@@ -1,11 +1,9 @@
-//
-//  main.swift
-//  Interpreter
-//
-//  Created by Michel Guo on 2022/4/26.
-//
-
 import Foundation
 
-print("Hello, World!")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
+
+let scanner = Scanner(source: toInterpret)
+let (tokens, errors) = scanner.scanTokens()
+debugPrintTokens(tokens: tokens)
+print(errors)
 
