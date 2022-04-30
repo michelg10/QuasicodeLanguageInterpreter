@@ -33,9 +33,6 @@ enum TokenType {
     // Other
     case END
     
-    // Composite keywords
-    case ENDLOOP, ENDIF, ENDFUNCTION, ENDCLASS
-    
     // Other
     case EOF, EOL
 }
