@@ -153,8 +153,6 @@ class Scanner {
             addToken(type: .STAR)
         case ":":
             addToken(type: .COLON)
-        case "!":
-            addToken(type: match(expected: "=") ? .BANG_EQUAL : .BANG)
         case "=":
             addToken(type: match(expected: "=") ? .EQUAL_EQUAL : .EQUAL)
         case "<":
@@ -187,6 +185,9 @@ class Scanner {
                 number()
             } else if isAlpha(c) {
                 identifier()
+            } else if c == "!" && peek() == "=" {
+                advance()
+                addToken(type: .BANG_EQUAL)
             } else {
                 problems.append(.init(message: "Unexpected character \(c)", line: line, inlineLocation: .init(column: column, length: 1)))
             }

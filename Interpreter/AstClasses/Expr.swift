@@ -1,29 +1,67 @@
 protocol Expr {
     func accept(visitor: ExprVisitor)
+    func accept(visitor: ExprStringVisitor) -> String
     var type: QsType? { get set }
 }
 
 protocol ExprVisitor {
-    func visitLiteralExpr(expr: Literal)
-    func visitThisExpr(expr: This)
-    func visitSuperExpr(expr: Super)
-    func visitVariableExpr(expr: Variable)
-    func visitSubscriptExpr(expr: Subscript)
-    func visitCallExpr(expr: Call)
-    func visitGetExpr(expr: Get)
-    func visitUnaryExpr(expr: Unary)
-    func visitCastExpr(expr: Cast)
-    func visitArrayAllocationExpr(expr: ArrayAllocation)
-    func visitClassAllocationExpr(expr: ClassAllocation)
-    func visitBinaryExpr(expr: Binary)
-    func visitSetExpr(expr: Set)
+    func visitGroupingExpr(expr: GroupingExpr) 
+    func visitLiteralExpr(expr: LiteralExpr) 
+    func visitThisExpr(expr: ThisExpr) 
+    func visitSuperExpr(expr: SuperExpr) 
+    func visitVariableExpr(expr: VariableExpr) 
+    func visitSubscriptExpr(expr: SubscriptExpr) 
+    func visitCallExpr(expr: CallExpr) 
+    func visitGetExpr(expr: GetExpr) 
+    func visitUnaryExpr(expr: UnaryExpr) 
+    func visitCastExpr(expr: CastExpr) 
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) 
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) 
+    func visitBinaryExpr(expr: BinaryExpr) 
+    func visitLogicalExpr(expr: LogicalExpr) 
+    func visitSetExpr(expr: SetExpr) 
 }
 
-class Literal: Expr {
-    var value: Any
+protocol ExprStringVisitor {
+    func visitGroupingExprString(expr: GroupingExpr) -> String
+    func visitLiteralExprString(expr: LiteralExpr) -> String
+    func visitThisExprString(expr: ThisExpr) -> String
+    func visitSuperExprString(expr: SuperExpr) -> String
+    func visitVariableExprString(expr: VariableExpr) -> String
+    func visitSubscriptExprString(expr: SubscriptExpr) -> String
+    func visitCallExprString(expr: CallExpr) -> String
+    func visitGetExprString(expr: GetExpr) -> String
+    func visitUnaryExprString(expr: UnaryExpr) -> String
+    func visitCastExprString(expr: CastExpr) -> String
+    func visitArrayAllocationExprString(expr: ArrayAllocationExpr) -> String
+    func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String
+    func visitBinaryExprString(expr: BinaryExpr) -> String
+    func visitLogicalExprString(expr: LogicalExpr) -> String
+    func visitSetExprString(expr: SetExpr) -> String
+}
+
+class GroupingExpr: Expr {
+    var expression: Expr
     var type: QsType?
     
-    init(value: Any, type: QsType?) {
+    init(expression: Expr, type: QsType?) {
+        self.expression = expression
+        self.type = type
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitGroupingExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitGroupingExprString(expr: self)
+    }
+}
+
+class LiteralExpr: Expr {
+    var value: Any?
+    var type: QsType?
+    
+    init(value: Any?, type: QsType?) {
         self.value = value
         self.type = type
     }
@@ -31,9 +69,12 @@ class Literal: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitLiteralExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitLiteralExprString(expr: self)
+    }
 }
 
-class This: Expr {
+class ThisExpr: Expr {
     var keyword: Token
     var type: QsType?
     
@@ -45,25 +86,31 @@ class This: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitThisExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitThisExprString(expr: self)
+    }
 }
 
-class Super: Expr {
+class SuperExpr: Expr {
     var keyword: Token
-    var method: Token
+    var property: Token
     var type: QsType?
     
-    init(keyword: Token, method: Token, type: QsType?) {
+    init(keyword: Token, property: Token, type: QsType?) {
         self.keyword = keyword
-        self.method = method
+        self.property = property
         self.type = type
     }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSuperExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitSuperExprString(expr: self)
+    }
 }
 
-class Variable: Expr {
+class VariableExpr: Expr {
     var name: Token
     var type: QsType?
     
@@ -75,9 +122,12 @@ class Variable: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitVariableExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitVariableExprString(expr: self)
+    }
 }
 
-class Subscript: Expr {
+class SubscriptExpr: Expr {
     var expression: Expr
     var index: Expr
     var type: QsType?
@@ -91,9 +141,12 @@ class Subscript: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitSubscriptExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitSubscriptExprString(expr: self)
+    }
 }
 
-class Call: Expr {
+class CallExpr: Expr {
     var callee: Expr
     var paren: Token
     var arguments: [Expr]
@@ -109,9 +162,12 @@ class Call: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitCallExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitCallExprString(expr: self)
+    }
 }
 
-class Get: Expr {
+class GetExpr: Expr {
     var object: Expr
     var name: Token
     var type: QsType?
@@ -125,9 +181,12 @@ class Get: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitGetExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitGetExprString(expr: self)
+    }
 }
 
-class Unary: Expr {
+class UnaryExpr: Expr {
     var opr: Token
     var right: Expr
     var type: QsType?
@@ -141,14 +200,17 @@ class Unary: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitUnaryExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitUnaryExprString(expr: self)
+    }
 }
 
-class Cast: Expr {
-    var toType: QsType
+class CastExpr: Expr {
+    var toType: AstType
     var value: Expr
     var type: QsType?
     
-    init(toType: QsType, value: Expr, type: QsType?) {
+    init(toType: AstType, value: Expr, type: QsType?) {
         self.toType = toType
         self.value = value
         self.type = type
@@ -157,14 +219,17 @@ class Cast: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitCastExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitCastExprString(expr: self)
+    }
 }
 
-class ArrayAllocation: Expr {
-    var contains: QsType
+class ArrayAllocationExpr: Expr {
+    var contains: AstType
     var capacity: Expr
     var type: QsType?
     
-    init(contains: QsType, capacity: Expr, type: QsType?) {
+    init(contains: AstType, capacity: Expr, type: QsType?) {
         self.contains = contains
         self.capacity = capacity
         self.type = type
@@ -173,13 +238,16 @@ class ArrayAllocation: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayAllocationExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitArrayAllocationExprString(expr: self)
+    }
 }
 
-class ClassAllocation: Expr {
-    var classType: QsClass
+class ClassAllocationExpr: Expr {
+    var classType: AstClassType
     var type: QsType?
     
-    init(classType: QsClass, type: QsType?) {
+    init(classType: AstClassType, type: QsType?) {
         self.classType = classType
         self.type = type
     }
@@ -187,9 +255,12 @@ class ClassAllocation: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitClassAllocationExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitClassAllocationExprString(expr: self)
+    }
 }
 
-class Binary: Expr {
+class BinaryExpr: Expr {
     var left: Expr
     var opr: Token
     var right: Expr
@@ -205,23 +276,50 @@ class Binary: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(expr: self)
     }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitBinaryExprString(expr: self)
+    }
 }
 
-class Set: Expr {
+class LogicalExpr: Expr {
+    var left: Expr
+    var opr: Token
+    var right: Expr
+    var type: QsType?
+    
+    init(left: Expr, opr: Token, right: Expr, type: QsType?) {
+        self.left = left
+        self.opr = opr
+        self.right = right
+        self.type = type
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitLogicalExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitLogicalExprString(expr: self)
+    }
+}
+
+class SetExpr: Expr {
     var to: Expr
-    var toType: QsType?
+    var annotation: AstType?
     var value: Expr
     var type: QsType?
     
-    init(to: Expr, toType: QsType?, value: Expr, type: QsType?) {
+    init(to: Expr, annotation: AstType?, value: Expr, type: QsType?) {
         self.to = to
-        self.toType = toType
+        self.annotation = annotation
         self.value = value
         self.type = type
     }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSetExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitSetExprString(expr: self)
     }
 }
 

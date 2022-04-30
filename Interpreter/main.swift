@@ -7,3 +7,5 @@ let (tokens, errors) = scanner.scanTokens()
 debugPrintTokens(tokens: tokens)
 print(errors)
 
+let parser = Parser(tokens: tokens)
+parser.parse()
