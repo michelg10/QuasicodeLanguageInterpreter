@@ -42,6 +42,10 @@ class Parser {
     
     private func declaration() -> Stmt? {
         do {
+            if match(types: .EOL) {
+                // its just an empty line, do nothing about it
+                return nil
+            }
             /*
             if match(types: .CLASS) {
                 return classDeclaration()
@@ -97,6 +101,7 @@ class Parser {
     
     private func expressionStatement() throws -> Stmt {
         let expr = try expression()
+        try consume(type: .EOL, message: "Expect end of line after expression")
         return ExpressionStmt(expression: expr)
     }
     
@@ -208,6 +213,7 @@ class Parser {
     }
     
     private func unary() throws -> Expr {
+        let statePrior = current
         if match(types: .LEFT_PAREN) {
             if isAtEnd() {
                 throw error(token: previous(), message: "Expect ')' after '('")
@@ -218,6 +224,9 @@ class Parser {
                 try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
                 let right = try unary()
                 return CastExpr(toType: typeCastTo!, value: right, type: nil)
+            } else {
+                // restore state
+                current = statePrior
             }
         }
         if match(types: .MINUS, .NOT) {
@@ -229,10 +238,34 @@ class Parser {
         return try secondary()
     }
     
-    func secondary() throws -> Expr {
-        let expr = try primary()
+    func finishCall(callee: Expr) throws -> Expr {
+        var arguments: [Expr] = []
+        if !check(type: .RIGHT_PAREN) {
+            repeat {
+                arguments.append(try expression())
+            } while match(types: .COMMA)
+        }
         
-        // TODO: this
+        let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
+        return CallExpr(callee: callee, paren: paren, arguments: arguments, type: nil)
+    }
+    
+    func secondary() throws -> Expr {
+        var expr = try primary()
+        
+        while true {
+            if match(types: .LEFT_PAREN) {
+                expr = try finishCall(callee: expr)
+            } else if match(types: .DOT) {
+                let name = try consume(type: .IDENTIFIER, message: "Expect property name after '.'.")
+                expr = GetExpr(object: expr, name: name, type: nil)
+            } else if match(types: .LEFT_BRACKET) {
+                let index = try expression()
+                expr = SubscriptExpr(expression: expr, index: index, type: nil)
+            } else {
+                break
+            }
+        }
         
         return expr
     }
@@ -260,7 +293,7 @@ class Parser {
             return VariableExpr(name: previous(), type: nil)
         }
         if match(types: .LEFT_BRACE) {
-            // TODO: array literal
+            return try arrayLiteral()
         }
         if match(types: .SUPER) {
             let keyword = previous()
@@ -275,6 +308,11 @@ class Parser {
         }
         
         throw error(token: peek(), message: "Expect expression")
+    }
+    
+    func arrayLiteral() throws -> Expr {
+        // placeholder
+        return LiteralExpr(value: 32, type: nil)
     }
     
     func typeSignature() throws -> AstType? {
@@ -404,7 +442,7 @@ class Parser {
             case .BREAK:
                 return
             default:
-                continue
+                advance()
             }
         }
     }

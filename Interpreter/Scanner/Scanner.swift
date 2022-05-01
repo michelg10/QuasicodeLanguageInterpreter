@@ -104,6 +104,7 @@ class Scanner {
             scanToken()
         }
         
+        tokens.append(.init(tokenType: .EOL, lexeme: "", line: line, column: 0))
         tokens.append(.init(tokenType: .EOF, lexeme: "", line: line, column: 0))
         return (tokens, problems)
     }

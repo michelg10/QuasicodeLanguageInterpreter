@@ -49,18 +49,18 @@ func typesIsEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
 }
 
 func hashTypeIntoHasher(_ value: QsType, _ hasher: inout Hasher) {
-    switch type(of: value) {
-    case is QsInt.Type:
+    switch value {
+    case is QsInt:
         hasher.combine(1)
-    case is QsDouble.Type:
+    case is QsDouble:
         hasher.combine(2)
-    case is QsBoolean.Type:
+    case is QsBoolean:
         hasher.combine(3)
-    case is QsAnyType.Type:
+    case is QsAnyType:
         hasher.combine(4)
-    case is QsClass.Type:
+    case is QsClass:
         hasher.combine((value as! QsClass).id)
-    case is QsArray.Type:
+    case is QsArray:
         hasher.combine(0)
         hashTypeIntoHasher((value as! QsArray).contains, &hasher)
     default:

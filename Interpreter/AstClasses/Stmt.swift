@@ -35,11 +35,11 @@ protocol StmtStringVisitor {
 
 class ClassStmt: Stmt {
     var name: Token
-    var superclass: VariableExpr
+    var superclass: VariableExpr?
     var methods: [MethodStmt]
     var staticMethods: [MethodStmt]
     
-    init(name: Token, superclass: VariableExpr, methods: [MethodStmt], staticMethods: [MethodStmt]) {
+    init(name: Token, superclass: VariableExpr?, methods: [MethodStmt], staticMethods: [MethodStmt]) {
         self.name = name
         self.superclass = superclass
         self.methods = methods
@@ -177,14 +177,12 @@ class ReturnStmt: Stmt {
 
 class LoopFromStmt: Stmt {
     var variable: Expr
-    var loopVariable: Expr
     var lRange: Expr
     var rRange: Expr
     var statements: [Stmt]
     
-    init(variable: Expr, loopVariable: Expr, lRange: Expr, rRange: Expr, statements: [Stmt]) {
+    init(variable: Expr, lRange: Expr, rRange: Expr, statements: [Stmt]) {
         self.variable = variable
-        self.loopVariable = loopVariable
         self.lRange = lRange
         self.rRange = rRange
         self.statements = statements

@@ -3,9 +3,15 @@ import Foundation
 let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 
 let scanner = Scanner(source: toInterpret)
-let (tokens, errors) = scanner.scanTokens()
+let (tokens, scanErrors) = scanner.scanTokens()
 debugPrintTokens(tokens: tokens)
-print(errors)
+print(scanErrors)
 
 let parser = Parser(tokens: tokens)
-parser.parse()
+let (stmts, parseErrors) = parser.parse()
+print(parseErrors)
+print("AST")
+let astPrinter = AstPrinter()
+for stmt in stmts {
+    print(astPrinter.printAst(stmt: stmt))
+}
