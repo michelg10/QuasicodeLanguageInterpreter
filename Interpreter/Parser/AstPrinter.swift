@@ -1,4 +1,8 @@
 class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
+    func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
+        return "<TemplateType \(asttype.name.lexeme)>"
+    }
+    
     func parenthesize(name: String, exprs: [Expr]) -> String {
         var result = "("+name
         for expr in exprs {
@@ -13,10 +17,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: name, exprs: exprs)
     }
     
-    func encapsulateBlock(blockStmts: [Stmt]) -> String {
-        var result=""
-        result += "{\n"
-        
+    func indentBlockStmts(blockStmts: [Stmt]) -> String {
+        var result = ""
         for blockStmt in blockStmts {
             let newRow = blockStmt.accept(visitor: self)
             let newRowLines = newRow.split(separator: "\n")
@@ -25,6 +27,13 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             }
             result+="\n"
         }
+        return result
+    }
+    
+    func encapsulateBlock(blockStmts: [Stmt]) -> String {
+        var result=""
+        result += "{\n\(indentBlockStmts(blockStmts: blockStmts))"
+        
         result+="}"
         
         return result
@@ -48,7 +57,16 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitAstClassTypeString(asttype: AstClassType) -> String {
-        return "<Class\(asttype.name.lexeme)\(asttype.templateType == nil ? "" : "<\(asttype.templateType!.accept(visitor: self))>")>"
+        var templateTypesString = ""
+        if asttype.templateTypes != nil {
+            for templateType in asttype.templateTypes! {
+                if templateTypesString != "" {
+                    templateTypesString += ", "
+                }
+                templateTypesString+=templateType.accept(visitor: self)
+            }
+        }
+        return "<Class \(asttype.name.lexeme)\(asttype.templateTypes == nil ? "" : "<\(templateTypesString)>")>"
     }
     
     func visitAstIntTypeString(asttype: AstIntType) -> String {
@@ -148,15 +166,27 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "Set{\(astTypeToString(astType: expr.annotation))}", exprs: expr.to, expr.value)
     }
     
+    func classField(field: ClassField) -> String {
+        return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){\(astTypeToString(astType: field.astType))} = \(field.initializer == nil ? "NoInit" : field.initializer!.accept(visitor: self))"
+    }
+    
     func visitClassStmtString(stmt: ClassStmt) -> String {
-        // TODO: this
-        return parenthesize(name: "Class{name: \(stmt.name.lexeme), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme)}")
+        let classDesc = "{name: \(stmt.name.lexeme), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme)}"
+        var result = "(Class\(classDesc){\n"
+        result += indentBlockStmts(blockStmts: stmt.staticMethods)
+        result += indentBlockStmts(blockStmts: stmt.methods)
+        for field in stmt.staticFields {
+            result += "    "+classField(field: field)+"\n"
+        }
+        for field in stmt.fields {
+            result += "    "+classField(field: field)+"\n"
+        }
+        result += "}"
+        return result
     }
     
     func visitMethodStmtString(stmt: MethodStmt) -> String {
-        
-        // TODO: this
-        return ""
+        return "(Method \(stmt.isStatic ? "static" : "nostatic") \(stmt.visibilityModifier == .PUBLIC ? "public" : "private") \(stmt.function.accept(visitor: self)))"
     }
     
     func astTypeToString(astType: AstType?) -> String {

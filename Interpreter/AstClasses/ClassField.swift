@@ -1,4 +1,5 @@
-struct ClassFields {
+struct ClassField {
+    var isStatic: Bool
     var visibilityModifier: VisibilityModifier
     var name: Token
     var astType: AstType?

@@ -6,6 +6,7 @@ protocol AstType {
 protocol AstTypeVisitor {
     func visitAstArrayType(asttype: AstArrayType) 
     func visitAstClassType(asttype: AstClassType) 
+    func visitAstTemplateTypeName(asttype: AstTemplateTypeName) 
     func visitAstIntType(asttype: AstIntType) 
     func visitAstDoubleType(asttype: AstDoubleType) 
     func visitAstBooleanType(asttype: AstBooleanType) 
@@ -15,6 +16,7 @@ protocol AstTypeVisitor {
 protocol AstTypeStringVisitor {
     func visitAstArrayTypeString(asttype: AstArrayType) -> String
     func visitAstClassTypeString(asttype: AstClassType) -> String
+    func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String
     func visitAstIntTypeString(asttype: AstIntType) -> String
     func visitAstDoubleTypeString(asttype: AstDoubleType) -> String
     func visitAstBooleanTypeString(asttype: AstBooleanType) -> String
@@ -38,11 +40,11 @@ class AstArrayType: AstType {
 
 class AstClassType: AstType {
     var name: Token
-    var templateType: AstType?
+    var templateTypes: [AstType]?
     
-    init(name: Token, templateType: AstType?) {
+    init(name: Token, templateTypes: [AstType]?) {
         self.name = name
-        self.templateType = templateType
+        self.templateTypes = templateTypes
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -50,6 +52,21 @@ class AstClassType: AstType {
     }
     func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstClassTypeString(asttype: self)
+    }
+}
+
+class AstTemplateTypeName: AstType {
+    var name: Token
+    
+    init(name: Token) {
+        self.name = name
+    }
+
+    func accept(visitor: AstTypeVisitor) {
+        visitor.visitAstTemplateTypeName(asttype: self)
+    }
+    func accept(visitor: AstTypeStringVisitor) -> String {
+        visitor.visitAstTemplateTypeNameString(asttype: self)
     }
 }
 

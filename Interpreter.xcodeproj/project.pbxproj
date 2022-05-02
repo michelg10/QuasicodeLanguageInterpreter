@@ -13,7 +13,7 @@
 		D07B710D281D0B9D003A672F /* FunctionParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B710C281D0B9D003A672F /* FunctionParam.swift */; };
 		D07B710F281D0DA7003A672F /* AstType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B710E281D0DA7003A672F /* AstType.swift */; };
 		D07B7111281D6920003A672F /* AstPrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B7110281D6920003A672F /* AstPrinter.swift */; };
-		D0AA38D7281E80F300CF94ED /* ClassFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* ClassFields.swift */; };
+		D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* ClassField.swift */; };
 		D0DD7C1D28179A1B00FBD20C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C1C28179A1B00FBD20C /* main.swift */; };
 		D0DD7C2428179A3300FBD20C /* Scanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C2328179A3300FBD20C /* Scanner.swift */; };
 		D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C2528179A5C00FBD20C /* TokenType.swift */; };
@@ -43,7 +43,7 @@
 		D07B710C281D0B9D003A672F /* FunctionParam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionParam.swift; sourceTree = "<group>"; };
 		D07B710E281D0DA7003A672F /* AstType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstType.swift; sourceTree = "<group>"; };
 		D07B7110281D6920003A672F /* AstPrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstPrinter.swift; sourceTree = "<group>"; };
-		D0AA38D6281E80F300CF94ED /* ClassFields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFields.swift; sourceTree = "<group>"; };
+		D0AA38D6281E80F300CF94ED /* ClassField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassField.swift; sourceTree = "<group>"; };
 		D0DD7C1928179A1B00FBD20C /* Interpreter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Interpreter; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0DD7C1C28179A1B00FBD20C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D0DD7C2328179A3300FBD20C /* Scanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scanner.swift; sourceTree = "<group>"; };
@@ -131,7 +131,7 @@
 				D07B710E281D0DA7003A672F /* AstType.swift */,
 				D0DD7C552819849600FBD20C /* Expr.swift */,
 				D07B710C281D0B9D003A672F /* FunctionParam.swift */,
-				D0AA38D6281E80F300CF94ED /* ClassFields.swift */,
+				D0AA38D6281E80F300CF94ED /* ClassField.swift */,
 			);
 			path = AstClasses;
 			sourceTree = "<group>";
@@ -198,7 +198,7 @@
 				D07B70F8281CC9FF003A672F /* Parser.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
 				D0DD7C2C2817E89F00FBD20C /* InterpreterProblem.swift in Sources */,
-				D0AA38D7281E80F300CF94ED /* ClassFields.swift in Sources */,
+				D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */,
 				D07B70F6281A7EB4003A672F /* Types.swift in Sources */,
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
 				D0DD7C2A2817A48900FBD20C /* Token.swift in Sources */,

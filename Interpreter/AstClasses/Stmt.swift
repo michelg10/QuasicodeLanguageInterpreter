@@ -35,14 +35,16 @@ protocol StmtStringVisitor {
 
 class ClassStmt: Stmt {
     var name: Token
-    var superclass: VariableExpr?
+    var templateTypes: [Token]?
+    var superclass: AstClassType?
     var methods: [MethodStmt]
     var staticMethods: [MethodStmt]
-    var fields: [ClassFields]
-    var staticFields: [ClassFields]
+    var fields: [ClassField]
+    var staticFields: [ClassField]
     
-    init(name: Token, superclass: VariableExpr?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassFields], staticFields: [ClassFields]) {
+    init(name: Token, templateTypes: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
         self.name = name
+        self.templateTypes = templateTypes
         self.superclass = superclass
         self.methods = methods
         self.staticMethods = staticMethods

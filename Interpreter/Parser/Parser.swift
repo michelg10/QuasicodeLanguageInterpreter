@@ -7,6 +7,7 @@ class Parser {
     private var problems: [InterpreterProblem] = []
     private var current = 0
     private var userDefinedTypes: Set<String> = []
+    private var currentClassTemplateTypes: [String] = []
     
     init(tokens: [Token]) {
         self.tokens = tokens
@@ -46,29 +47,129 @@ class Parser {
                 // its just an empty line, do nothing about it
                 return nil
             }
-            /*
             if match(types: .CLASS) {
-                return classDeclaration()
+                return try ClassDeclaration()
             }
-             */
             if match(types: .FUNCTION) {
-                return try functionDeclaration()
+                return try FunctionDeclaration()
             }
             return try statement()
         } catch {
             synchronize()
             return nil
         }
-        return nil
     }
     
-    /*
-    private func classDeclaration() -> Class {
+    private func ClassDeclaration() throws -> Stmt {
+        let name = try consume(type: .IDENTIFIER, message: "Expect class name.")
+        var templateTypes: [Token]?
+        var superclass: AstClassType? = nil
         
+        if match(types: .LESS) {
+            templateTypes = []
+            repeat {
+                templateTypes?.append(try consume(type: .IDENTIFIER, message: "Expect template identifier"))
+            } while match(types: .COMMA)
+            try consume(type: .GREATER, message: "Expect '>' following template identifiers")
+            for templateType in templateTypes! {
+                currentClassTemplateTypes.append(templateType.lexeme)
+            }
+        }
+        
+        if match(types: .EXTENDS) {
+            let extendsKeyword = previous()
+            let extendedClass = try typeSignature(matchArray: false)
+            if extendedClass == nil {
+                throw error(token: extendsKeyword, message: "Expect class name")
+            }
+            if !(extendedClass is AstClassType) {
+                throw error(token: previous(), message: "Only classes can be extended!")
+            }
+            superclass = extendedClass as? AstClassType
+        }
+        try consume(type: .EOL, message: "Expect end-of-line after class signature")
+        
+        // TODO: consume all of the methods and fields
+        var methods: [MethodStmt] = []
+        var staticMethods: [MethodStmt] = []
+        var fields: [ClassField] = []
+        var staticFields: [ClassField] = []
+        
+        while !check(type: .END) && !isAtEnd() {
+            var visibilityModifer: VisibilityModifier? = nil
+            var isStatic: Bool? = nil
+            
+            while match(types: .PUBLIC, .PRIVATE, .STATIC) {
+                switch previous().tokenType {
+                case .PUBLIC:
+                    if visibilityModifer != nil {
+                        throw error(token: previous(), message: "Repeated visibility modifier")
+                    }
+                    visibilityModifer = .PUBLIC
+                case .PRIVATE:
+                    if visibilityModifer != nil {
+                        throw error(token: previous(), message: "Repeated visibility modifier")
+                    }
+                    visibilityModifer = .PRIVATE
+                case .STATIC:
+                    if isStatic != nil {
+                        throw error(token: previous(), message: "Repeated static modifier")
+                    }
+                    isStatic = true
+                default:
+                    continue
+                }
+            }
+            
+            
+            if isStatic == nil {
+                isStatic = true
+            }
+            if visibilityModifer == nil {
+                visibilityModifer = .PUBLIC
+            }
+            
+            if match(types: .FUNCTION) {
+                let function = try FunctionDeclaration()
+                let method = MethodStmt.init(isStatic: isStatic!, visibilityModifier: visibilityModifer!, function: function as! FunctionStmt)
+                if isStatic! {
+                    staticMethods.append(method)
+                } else {
+                    methods.append(method)
+                }
+            } else if match(types: .IDENTIFIER) {
+                let fieldName = previous()
+                var typeAnnotation: AstType? = nil
+                var initializer: Expr? = nil
+                if match(types: .COLON) {
+                    typeAnnotation = try typeSignature(matchArray: true)
+                }
+                if match(types: .EQUAL) {
+                    initializer = try expression()
+                }
+                let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, type: nil)
+                try consume(type: .EOL, message: "Expect end-of-line after field declaration")
+                if isStatic! {
+                    staticFields.append(field)
+                } else {
+                    fields.append(field)
+                }
+            } else if match(types: .EOL) {
+                // ignore
+            } else {
+                throw error(token: peek(), message: "Expect method or field declaration")
+            }
+        }
+        
+        try consume(type: .END, message: "Expect 'end class' after class declaration")
+        try consume(type: .CLASS, message: "Expect 'end class' after class declaration")
+        try consume(type: .EOL, message: "Expect end-of-line after 'end class'")
+        
+        currentClassTemplateTypes = []
+        return ClassStmt(name: name, templateTypes: templateTypes, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
     }
-     */
     
-    private func functionDeclaration() throws -> Stmt {
+    private func FunctionDeclaration() throws -> Stmt {
         let name = try consume(type: .IDENTIFIER, message: "Expect function name")
         try consume(type: .LEFT_PAREN, message: "Expect '(' after function declaration")
         var parameters: [FunctionParam] = []
@@ -365,6 +466,7 @@ class Parser {
         if allocationType == nil {
             throw error(token: newKeyword, message: "Expect type after 'new'")
         }
+        
         if match(types: .LEFT_BRACKET) {
             var capacity: [Expr] = []
             repeat {
@@ -378,10 +480,11 @@ class Parser {
             if !(allocationType! is AstClassType) {
                 throw error(token: baseType, message: "Expect class")
             }
+            try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
             return ClassAllocationExpr(classType: allocationType as! AstClassType, arguments: argumentsList, type: nil)
         }
         
-        return LiteralExpr(value: 3, type: nil)
+        throw error(token: previous(), message: "Expect expression")
     }
     
     private func unary() throws -> Expr {
@@ -507,11 +610,19 @@ class Parser {
         }
         advance()
         if match(types: .LESS) {
-            if !(type(of: astType!) is AstClassType) {
+            if !(astType! is AstClassType) {
                 throw error(token: peek(), message: "Non-classes cannot be templated")
             }
-            let templateType = try typeSignature(matchArray: true)
-            (astType as! AstClassType).templateType = templateType
+            var templateTypes: [AstType] = []
+            repeat {
+                let nextToken = peek()
+                let templateType = try typeSignature(matchArray: true)
+                if templateType == nil {
+                    throw error(token: nextToken, message: "Expect type")
+                }
+                templateTypes.append(templateType!)
+            } while match(types: .COMMA)
+            (astType as! AstClassType).templateTypes = templateTypes
             try consume(type: .GREATER, message: "Expect '>' after template")
         }
         
@@ -539,7 +650,9 @@ class Parser {
             astType = AstAnyType()
         case .IDENTIFIER:
             if userDefinedTypes.contains(token.lexeme) {
-                astType = AstClassType(name: token, templateType: nil)
+                astType = AstClassType(name: token, templateTypes: nil)
+            } else if currentClassTemplateTypes.contains(token.lexeme) {
+                astType = AstTemplateTypeName(name: token)
             }
         default:
             astType = nil
