@@ -37,7 +37,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             result += " "
             result += expr.accept(visitor: self)
         }
-        result += encapsulateBlock(blockStmts: blockStmts)
+        result += " "+encapsulateBlock(blockStmts: blockStmts)
         result+=")"
         
         return result
@@ -205,7 +205,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitReturnStmtString(stmt: ReturnStmt) -> String {
-        return parenthesize(name: "Return", exprs: stmt.value)
+        if stmt.value == nil {
+            return parenthesize(name: "Return")
+        }
+        return parenthesize(name: "Return", exprs: stmt.value!)
     }
     
     func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {

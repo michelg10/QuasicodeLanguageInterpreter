@@ -164,9 +164,9 @@ class InputStmt: Stmt {
 
 class ReturnStmt: Stmt {
     var keyword: Token
-    var value: Expr
+    var value: Expr?
     
-    init(keyword: Token, value: Expr) {
+    init(keyword: Token, value: Expr?) {
         self.keyword = keyword
         self.value = value
     }
