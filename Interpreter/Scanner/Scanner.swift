@@ -5,7 +5,7 @@ class Scanner {
     private var start: String.Index
     private var current: String.Index
     private var line = 1
-    private var column = 0
+    private var column = 1
     
     func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ s: String.SubSequence) -> String.SubSequence {
         var i=s.endIndex
@@ -171,6 +171,8 @@ class Scanner {
                 if !isAtEnd() {
                     advance() // consume the \n
                 }
+            } else if match(expected: "*") {
+                blockComment()
             } else {
                 addToken(type: .SLASH)
             }
@@ -191,6 +193,23 @@ class Scanner {
                 addToken(type: .BANG_EQUAL)
             } else {
                 problems.append(.init(message: "Unexpected character \(c)", line: line, inlineLocation: .init(column: column, length: 1)))
+            }
+        }
+    }
+    
+    private func blockComment() {
+        
+        var blockCommentLevel = 1
+        while blockCommentLevel>0 {
+            let c = advance()
+            if c == "*" {
+                if match(expected: "/") {
+                    blockCommentLevel-=1
+                }
+            } else if c == "/" {
+                if match(expected: "*") {
+                    blockCommentLevel+=1
+                }
             }
         }
     }
@@ -368,7 +387,7 @@ class Scanner {
         if !isAtEnd() {
             if source[current] == "\n" {
                 line += 1
-                column = 0
+                column = 1
             } else {
                 column+=1
             }

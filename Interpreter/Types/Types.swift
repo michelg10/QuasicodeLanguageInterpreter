@@ -20,7 +20,7 @@ class QsAnyType: QsType {}
 
 let builtInTypesCount = 5 // classes start counting from this number
 
-class QsClass {
+class QsClass: QsType {
     init(name: String, id: Int, superclass: QsClass?, methodTypes: [MethodSignature : QsType], fieldTypes: [String : QsType]) {
         self.name = name
         self.id = id

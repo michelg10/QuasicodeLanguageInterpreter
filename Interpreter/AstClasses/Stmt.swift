@@ -38,12 +38,16 @@ class ClassStmt: Stmt {
     var superclass: VariableExpr?
     var methods: [MethodStmt]
     var staticMethods: [MethodStmt]
+    var fields: [ClassFields]
+    var staticFields: [ClassFields]
     
-    init(name: Token, superclass: VariableExpr?, methods: [MethodStmt], staticMethods: [MethodStmt]) {
+    init(name: Token, superclass: VariableExpr?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassFields], staticFields: [ClassFields]) {
         self.name = name
         self.superclass = superclass
         self.methods = methods
         self.staticMethods = staticMethods
+        self.fields = fields
+        self.staticFields = staticFields
     }
 
     func accept(visitor: StmtVisitor) {

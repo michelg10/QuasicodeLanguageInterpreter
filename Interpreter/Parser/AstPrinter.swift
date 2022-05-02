@@ -13,6 +13,23 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: name, exprs: exprs)
     }
     
+    func encapsulateBlock(blockStmts: [Stmt]) -> String {
+        var result=""
+        result += "{\n"
+        
+        for blockStmt in blockStmts {
+            let newRow = blockStmt.accept(visitor: self)
+            let newRowLines = newRow.split(separator: "\n")
+            for newRowLine in newRowLines {
+                result+="    "+newRowLine+"\n"
+            }
+            result+="\n"
+        }
+        result+="}"
+        
+        return result
+    }
+    
     func parenthesizeBlock(name: String, exprs: [Expr], blockStmts: [Stmt]) -> String {
         var result = "("+name
         
@@ -20,27 +37,18 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             result += " "
             result += expr.accept(visitor: self)
         }
-        result += "{\n"
-        
-        for blockStmt in blockStmts {
-            let newRow = blockStmt.accept(visitor: self)
-            let newRowLines = newRow.split(separator: "\n")
-            for newRowLine in newRowLines {
-                result+="    "+newRowLine
-            }
-            result+="\n"
-        }
-        result+="})"
+        result += encapsulateBlock(blockStmts: blockStmts)
+        result+=")"
         
         return result
     }
     
     func visitAstArrayTypeString(asttype: AstArrayType) -> String {
-        return "<Array \(asttype.contains.accept(visitor: self))>"
+        return "<Array\(asttype.contains.accept(visitor: self))>"
     }
     
     func visitAstClassTypeString(asttype: AstClassType) -> String {
-        return "<Class \(asttype.name.lexeme)\(asttype.templateType == nil ? "" : "<\(asttype.templateType!.accept(visitor: self))>")>"
+        return "<Class\(asttype.name.lexeme)\(asttype.templateType == nil ? "" : "<\(asttype.templateType!.accept(visitor: self))>")>"
     }
     
     func visitAstIntTypeString(asttype: AstIntType) -> String {
@@ -67,17 +75,27 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         if expr.value == nil {
             return "nil"
         }
-        if expr.value is Int {
+        if expr.type is QsInt {
             return String(expr.value as! Int)
         }
-        if expr.value is Double {
+        if expr.type is QsDouble {
             return String(expr.value as! Double)
+        }
+        if expr.type is QsBoolean {
+            return (expr.value as! Bool) ? "true" : "false"
+        }
+        if expr.type is QsClass {
+            return "[Class \((expr.type as! QsClass).name)]"
         }
         return "[Literal of unknown type]"
     }
     
     func visitThisExprString(expr: ThisExpr) -> String {
         return parenthesize(name: "this")
+    }
+    
+    func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String {
+        return parenthesize(name: "ArrayLiteral", exprs: expr.values)
     }
     
     func visitSuperExprString(expr: SuperExpr) -> String {
@@ -127,7 +145,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set{\(expr.type == nil ? "NoMandatedType" : expr.annotation!.accept(visitor: self))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Set{\(expr.annotation == nil ? "NoMandatedType" : expr.annotation!.accept(visitor: self))}", exprs: expr.to, expr.value)
     }
     
     func visitClassStmtString(stmt: ClassStmt) -> String {
@@ -136,11 +154,13 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitMethodStmtString(stmt: MethodStmt) -> String {
+        
         // TODO: this
         return ""
     }
     
     func visitFunctionStmtString(stmt: FunctionStmt) -> String {
+        
         // TODO: this
         return ""
     }
@@ -149,12 +169,31 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "Expression", exprs: stmt.expression)
     }
     
-    func ifStmt(stmt: IfStmt, isInElseIf: Bool) -> String {
-        return ""
+    func ifStmt(stmt: IfStmt, isElseIf: Bool) -> String {
+        var result = ""
+        if isElseIf {
+            result = "Else If "
+        } else {
+            result = "If "
+        }
+        
+        result += stmt.condition.accept(visitor: self)
+        
+        result += " \(encapsulateBlock(blockStmts: stmt.thenBranch))"
+        
+        for elseIfBranch in stmt.elseIfBranches {
+            result += " "+ifStmt(stmt: elseIfBranch, isElseIf: true)
+        }
+        
+        if stmt.elseBranch != nil {
+            result += " Else \(encapsulateBlock(blockStmts: stmt.elseBranch!))"
+        }
+        
+        return result
     }
     
     func visitIfStmtString(stmt: IfStmt) -> String {
-        return ""
+        return "(\(ifStmt(stmt: stmt, isElseIf: false)))"
     }
     
     func visitOutputStmtString(stmt: OutputStmt) -> String {

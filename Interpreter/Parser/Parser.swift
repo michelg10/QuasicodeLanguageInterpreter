@@ -75,7 +75,7 @@ class Parser {
     
     private func statement() throws -> Stmt {
         if match(types: .IF) {
-            
+            return try IfStatement()
         }
         if match(types: .OUTPUT) {
             
@@ -99,9 +99,46 @@ class Parser {
         return try expressionStatement()
     }
     
+    private func block(additionalEndMarkers: [TokenType]) -> [Stmt] {
+        var statements: [Stmt] = []
+        while !check(types: additionalEndMarkers) && !check(type: .END) && !isAtEnd() {
+            if let toInsert = declaration() {
+                statements.append(toInsert)
+            }
+        }
+        return statements
+    }
+    
+    private func IfStatement() throws -> Stmt {
+        let condition = try expression()
+        try consume(type: .EOL, message: "Expect end-of-line after if condition")
+        var thenBranch: [Stmt] = block(additionalEndMarkers: [.ELSE])
+        var elseIfBranches: [IfStmt] = []
+        var elseBranch: [Stmt]? = nil
+        
+        while match(types: .ELSE) {
+            if match(types: .IF) {
+                let condition = try expression()
+                try consume(type: .EOL, message: "Expect end-of-line after if condition")
+                let thisElseIfBranch = block(additionalEndMarkers: [.ELSE])
+                elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil))
+            } else {
+                try consume(type: .EOL, message: "Expect end-of-line after else")
+                elseBranch = block(additionalEndMarkers: [.ELSE])
+                break
+            }
+        }
+        
+        try consume(type: .END, message: "Expect 'end if' after if statement")
+        try consume(type: .IF, message: "Expect 'end if' after if statement")
+        try consume(type: .EOL, message: "Expect end-of-line after 'end if'")
+        
+        return IfStmt(condition: condition, thenBranch: thenBranch, elseIfBranches: elseIfBranches, elseBranch: elseBranch)
+    }
+    
     private func expressionStatement() throws -> Stmt {
         let expr = try expression()
-        try consume(type: .EOL, message: "Expect end of line after expression")
+        try consume(type: .EOL, message: "Expect end-of-line after expression")
         return ExpressionStmt(expression: expr)
     }
     
@@ -114,7 +151,7 @@ class Parser {
         
         var annotation: AstType? = nil
         if match(types: .COLON) {
-            annotation = try typeSignature()
+            annotation = try typeSignature(matchArray: true)
         }
         
         if match(types: .EQUAL) {
@@ -194,7 +231,7 @@ class Parser {
     private func factor() throws -> Expr {
         var expr: Expr
         if match(types: .NEW) {
-            expr = allocation()
+            expr = try allocation()
         } else {
             expr = try unary()
             while match(types: .SLASH, .STAR, .DIV, .MOD) {
@@ -207,8 +244,30 @@ class Parser {
         return expr
     }
     
-    private func allocation() -> Expr {
-        // TODO: this
+    private func allocation() throws -> Expr {
+        let newKeyword = previous()
+        // consume the base type
+        let baseType = peek()
+        var allocationType = try typeSignature(matchArray: false)
+        if allocationType == nil {
+            throw error(token: newKeyword, message: "Expect type after 'new'")
+        }
+        if match(types: .LEFT_BRACKET) {
+            var capacity: [Expr] = []
+            repeat {
+                capacity.append(try expression())
+                allocationType = AstArrayType(contains: allocationType!)
+                try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
+            } while match(types: .LEFT_BRACKET)
+            return ArrayAllocationExpr(contains: allocationType!, capacity: capacity, type: nil)
+        } else if match(types: .LEFT_PAREN) {
+            let argumentsList = try arguments()
+            if !(allocationType! is AstClassType) {
+                throw error(token: baseType, message: "Expect class")
+            }
+            return ClassAllocationExpr(classType: allocationType as! AstClassType, arguments: argumentsList, type: nil)
+        }
+        
         return LiteralExpr(value: 3, type: nil)
     }
     
@@ -219,7 +278,7 @@ class Parser {
                 throw error(token: previous(), message: "Expect ')' after '('")
             }
             // determine if its a type cast
-            let typeCastTo = try typeSignature()
+            let typeCastTo = try typeSignature(matchArray: true)
             if typeCastTo != nil {
                 try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
                 let right = try unary()
@@ -238,19 +297,24 @@ class Parser {
         return try secondary()
     }
     
-    func finishCall(callee: Expr) throws -> Expr {
-        var arguments: [Expr] = []
+    private func arguments() throws -> [Expr] {
+        var argumentsList: [Expr] = []
         if !check(type: .RIGHT_PAREN) {
             repeat {
-                arguments.append(try expression())
+                argumentsList.append(try expression())
             } while match(types: .COMMA)
         }
-        
-        let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
-        return CallExpr(callee: callee, paren: paren, arguments: arguments, type: nil)
+        return argumentsList
     }
     
-    func secondary() throws -> Expr {
+    private func finishCall(callee: Expr) throws -> Expr {
+        var argumentsList: [Expr] = try arguments()
+        
+        let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
+        return CallExpr(callee: callee, paren: paren, arguments: argumentsList, type: nil)
+    }
+    
+    private func secondary() throws -> Expr {
         var expr = try primary()
         
         while true {
@@ -262,6 +326,7 @@ class Parser {
             } else if match(types: .LEFT_BRACKET) {
                 let index = try expression()
                 expr = SubscriptExpr(expression: expr, index: index, type: nil)
+                try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
             } else {
                 break
             }
@@ -270,7 +335,7 @@ class Parser {
         return expr
     }
     
-    func primary() throws -> Expr {
+    private func primary() throws -> Expr {
         if match(types: .TRUE) {
             return LiteralExpr(value: true, type: QsBoolean())
         }
@@ -288,6 +353,9 @@ class Parser {
         }
         if match(types: .FLOAT) {
             return LiteralExpr(value: previous().value, type: QsDouble())
+        }
+        if match(types: .STRING) {
+            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, superclass: nil, methodTypes: [:], fieldTypes: [:]))
         }
         if match(types: .IDENTIFIER) {
             return VariableExpr(name: previous(), type: nil)
@@ -310,12 +378,16 @@ class Parser {
         throw error(token: peek(), message: "Expect expression")
     }
     
-    func arrayLiteral() throws -> Expr {
-        // placeholder
-        return LiteralExpr(value: 32, type: nil)
+    private func arrayLiteral() throws -> Expr {
+        var values: [Expr] = []
+        repeat {
+            values.append(try expression())
+        } while match(types: .COMMA)
+        
+        return ArrayLiteralExpr(values: values, type: nil)
     }
     
-    func typeSignature() throws -> AstType? {
+    private func typeSignature(matchArray: Bool) throws -> AstType? {
         var astType = tokenToAstType(peek())
         if astType == nil {
             return nil
@@ -325,19 +397,22 @@ class Parser {
             if !(type(of: astType!) is AstClassType) {
                 throw error(token: peek(), message: "Non-classes cannot be templated")
             }
-            let templateType = try typeSignature()
+            let templateType = try typeSignature(matchArray: true)
             (astType as! AstClassType).templateType = templateType
             try consume(type: .GREATER, message: "Expect '>' after template")
         }
-        while match(types: .LEFT_BRACKET) {
-            astType = AstArrayType(contains: astType!)
-            try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
+        
+        if matchArray {
+            while match(types: .LEFT_BRACKET) {
+                astType = AstArrayType(contains: astType!)
+                try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
+            }
         }
         
         return astType
     }
     
-    func tokenToAstType(_ token: Token) -> AstType? {
+    private func tokenToAstType(_ token: Token) -> AstType? {
         // in case of a class, the template field is left blank.
         var astType: AstType? = nil
         switch token.tokenType {
@@ -385,6 +460,15 @@ class Parser {
             return false
         }
         return peek().tokenType == type
+    }
+    
+    private func check(types: [TokenType]) -> Bool {
+        for type in types {
+            if check(type: type) {
+                return true
+            }
+        }
+        return false
     }
     
     private func advance() -> Token {

@@ -7,6 +7,7 @@ protocol Expr {
 protocol ExprVisitor {
     func visitGroupingExpr(expr: GroupingExpr) 
     func visitLiteralExpr(expr: LiteralExpr) 
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) 
     func visitThisExpr(expr: ThisExpr) 
     func visitSuperExpr(expr: SuperExpr) 
     func visitVariableExpr(expr: VariableExpr) 
@@ -25,6 +26,7 @@ protocol ExprVisitor {
 protocol ExprStringVisitor {
     func visitGroupingExprString(expr: GroupingExpr) -> String
     func visitLiteralExprString(expr: LiteralExpr) -> String
+    func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String
     func visitThisExprString(expr: ThisExpr) -> String
     func visitSuperExprString(expr: SuperExpr) -> String
     func visitVariableExprString(expr: VariableExpr) -> String
@@ -71,6 +73,23 @@ class LiteralExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLiteralExprString(expr: self)
+    }
+}
+
+class ArrayLiteralExpr: Expr {
+    var values: [Expr]
+    var type: QsType?
+    
+    init(values: [Expr], type: QsType?) {
+        self.values = values
+        self.type = type
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitArrayLiteralExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitArrayLiteralExprString(expr: self)
     }
 }
 
@@ -226,10 +245,10 @@ class CastExpr: Expr {
 
 class ArrayAllocationExpr: Expr {
     var contains: AstType
-    var capacity: Expr
+    var capacity: [Expr]
     var type: QsType?
     
-    init(contains: AstType, capacity: Expr, type: QsType?) {
+    init(contains: AstType, capacity: [Expr], type: QsType?) {
         self.contains = contains
         self.capacity = capacity
         self.type = type
@@ -245,10 +264,12 @@ class ArrayAllocationExpr: Expr {
 
 class ClassAllocationExpr: Expr {
     var classType: AstClassType
+    var arguments: [Expr]
     var type: QsType?
     
-    init(classType: AstClassType, type: QsType?) {
+    init(classType: AstClassType, arguments: [Expr], type: QsType?) {
         self.classType = classType
+        self.arguments = arguments
         self.type = type
     }
 
