@@ -145,7 +145,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set{\(expr.annotation == nil ? "NoMandatedType" : expr.annotation!.accept(visitor: self))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Set{\(astTypeToString(astType: expr.annotation))}", exprs: expr.to, expr.value)
     }
     
     func visitClassStmtString(stmt: ClassStmt) -> String {
@@ -159,10 +159,25 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return ""
     }
     
+    func astTypeToString(astType: AstType?) -> String {
+        return (astType == nil ? "NoMandatedType" : astType!.accept(visitor: self))
+    }
+    
+    func parenthesizeFunctionParam(functionParam: FunctionParam) -> String {
+        let initializer = functionParam.initializer == nil ? "" : " = \(functionParam.initializer!.accept(visitor: self))"
+        return "(\(functionParam.name.lexeme){\(astTypeToString(astType: functionParam.astType))}\(initializer)"
+    }
+    
+    func parenthesizeFunctionParams(functionParams: [FunctionParam]) -> String {
+        var result = ""
+        for functionParam in functionParams {
+            result+=" "+parenthesizeFunctionParam(functionParam: functionParam)
+        }
+        return result
+    }
+    
     func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        
-        // TODO: this
-        return ""
+        return "(Function{\(astTypeToString(astType: stmt.annotation))}{\(stmt.name.lexeme)}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
     }
     
     func visitExpressionStmtString(stmt: ExpressionStmt) -> String {

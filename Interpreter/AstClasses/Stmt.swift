@@ -79,12 +79,14 @@ class MethodStmt: Stmt {
 
 class FunctionStmt: Stmt {
     var name: Token
-    var params: [FunctionParams]
+    var params: [FunctionParam]
+    var annotation: AstType?
     var body: [Stmt]
     
-    init(name: Token, params: [FunctionParams], body: [Stmt]) {
+    init(name: Token, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
         self.name = name
         self.params = params
+        self.annotation = annotation
         self.body = body
     }
 

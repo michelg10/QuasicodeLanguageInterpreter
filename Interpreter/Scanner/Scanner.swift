@@ -8,6 +8,9 @@ class Scanner {
     private var column = 1
     
     func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ s: String.SubSequence) -> String.SubSequence {
+        if s.count == 0 {
+            return s
+        }
         var i=s.endIndex
         while i != s.startIndex {
             i = s.index(i, offsetBy: -1)
@@ -24,7 +27,8 @@ class Scanner {
     }
     
     func trimWhitespaceOfMultilineString(_ s: String) -> String {
-        var lines = s.split(separator: "\n")
+        var lines = s.split(separator: "\n", omittingEmptySubsequences: false)
+        print(lines.count)
         for i in 0..<lines.count {
             lines[i] = trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(lines[i])
         }
@@ -167,9 +171,6 @@ class Scanner {
                     if nextChar == "\\" && peek() == "\n" {
                         advance() // consume the \n and keep on going
                     }
-                }
-                if !isAtEnd() {
-                    advance() // consume the \n
                 }
             } else if match(expected: "*") {
                 blockComment()
@@ -385,7 +386,7 @@ class Scanner {
         current = source.index(current, offsetBy: 1)
         
         if !isAtEnd() {
-            if source[current] == "\n" {
+            if value == "\n" {
                 line += 1
                 column = 1
             } else {
@@ -398,6 +399,6 @@ class Scanner {
     
     private func addToken(type: TokenType, value: Any? = nil) {
         let lexeme: String = String(source[start..<current])
-        tokens.append(.init(tokenType: type, lexeme: lexeme, line: line, column: column, value: value))
+        tokens.append(.init(tokenType: type, lexeme: lexeme, line: (line - (type == .EOL ? 1 : 0)), column: column, value: value))
     }
 }

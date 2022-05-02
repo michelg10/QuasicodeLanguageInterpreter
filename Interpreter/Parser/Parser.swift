@@ -50,11 +50,10 @@ class Parser {
             if match(types: .CLASS) {
                 return classDeclaration()
             }
-            if match(types: .FUNCTION) {
-                return functionDeclaration()
-            }
              */
-            
+            if match(types: .FUNCTION) {
+                return try functionDeclaration()
+            }
             return try statement()
         } catch {
             synchronize()
@@ -67,11 +66,42 @@ class Parser {
     private func classDeclaration() -> Class {
         
     }
-    
-    private func functionDeclaration() -> Function {
-        
-    }
      */
+    
+    private func functionDeclaration() throws -> Stmt {
+        let name = try consume(type: .IDENTIFIER, message: "Expect function name")
+        try consume(type: .LEFT_PAREN, message: "Expect '(' after function declaration")
+        var parameters: [FunctionParam] = []
+        var functionType: AstType? = nil
+        if !check(type: .RIGHT_PAREN) {
+            repeat {
+                let parameterName = try consume(type: .IDENTIFIER, message: "Expect parameter name")
+                var parameterType: AstType? = nil
+                var initializer: Expr? = nil
+                if match(types: .COLON) {
+                    parameterType = try typeSignature(matchArray: true)
+                }
+                if match(types: .EQUAL) {
+                    initializer = try expression()
+                }
+                parameters.append(.init(name: parameterName, astType: parameterType, initializer: initializer, type: nil))
+            } while match(types: .COMMA)
+        }
+        try consume(type: .RIGHT_PAREN, message: "Expect ')' after parameters")
+        
+        if match(types: .COLON) {
+            functionType = try typeSignature(matchArray: true)
+        }
+        try consume(type: .EOL, message: "Expect end-of-line after function signature")
+        
+        let body = block(additionalEndMarkers: [])
+        
+        try consume(type: .END, message: "Expect 'end function' after function declaration")
+        try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
+        try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
+
+        return FunctionStmt(name: name, params: parameters, annotation: functionType, body: body)
+    }
     
     private func statement() throws -> Stmt {
         if match(types: .IF) {
@@ -193,6 +223,7 @@ class Parser {
     
     private func IfStatement() throws -> Stmt {
         let condition = try expression()
+        try consume(type: .THEN, message: "Expect 'then' after if condition")
         try consume(type: .EOL, message: "Expect end-of-line after if condition")
         let thenBranch: [Stmt] = block(additionalEndMarkers: [.ELSE])
         var elseIfBranches: [IfStmt] = []

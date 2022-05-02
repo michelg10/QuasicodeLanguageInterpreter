@@ -1,4 +1,4 @@
-struct FunctionParams {
+struct FunctionParam {
     var name: Token
     var astType: AstType?
     var initializer: Expr?
