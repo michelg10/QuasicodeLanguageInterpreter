@@ -28,7 +28,6 @@ class Scanner {
     
     func trimWhitespaceOfMultilineString(_ s: String) -> String {
         var lines = s.split(separator: "\n", omittingEmptySubsequences: false)
-        print(lines.count)
         for i in 0..<lines.count {
             lines[i] = trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(lines[i])
         }

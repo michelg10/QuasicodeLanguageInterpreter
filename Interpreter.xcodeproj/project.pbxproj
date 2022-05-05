@@ -14,6 +14,12 @@
 		D07B710F281D0DA7003A672F /* AstType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B710E281D0DA7003A672F /* AstType.swift */; };
 		D07B7111281D6920003A672F /* AstPrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B7110281D6920003A672F /* AstPrinter.swift */; };
 		D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* ClassField.swift */; };
+		D0AA390728215D5F00CF94ED /* RuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390628215D5F00CF94ED /* RuntimeLocation.swift */; };
+		D0AA390928215DB200CF94ED /* Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390828215DB200CF94ED /* Resolver.swift */; };
+		D0AA390B282166ED00CF94ED /* SymbolInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390A282166ED00CF94ED /* SymbolInfo.swift */; };
+		D0AA390D28216E5300CF94ED /* ClassInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390C28216E5300CF94ED /* ClassInfo.swift */; };
+		D0AA391028217F6400CF94ED /* Templater.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390F28217F6400CF94ED /* Templater.swift */; };
+		D0AA39122823BB1900CF94ED /* TypeEquality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA39112823BB1900CF94ED /* TypeEquality.swift */; };
 		D0DD7C1D28179A1B00FBD20C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C1C28179A1B00FBD20C /* main.swift */; };
 		D0DD7C2428179A3300FBD20C /* Scanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C2328179A3300FBD20C /* Scanner.swift */; };
 		D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C2528179A5C00FBD20C /* TokenType.swift */; };
@@ -44,6 +50,12 @@
 		D07B710E281D0DA7003A672F /* AstType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstType.swift; sourceTree = "<group>"; };
 		D07B7110281D6920003A672F /* AstPrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstPrinter.swift; sourceTree = "<group>"; };
 		D0AA38D6281E80F300CF94ED /* ClassField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassField.swift; sourceTree = "<group>"; };
+		D0AA390628215D5F00CF94ED /* RuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeLocation.swift; sourceTree = "<group>"; };
+		D0AA390828215DB200CF94ED /* Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Resolver.swift; sourceTree = "<group>"; };
+		D0AA390A282166ED00CF94ED /* SymbolInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolInfo.swift; sourceTree = "<group>"; };
+		D0AA390C28216E5300CF94ED /* ClassInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassInfo.swift; sourceTree = "<group>"; };
+		D0AA390F28217F6400CF94ED /* Templater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Templater.swift; sourceTree = "<group>"; };
+		D0AA39112823BB1900CF94ED /* TypeEquality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeEquality.swift; sourceTree = "<group>"; };
 		D0DD7C1928179A1B00FBD20C /* Interpreter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Interpreter; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0DD7C1C28179A1B00FBD20C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D0DD7C2328179A3300FBD20C /* Scanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scanner.swift; sourceTree = "<group>"; };
@@ -74,6 +86,24 @@
 			path = Types;
 			sourceTree = "<group>";
 		};
+		D0AA390528215C5E00CF94ED /* Resolver */ = {
+			isa = PBXGroup;
+			children = (
+				D0AA390828215DB200CF94ED /* Resolver.swift */,
+				D0AA390A282166ED00CF94ED /* SymbolInfo.swift */,
+				D0AA390C28216E5300CF94ED /* ClassInfo.swift */,
+			);
+			path = Resolver;
+			sourceTree = "<group>";
+		};
+		D0AA390E28217DED00CF94ED /* Templater */ = {
+			isa = PBXGroup;
+			children = (
+				D0AA390F28217F6400CF94ED /* Templater.swift */,
+			);
+			path = Templater;
+			sourceTree = "<group>";
+		};
 		D0DD7C1028179A1B00FBD20C = {
 			isa = PBXGroup;
 			children = (
@@ -94,8 +124,10 @@
 			isa = PBXGroup;
 			children = (
 				D0DD7C1C28179A1B00FBD20C /* main.swift */,
-				D0DD7C512819824B00FBD20C /* Parser */,
 				D0DD7C312818392A00FBD20C /* Scanner */,
+				D0DD7C512819824B00FBD20C /* Parser */,
+				D0AA390E28217DED00CF94ED /* Templater */,
+				D0AA390528215C5E00CF94ED /* Resolver */,
 				D0DD7C542819848300FBD20C /* AstClasses */,
 				D07B70F4281A7EA3003A672F /* Types */,
 				D0DD7C292817A48900FBD20C /* Token.swift */,
@@ -130,8 +162,10 @@
 				D0DD7C522819847E00FBD20C /* Stmt.swift */,
 				D07B710E281D0DA7003A672F /* AstType.swift */,
 				D0DD7C552819849600FBD20C /* Expr.swift */,
+				D0AA39112823BB1900CF94ED /* TypeEquality.swift */,
 				D07B710C281D0B9D003A672F /* FunctionParam.swift */,
 				D0AA38D6281E80F300CF94ED /* ClassField.swift */,
+				D0AA390628215D5F00CF94ED /* RuntimeLocation.swift */,
 			);
 			path = AstClasses;
 			sourceTree = "<group>";
@@ -195,7 +229,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */,
+				D0AA39122823BB1900CF94ED /* TypeEquality.swift in Sources */,
 				D07B70F8281CC9FF003A672F /* Parser.swift in Sources */,
+				D0AA390B282166ED00CF94ED /* SymbolInfo.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
 				D0DD7C2C2817E89F00FBD20C /* InterpreterProblem.swift in Sources */,
 				D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */,
@@ -205,8 +241,12 @@
 				D07B7111281D6920003A672F /* AstPrinter.swift in Sources */,
 				D0DD7C562819849600FBD20C /* Expr.swift in Sources */,
 				D0DD7C532819847E00FBD20C /* Stmt.swift in Sources */,
+				D0AA391028217F6400CF94ED /* Templater.swift in Sources */,
 				D07B710D281D0B9D003A672F /* FunctionParam.swift in Sources */,
 				D0DD7C2428179A3300FBD20C /* Scanner.swift in Sources */,
+				D0AA390928215DB200CF94ED /* Resolver.swift in Sources */,
+				D0AA390D28216E5300CF94ED /* ClassInfo.swift in Sources */,
+				D0AA390728215D5F00CF94ED /* RuntimeLocation.swift in Sources */,
 				D0DD7C1D28179A1B00FBD20C /* main.swift in Sources */,
 				D07B710F281D0DA7003A672F /* AstType.swift in Sources */,
 			);

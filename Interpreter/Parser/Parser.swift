@@ -6,8 +6,9 @@ class Parser {
     private let tokens: [Token]
     private var problems: [InterpreterProblem] = []
     private var current = 0
-    private var userDefinedTypes: Set<String> = []
     private var currentClassTemplateTypes: [String] = []
+    private var classNames: Set<String> = []
+    private var functionNames: Set<String> = []
     
     init(tokens: [Token]) {
         self.tokens = tokens
@@ -19,7 +20,15 @@ class Parser {
             if currentToken.tokenType == .CLASS {
                 if !isAtEnd() {
                     if peek().tokenType == .IDENTIFIER {
-                        userDefinedTypes.insert(advance().lexeme)
+                        classNames.insert(advance().lexeme)
+                    }
+                }
+            }
+            
+            if currentToken.tokenType == .FUNCTION {
+                if !isAtEnd() {
+                    if peek().tokenType == .IDENTIFIER {
+                        functionNames.insert(advance().lexeme)
                     }
                 }
             }
@@ -28,7 +37,7 @@ class Parser {
     
     func parse() -> ([Stmt], [InterpreterProblem]) {
         current = 0
-        userDefinedTypes = []
+        classNames = []
         parseUserDefinedTypes()
         current = 0
         var statements: [Stmt] = []
@@ -123,7 +132,7 @@ class Parser {
             
             
             if isStatic == nil {
-                isStatic = true
+                isStatic = false
             }
             if visibilityModifer == nil {
                 visibilityModifer = .PUBLIC
@@ -372,7 +381,7 @@ class Parser {
             let equals = previous()
             let value = try expression()
             
-            return SetExpr(to: expr, annotation: annotation, value: value, type: nil)
+            return SetExpr(to: expr, annotation: annotation, value: value, isFirstAssignment: nil, type: nil)
         } else {
             if annotation != nil {
                 throw error(token: peek(), message: "Expect '=' after type annotation")
@@ -571,10 +580,11 @@ class Parser {
             return LiteralExpr(value: previous().value, type: QsDouble())
         }
         if match(types: .STRING) {
+            // TODO: this
             return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, superclass: nil, methodTypes: [:], fieldTypes: [:]))
         }
         if match(types: .IDENTIFIER) {
-            return VariableExpr(name: previous(), type: nil)
+            return VariableExpr(name: previous(), symbolTableIndex: nil, runtimeLocation: nil, type: nil)
         }
         if match(types: .LEFT_BRACE) {
             return try arrayLiteral()
@@ -649,7 +659,7 @@ class Parser {
         case .ANY:
             astType = AstAnyType()
         case .IDENTIFIER:
-            if userDefinedTypes.contains(token.lexeme) {
+            if classNames.contains(token.lexeme) {
                 astType = AstClassType(name: token, templateTypes: nil)
             } else if currentClassTemplateTypes.contains(token.lexeme) {
                 astType = AstTemplateTypeName(name: token)

@@ -131,10 +131,14 @@ class SuperExpr: Expr {
 
 class VariableExpr: Expr {
     var name: Token
+    var symbolTableIndex: Int?
+    var runtimeLocation: RuntimeLocation?
     var type: QsType?
     
-    init(name: Token, type: QsType?) {
+    init(name: Token, symbolTableIndex: Int?, runtimeLocation: RuntimeLocation?, type: QsType?) {
         self.name = name
+        self.symbolTableIndex = symbolTableIndex
+        self.runtimeLocation = runtimeLocation
         self.type = type
     }
 
@@ -327,12 +331,14 @@ class SetExpr: Expr {
     var to: Expr
     var annotation: AstType?
     var value: Expr
+    var isFirstAssignment: Bool?
     var type: QsType?
     
-    init(to: Expr, annotation: AstType?, value: Expr, type: QsType?) {
+    init(to: Expr, annotation: AstType?, value: Expr, isFirstAssignment: Bool?, type: QsType?) {
         self.to = to
         self.annotation = annotation
         self.value = value
+        self.isFirstAssignment = isFirstAssignment
         self.type = type
     }
 
