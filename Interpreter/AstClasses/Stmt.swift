@@ -34,17 +34,19 @@ protocol StmtStringVisitor {
 }
 
 class ClassStmt: Stmt {
+    var keyword: Token
     var name: Token
-    var templateTypes: [Token]?
+    var templateParameters: [Token]?
     var superclass: AstClassType?
     var methods: [MethodStmt]
     var staticMethods: [MethodStmt]
     var fields: [ClassField]
     var staticFields: [ClassField]
     
-    init(name: Token, templateTypes: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, templateParameters: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+        self.keyword = keyword
         self.name = name
-        self.templateTypes = templateTypes
+        self.templateParameters = templateParameters
         self.superclass = superclass
         self.methods = methods
         self.staticMethods = staticMethods
@@ -80,12 +82,14 @@ class MethodStmt: Stmt {
 }
 
 class FunctionStmt: Stmt {
+    var keyword: Token
     var name: Token
     var params: [FunctionParam]
     var annotation: AstType?
     var body: [Stmt]
     
-    init(name: Token, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+    init(keyword: Token, name: Token, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+        self.keyword = keyword
         self.name = name
         self.params = params
         self.annotation = annotation

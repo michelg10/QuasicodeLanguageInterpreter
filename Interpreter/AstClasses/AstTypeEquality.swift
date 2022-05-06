@@ -13,8 +13,8 @@ func typesIsEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
             let rhsClass = rhs as! AstClassType
             
             if lhsClass.name.lexeme == rhsClass.name.lexeme {
-                if lhsClass.templateTypes == nil || rhsClass.templateTypes == nil {
-                    if lhsClass.templateTypes != nil || rhsClass.templateTypes != nil {
+                if lhsClass.templateArguments == nil || rhsClass.templateArguments == nil {
+                    if lhsClass.templateArguments != nil || rhsClass.templateArguments != nil {
                         // one of them isn't nil
                         return false
                     } else {
@@ -23,12 +23,12 @@ func typesIsEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
                 }
                 
                 // compare their template types
-                if lhsClass.templateTypes!.count != rhsClass.templateTypes!.count {
+                if lhsClass.templateArguments!.count != rhsClass.templateArguments!.count {
                     return false // this shouldn't happen because its the same class identifier but if i dont do this the next one might crash so... safest route is to just return false
                 }
                 
-                for i in 0..<lhsClass.templateTypes!.count {
-                    if !typesIsEqual(lhsClass.templateTypes![i], rhsClass.templateTypes![i]) {
+                for i in 0..<lhsClass.templateArguments!.count {
+                    if !typesIsEqual(lhsClass.templateArguments![i], rhsClass.templateArguments![i]) {
                         return false
                     }
                 }

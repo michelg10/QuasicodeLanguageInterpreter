@@ -1,6 +1,6 @@
 class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
-        return "<TemplateType \(asttype.name.lexeme)>"
+        return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
     
     private func parenthesize(name: String, exprs: [Expr]) -> String {
@@ -57,16 +57,16 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitAstClassTypeString(asttype: AstClassType) -> String {
-        var templateTypesString = ""
-        if asttype.templateTypes != nil {
-            for templateType in asttype.templateTypes! {
-                if templateTypesString != "" {
-                    templateTypesString += ", "
+        var templateArgumentsString = ""
+        if asttype.templateArguments != nil {
+            for templateArguments in asttype.templateArguments! {
+                if templateArgumentsString != "" {
+                    templateArgumentsString += ", "
                 }
-                templateTypesString+=templateType.accept(visitor: self)
+                templateArgumentsString+=templateArguments.accept(visitor: self)
             }
         }
-        return "<Class \(asttype.name.lexeme)\(asttype.templateTypes == nil ? "" : "<\(templateTypesString)>")>"
+        return "<Class \(asttype.name.lexeme)\(asttype.templateArguments == nil ? "" : "<\(templateArgumentsString)>")>"
     }
     
     internal func visitAstIntTypeString(asttype: AstIntType) -> String {
@@ -171,14 +171,13 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitClassStmtString(stmt: ClassStmt) -> String {
-        stmt.templateTypes
-        let templateTypesDesc = stmt.templateTypes == nil ? "none" : stmt.templateTypes!.reduce("", { partialResult, next in
+        let templateParametersDescription = stmt.templateParameters == nil ? "none" : stmt.templateParameters!.reduce("", { partialResult, next in
             if partialResult == "" {
                 return next.lexeme
             }
             return partialResult+", "+next.lexeme
         })
-        let classDesc = "{name: \(stmt.name.lexeme), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateTypes: \(templateTypesDesc)}"
+        let classDesc = "{name: \(stmt.name.lexeme), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription)}"
         var result = "(Class\(classDesc) {\n"
         result += indentBlockStmts(blockStmts: stmt.staticMethods)
         result += indentBlockStmts(blockStmts: stmt.methods)

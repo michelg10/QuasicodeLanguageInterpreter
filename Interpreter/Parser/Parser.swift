@@ -1,14 +1,17 @@
-enum ParserError: Error {
-    case error(String)
-}
-
 class Parser {
+    enum ParserError: Error {
+        case error(String)
+    }
+    
     private let tokens: [Token]
     private var problems: [InterpreterProblem] = []
     private var current = 0
-    private var currentClassTemplateTypes: [String] = []
+    private var currentClassTemplateParameters: [String] = []
     private var classNames: Set<String> = []
     private var functionNames: Set<String> = []
+    private var currentClassName: String?
+    private var isInGlobalScope: Bool = true
+    private var classStmts: [ClassStmt] = []
     
     init(tokens: [Token]) {
         self.tokens = tokens
@@ -35,19 +38,21 @@ class Parser {
         }
     }
     
-    func parse() -> ([Stmt], [InterpreterProblem]) {
+    func parse() -> ([Stmt], [ClassStmt], [InterpreterProblem]) {
         current = 0
         classNames = []
         parseUserDefinedTypes()
         current = 0
         var statements: [Stmt] = []
+        isInGlobalScope = true
+        classStmts = []
         while !isAtEnd() {
             if let newDeclaration = declaration() {
                 statements.append(newDeclaration)
             }
         }
         
-        return (statements, problems)
+        return (statements, classStmts, problems)
     }
     
     private func declaration() -> Stmt? {
@@ -60,6 +65,9 @@ class Parser {
                 return try ClassDeclaration()
             }
             if match(types: .FUNCTION) {
+                if !isInGlobalScope {
+                    throw error(token: previous(), message: "Fucntion declaration must be in global scope or within a class")
+                }
                 return try FunctionDeclaration()
             }
             return try statement()
@@ -70,18 +78,23 @@ class Parser {
     }
     
     private func ClassDeclaration() throws -> Stmt {
+        let keyword = previous()
+        if !isInGlobalScope {
+            throw error(token: keyword, message: "Class declaration must be global")
+        }
         let name = try consume(type: .IDENTIFIER, message: "Expect class name.")
-        var templateTypes: [Token]?
+        currentClassName = name.lexeme
+        var templateParameters: [Token]?
         var superclass: AstClassType? = nil
         
         if match(types: .LESS) {
-            templateTypes = []
+            templateParameters = []
             repeat {
-                templateTypes?.append(try consume(type: .IDENTIFIER, message: "Expect template identifier"))
+                templateParameters?.append(try consume(type: .IDENTIFIER, message: "Expect template parameter"))
             } while match(types: .COMMA)
-            try consume(type: .GREATER, message: "Expect '>' following template identifiers")
-            for templateType in templateTypes! {
-                currentClassTemplateTypes.append(templateType.lexeme)
+            try consume(type: .GREATER, message: "Expect '>' following template parameters")
+            for templateParameter in templateParameters! {
+                currentClassTemplateParameters.append(templateParameter.lexeme)
             }
         }
         
@@ -174,11 +187,15 @@ class Parser {
         try consume(type: .CLASS, message: "Expect 'end class' after class declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end class'")
         
-        currentClassTemplateTypes = []
-        return ClassStmt(name: name, templateTypes: templateTypes, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        currentClassName = nil
+        currentClassTemplateParameters = []
+        let result = ClassStmt(keyword: keyword, name: name, templateParameters: templateParameters, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        classStmts.append(result)
+        return result
     }
     
     private func FunctionDeclaration() throws -> Stmt {
+        let keyword = previous()
         let name = try consume(type: .IDENTIFIER, message: "Expect function name")
         try consume(type: .LEFT_PAREN, message: "Expect '(' after function declaration")
         var parameters: [FunctionParam] = []
@@ -210,7 +227,7 @@ class Parser {
         try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
-        return FunctionStmt(name: name, params: parameters, annotation: functionType, body: body)
+        return FunctionStmt(keyword: keyword, name: name, params: parameters, annotation: functionType, body: body)
     }
     
     private func statement() throws -> Stmt {
@@ -322,12 +339,15 @@ class Parser {
     }
     
     private func block(additionalEndMarkers: [TokenType]) -> [Stmt] {
+        let previousIsInGlobalScope = isInGlobalScope
+        isInGlobalScope = true
         var statements: [Stmt] = []
         while !check(types: additionalEndMarkers) && !check(type: .END) && !isAtEnd() {
             if let toInsert = declaration() {
                 statements.append(toInsert)
             }
         }
+        isInGlobalScope = false
         return statements
     }
     
@@ -623,16 +643,16 @@ class Parser {
             if !(astType! is AstClassType) {
                 throw error(token: peek(), message: "Non-classes cannot be templated")
             }
-            var templateTypes: [AstType] = []
+            var templateArguments: [AstType] = []
             repeat {
                 let nextToken = peek()
-                let templateType = try typeSignature(matchArray: true)
-                if templateType == nil {
+                let typeArgument = try typeSignature(matchArray: true)
+                if typeArgument == nil {
                     throw error(token: nextToken, message: "Expect type")
                 }
-                templateTypes.append(templateType!)
+                templateArguments.append(typeArgument!)
             } while match(types: .COMMA)
-            (astType as! AstClassType).templateTypes = templateTypes
+            (astType as! AstClassType).templateArguments = templateArguments
             try consume(type: .GREATER, message: "Expect '>' after template")
         }
         
@@ -660,9 +680,10 @@ class Parser {
             astType = AstAnyType()
         case .IDENTIFIER:
             if classNames.contains(token.lexeme) {
-                astType = AstClassType(name: token, templateTypes: nil)
-            } else if currentClassTemplateTypes.contains(token.lexeme) {
-                astType = AstTemplateTypeName(name: token)
+                astType = AstClassType(name: token, templateArguments: nil)
+            } else if currentClassTemplateParameters.contains(token.lexeme) {
+                assert(currentClassName != nil, "Template should not exist when class name is nil!")
+                astType = AstTemplateTypeName(belongingClass: currentClassName!, name: token)
             }
         default:
             astType = nil
