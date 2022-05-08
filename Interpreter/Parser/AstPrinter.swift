@@ -278,6 +278,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "Continue")
     }
     
+    func printAst(_ astType: AstType) -> String {
+        astType.accept(visitor: self)
+    }
+    
     func printAst(_ expr: Expr) -> String {
         expr.accept(visitor: self)
     }

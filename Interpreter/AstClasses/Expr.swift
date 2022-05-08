@@ -1,5 +1,6 @@
 protocol Expr {
     func accept(visitor: ExprVisitor)
+    func accept(visitor: ExprThrowVisitor) throws
     func accept(visitor: ExprStringVisitor) -> String
     var type: QsType? { get set }
 }
@@ -21,6 +22,25 @@ protocol ExprVisitor {
     func visitBinaryExpr(expr: BinaryExpr) 
     func visitLogicalExpr(expr: LogicalExpr) 
     func visitSetExpr(expr: SetExpr) 
+}
+
+protocol ExprThrowVisitor {
+    func visitGroupingExpr(expr: GroupingExpr) throws 
+    func visitLiteralExpr(expr: LiteralExpr) throws 
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws 
+    func visitThisExpr(expr: ThisExpr) throws 
+    func visitSuperExpr(expr: SuperExpr) throws 
+    func visitVariableExpr(expr: VariableExpr) throws 
+    func visitSubscriptExpr(expr: SubscriptExpr) throws 
+    func visitCallExpr(expr: CallExpr) throws 
+    func visitGetExpr(expr: GetExpr) throws 
+    func visitUnaryExpr(expr: UnaryExpr) throws 
+    func visitCastExpr(expr: CastExpr) throws 
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws 
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) throws 
+    func visitBinaryExpr(expr: BinaryExpr) throws 
+    func visitLogicalExpr(expr: LogicalExpr) throws 
+    func visitSetExpr(expr: SetExpr) throws 
 }
 
 protocol ExprStringVisitor {
@@ -54,6 +74,9 @@ class GroupingExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitGroupingExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitGroupingExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGroupingExprString(expr: self)
     }
@@ -70,6 +93,9 @@ class LiteralExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitLiteralExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitLiteralExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLiteralExprString(expr: self)
@@ -88,6 +114,9 @@ class ArrayLiteralExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayLiteralExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitArrayLiteralExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayLiteralExprString(expr: self)
     }
@@ -104,6 +133,9 @@ class ThisExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitThisExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitThisExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitThisExprString(expr: self)
@@ -123,6 +155,9 @@ class SuperExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSuperExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitSuperExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSuperExprString(expr: self)
@@ -145,6 +180,9 @@ class VariableExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitVariableExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitVariableExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitVariableExprString(expr: self)
     }
@@ -163,6 +201,9 @@ class SubscriptExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSubscriptExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitSubscriptExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSubscriptExprString(expr: self)
@@ -185,6 +226,9 @@ class CallExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitCallExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitCallExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCallExprString(expr: self)
     }
@@ -203,6 +247,9 @@ class GetExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitGetExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitGetExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGetExprString(expr: self)
@@ -223,6 +270,9 @@ class UnaryExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitUnaryExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitUnaryExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitUnaryExprString(expr: self)
     }
@@ -241,6 +291,9 @@ class CastExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitCastExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitCastExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCastExprString(expr: self)
@@ -261,6 +314,9 @@ class ArrayAllocationExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayAllocationExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitArrayAllocationExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayAllocationExprString(expr: self)
     }
@@ -279,6 +335,9 @@ class ClassAllocationExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitClassAllocationExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitClassAllocationExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitClassAllocationExprString(expr: self)
@@ -301,6 +360,9 @@ class BinaryExpr: Expr {
     func accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(expr: self)
     }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitBinaryExpr(expr: self)
+    }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitBinaryExprString(expr: self)
     }
@@ -321,6 +383,9 @@ class LogicalExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitLogicalExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitLogicalExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLogicalExprString(expr: self)
@@ -344,6 +409,9 @@ class SetExpr: Expr {
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSetExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitSetExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSetExprString(expr: self)
