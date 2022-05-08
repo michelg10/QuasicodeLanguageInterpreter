@@ -40,6 +40,9 @@ class AstArrayType: AstType {
     init(contains: AstType) {
         self.contains = contains
     }
+    init(_ objectToCopy: AstArrayType) {
+        self.contains = objectToCopy.contains
+    }
 
     func accept(visitor: AstTypeVisitor) {
         visitor.visitAstArrayType(asttype: self)
@@ -59,6 +62,10 @@ class AstClassType: AstType {
     init(name: Token, templateArguments: [AstType]?) {
         self.name = name
         self.templateArguments = templateArguments
+    }
+    init(_ objectToCopy: AstClassType) {
+        self.name = objectToCopy.name
+        self.templateArguments = objectToCopy.templateArguments
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -80,6 +87,10 @@ class AstTemplateTypeName: AstType {
         self.belongingClass = belongingClass
         self.name = name
     }
+    init(_ objectToCopy: AstTemplateTypeName) {
+        self.belongingClass = objectToCopy.belongingClass
+        self.name = objectToCopy.name
+    }
 
     func accept(visitor: AstTypeVisitor) {
         visitor.visitAstTemplateTypeName(asttype: self)
@@ -95,6 +106,8 @@ class AstTemplateTypeName: AstType {
 class AstIntType: AstType {
     
     init() {
+    }
+    init(_ objectToCopy: AstIntType) {
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -112,6 +125,8 @@ class AstDoubleType: AstType {
     
     init() {
     }
+    init(_ objectToCopy: AstDoubleType) {
+    }
 
     func accept(visitor: AstTypeVisitor) {
         visitor.visitAstDoubleType(asttype: self)
@@ -128,6 +143,8 @@ class AstBooleanType: AstType {
     
     init() {
     }
+    init(_ objectToCopy: AstBooleanType) {
+    }
 
     func accept(visitor: AstTypeVisitor) {
         visitor.visitAstBooleanType(asttype: self)
@@ -143,6 +160,8 @@ class AstBooleanType: AstType {
 class AstAnyType: AstType {
     
     init() {
+    }
+    init(_ objectToCopy: AstAnyType) {
     }
 
     func accept(visitor: AstTypeVisitor) {

@@ -7,7 +7,7 @@ let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.q
 let scanner = Scanner(source: toInterpret)
 let (tokens, scanErrors) = scanner.scanTokens()
 print("----- Scanner -----")
-print("Tokens")
+print("Scanned tokens")
 debugPrintTokens(tokens: tokens)
 print("\nErrors")
 print(scanErrors)

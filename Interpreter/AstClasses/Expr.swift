@@ -1,6 +1,6 @@
 protocol Expr {
     func accept(visitor: ExprVisitor)
-    func accept(visitor: ExprThrowVisitor) throws
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
     var type: QsType? { get set }
 }
@@ -24,23 +24,23 @@ protocol ExprVisitor {
     func visitSetExpr(expr: SetExpr) 
 }
 
-protocol ExprThrowVisitor {
-    func visitGroupingExpr(expr: GroupingExpr) throws 
-    func visitLiteralExpr(expr: LiteralExpr) throws 
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws 
-    func visitThisExpr(expr: ThisExpr) throws 
-    func visitSuperExpr(expr: SuperExpr) throws 
-    func visitVariableExpr(expr: VariableExpr) throws 
-    func visitSubscriptExpr(expr: SubscriptExpr) throws 
-    func visitCallExpr(expr: CallExpr) throws 
-    func visitGetExpr(expr: GetExpr) throws 
-    func visitUnaryExpr(expr: UnaryExpr) throws 
-    func visitCastExpr(expr: CastExpr) throws 
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws 
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) throws 
-    func visitBinaryExpr(expr: BinaryExpr) throws 
-    func visitLogicalExpr(expr: LogicalExpr) throws 
-    func visitSetExpr(expr: SetExpr) throws 
+protocol ExprExprThrowVisitor {
+    func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr
+    func visitLiteralExprExpr(expr: LiteralExpr) throws -> Expr
+    func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr
+    func visitThisExprExpr(expr: ThisExpr) throws -> Expr
+    func visitSuperExprExpr(expr: SuperExpr) throws -> Expr
+    func visitVariableExprExpr(expr: VariableExpr) throws -> Expr
+    func visitSubscriptExprExpr(expr: SubscriptExpr) throws -> Expr
+    func visitCallExprExpr(expr: CallExpr) throws -> Expr
+    func visitGetExprExpr(expr: GetExpr) throws -> Expr
+    func visitUnaryExprExpr(expr: UnaryExpr) throws -> Expr
+    func visitCastExprExpr(expr: CastExpr) throws -> Expr
+    func visitArrayAllocationExprExpr(expr: ArrayAllocationExpr) throws -> Expr
+    func visitClassAllocationExprExpr(expr: ClassAllocationExpr) throws -> Expr
+    func visitBinaryExprExpr(expr: BinaryExpr) throws -> Expr
+    func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
+    func visitSetExprExpr(expr: SetExpr) throws -> Expr
 }
 
 protocol ExprStringVisitor {
@@ -70,12 +70,16 @@ class GroupingExpr: Expr {
         self.expression = expression
         self.type = type
     }
+    init(_ objectToCopy: GroupingExpr) {
+        self.expression = objectToCopy.expression
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitGroupingExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitGroupingExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitGroupingExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGroupingExprString(expr: self)
@@ -90,12 +94,16 @@ class LiteralExpr: Expr {
         self.value = value
         self.type = type
     }
+    init(_ objectToCopy: LiteralExpr) {
+        self.value = objectToCopy.value
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitLiteralExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitLiteralExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLiteralExprString(expr: self)
@@ -110,12 +118,16 @@ class ArrayLiteralExpr: Expr {
         self.values = values
         self.type = type
     }
+    init(_ objectToCopy: ArrayLiteralExpr) {
+        self.values = objectToCopy.values
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitArrayLiteralExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitArrayLiteralExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayLiteralExprString(expr: self)
@@ -130,12 +142,16 @@ class ThisExpr: Expr {
         self.keyword = keyword
         self.type = type
     }
+    init(_ objectToCopy: ThisExpr) {
+        self.keyword = objectToCopy.keyword
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitThisExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitThisExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitThisExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitThisExprString(expr: self)
@@ -152,12 +168,17 @@ class SuperExpr: Expr {
         self.property = property
         self.type = type
     }
+    init(_ objectToCopy: SuperExpr) {
+        self.keyword = objectToCopy.keyword
+        self.property = objectToCopy.property
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSuperExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitSuperExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitSuperExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSuperExprString(expr: self)
@@ -176,12 +197,18 @@ class VariableExpr: Expr {
         self.runtimeLocation = runtimeLocation
         self.type = type
     }
+    init(_ objectToCopy: VariableExpr) {
+        self.name = objectToCopy.name
+        self.symbolTableIndex = objectToCopy.symbolTableIndex
+        self.runtimeLocation = objectToCopy.runtimeLocation
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitVariableExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitVariableExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitVariableExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitVariableExprString(expr: self)
@@ -198,12 +225,17 @@ class SubscriptExpr: Expr {
         self.index = index
         self.type = type
     }
+    init(_ objectToCopy: SubscriptExpr) {
+        self.expression = objectToCopy.expression
+        self.index = objectToCopy.index
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSubscriptExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitSubscriptExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitSubscriptExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSubscriptExprString(expr: self)
@@ -222,12 +254,18 @@ class CallExpr: Expr {
         self.arguments = arguments
         self.type = type
     }
+    init(_ objectToCopy: CallExpr) {
+        self.callee = objectToCopy.callee
+        self.paren = objectToCopy.paren
+        self.arguments = objectToCopy.arguments
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitCallExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitCallExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitCallExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCallExprString(expr: self)
@@ -244,12 +282,17 @@ class GetExpr: Expr {
         self.name = name
         self.type = type
     }
+    init(_ objectToCopy: GetExpr) {
+        self.object = objectToCopy.object
+        self.name = objectToCopy.name
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitGetExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitGetExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitGetExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGetExprString(expr: self)
@@ -266,12 +309,17 @@ class UnaryExpr: Expr {
         self.right = right
         self.type = type
     }
+    init(_ objectToCopy: UnaryExpr) {
+        self.opr = objectToCopy.opr
+        self.right = objectToCopy.right
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitUnaryExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitUnaryExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitUnaryExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitUnaryExprString(expr: self)
@@ -288,12 +336,17 @@ class CastExpr: Expr {
         self.value = value
         self.type = type
     }
+    init(_ objectToCopy: CastExpr) {
+        self.toType = objectToCopy.toType
+        self.value = objectToCopy.value
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitCastExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitCastExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitCastExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCastExprString(expr: self)
@@ -310,12 +363,17 @@ class ArrayAllocationExpr: Expr {
         self.capacity = capacity
         self.type = type
     }
+    init(_ objectToCopy: ArrayAllocationExpr) {
+        self.contains = objectToCopy.contains
+        self.capacity = objectToCopy.capacity
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitArrayAllocationExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitArrayAllocationExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayAllocationExprString(expr: self)
@@ -332,12 +390,17 @@ class ClassAllocationExpr: Expr {
         self.arguments = arguments
         self.type = type
     }
+    init(_ objectToCopy: ClassAllocationExpr) {
+        self.classType = objectToCopy.classType
+        self.arguments = objectToCopy.arguments
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitClassAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitClassAllocationExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitClassAllocationExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitClassAllocationExprString(expr: self)
@@ -356,12 +419,18 @@ class BinaryExpr: Expr {
         self.right = right
         self.type = type
     }
+    init(_ objectToCopy: BinaryExpr) {
+        self.left = objectToCopy.left
+        self.opr = objectToCopy.opr
+        self.right = objectToCopy.right
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitBinaryExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitBinaryExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitBinaryExprString(expr: self)
@@ -380,12 +449,18 @@ class LogicalExpr: Expr {
         self.right = right
         self.type = type
     }
+    init(_ objectToCopy: LogicalExpr) {
+        self.left = objectToCopy.left
+        self.opr = objectToCopy.opr
+        self.right = objectToCopy.right
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitLogicalExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitLogicalExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitLogicalExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLogicalExprString(expr: self)
@@ -406,12 +481,19 @@ class SetExpr: Expr {
         self.isFirstAssignment = isFirstAssignment
         self.type = type
     }
+    init(_ objectToCopy: SetExpr) {
+        self.to = objectToCopy.to
+        self.annotation = objectToCopy.annotation
+        self.value = objectToCopy.value
+        self.isFirstAssignment = objectToCopy.isFirstAssignment
+        self.type = objectToCopy.type
+    }
 
     func accept(visitor: ExprVisitor) {
         visitor.visitSetExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitSetExpr(expr: self)
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitSetExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSetExprString(expr: self)

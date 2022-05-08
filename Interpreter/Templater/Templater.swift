@@ -1,13 +1,13 @@
-class Templater: StmtVisitor, ExprThrowVisitor, AstTypeAstTypeThrowVisitor {
+class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisitor {
     enum TemplaterError: Error {
         case error(String)
     }
     
-    private struct TypedClassTemplate: Hashable {
+    private struct ClassSignature: Hashable {
         var name: String
         var templateParameters: [AstType]
         
-        static func == (lhs: Templater.TypedClassTemplate, rhs: Templater.TypedClassTemplate) -> Bool {
+        static func == (lhs: Templater.ClassSignature, rhs: Templater.ClassSignature) -> Bool {
             if lhs.name != rhs.name {
                 return false
             }
@@ -40,8 +40,74 @@ class Templater: StmtVisitor, ExprThrowVisitor, AstTypeAstTypeThrowVisitor {
     private var statements: [Stmt] = []
     private var problems: [InterpreterProblem] = []
     private var classes: [String : ClassStmt] = [:] // maps from class name to the class statement
-    private var templatedClasses: Set<TypedClassTemplate> = [] // keeps track of all the classes that have already been templated
+    private var templatedClasses: Set<ClassSignature> = [] // keeps track of all the classes that have already been templated
     private var templateParameterMappings: [[String : AstType]] = [] // maps a template parameter to a concrete type
+    
+    private func expandFields(fields: [ClassField]) -> [ClassField] {
+        var expandedFields: [ClassField] = []
+        expandedFields.reserveCapacity(fields.count)
+        for field in fields {
+            var newField = field
+            if field.astType != nil {
+                newField.astType = catchErrorClosure {
+                    try expandClasses(field.astType!)
+                }
+            }
+            
+            if field.initializer != nil {
+                newField.initializer = catchErrorClosure {
+                    try expandClasses(field.initializer!)
+                }
+            }
+            
+            expandedFields.append(newField)
+        }
+        
+        return expandedFields
+    }
+    
+    private func expandMethods(methods: [MethodStmt]) -> [MethodStmt] {
+        var expandedMethods: [MethodStmt] = []
+        expandedMethods.reserveCapacity(methods.capacity)
+        for method in methods {
+            let newMethod = MethodStmt.init(method)
+            newMethod.function = expandClasses(method.function) as! FunctionStmt
+            expandedMethods.append(newMethod)
+        }
+        return expandedMethods
+    }
+    
+    private func expandClass(classSignature: ClassSignature) {
+        // append to template parameter mappings
+        guard let belongingClass = classes[classSignature.name] else {
+            assertionFailure("Expand class called on non-existing class \(classSignature.name).")
+            return
+        }
+        
+        var resultingClass = ClassStmt.init(belongingClass)
+        
+        let classParameters = belongingClass.templateParameters?.map({ token in
+            token.lexeme
+        }) ?? []
+        
+        assert(classParameters.count == classSignature.templateParameters.count, "Mismatch between parameters given in signature and parameters required in class!")
+        
+        var newMapping: [String : AstType] = [:]
+        for i in 0..<classParameters.count {
+            newMapping[classParameters[i]] = classSignature.templateParameters[i]
+        }
+        templateParameterMappings.append(newMapping)
+        
+        resultingClass.fields = expandFields(fields: belongingClass.fields)
+        resultingClass.staticFields = expandFields(fields: belongingClass.staticFields)
+        
+        resultingClass.methods = expandMethods(methods: belongingClass.methods)
+        resultingClass.staticMethods = expandMethods(methods: belongingClass.staticMethods)
+        
+        statements.append(resultingClass)
+        
+        templateParameterMappings.popLast()
+    }
     
     func visitAstArrayTypeAstType(asttype: AstArrayType) throws -> AstType {
         return try AstArrayType(contains: expandClasses(asttype.contains))
@@ -52,6 +118,7 @@ class Templater: StmtVisitor, ExprThrowVisitor, AstTypeAstTypeThrowVisitor {
             assertionFailure("Class \(asttype.name.lexeme) does not exist in classes")
             return asttype
         }
+        
         let belongingClassTemplateParameterCount = belongingClass.templateParameters?.count ?? 0
         let givenArguments = asttype.templateArguments?.count ?? 0
         if belongingClassTemplateParameterCount != givenArguments {
@@ -65,25 +132,25 @@ class Templater: StmtVisitor, ExprThrowVisitor, AstTypeAstTypeThrowVisitor {
         }
         
         // compute and expand the class
-        let classToGenerateTemplate = TypedClassTemplate(name: asttype.name.lexeme, templateParameters: computedTemplateArguments)
-        if !templatedClasses.contains(classToGenerateTemplate) {
-            templatedClasses.insert(classToGenerateTemplate)
-            if (DEBUG) {
-                let templateParametersDesc = classToGenerateTemplate.templateParameters.reduce("") { partialResult, next in
-                    var result = partialResult
-                    if result != "" {
-                        result += ", "
+        if belongingClassTemplateParameterCount > 0 { // there's nothing to generate if there's no template parameters
+            let classToGenerateSignature = ClassSignature(name: asttype.name.lexeme, templateParameters: computedTemplateArguments)
+            if !templatedClasses.contains(classToGenerateSignature) {
+                templatedClasses.insert(classToGenerateSignature)
+                if (DEBUG) {
+                    let templateParametersDesc = classToGenerateSignature.templateParameters.reduce("") { partialResult, next in
+                        var result = partialResult
+                        if result != "" {
+                            result += ", "
+                        }
+                        result += astPrinter.printAst(next)
+                        return result
                     }
-                    result += astPrinter.printAst(next)
-                    return result
+                    print("Generate class \(classToGenerateSignature.name)<\(templateParametersDesc)>")
                 }
-                print("Generate class \(classToGenerateTemplate.name)<\(templateParametersDesc)>")
+                
+                // expand the class
+                expandClass(classSignature: classToGenerateSignature)
             }
-            
-            // expand the class
-            // TODO: Remember to expand our everything within a class too, like references within its fields and all of its methods.
-            
-            
         }
         
         return AstClassType(name: asttype.name, templateArguments: computedTemplateArguments)
@@ -129,192 +196,276 @@ class Templater: StmtVisitor, ExprThrowVisitor, AstTypeAstTypeThrowVisitor {
         return nil
     }
     
-    func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmtStmt(stmt: ClassStmt) -> Stmt {
         // do nothing
-        return
+        return stmt
     }
     
-    func visitMethodStmt(stmt: MethodStmt) {
-        expandClasses(stmt.function)
+    func visitMethodStmtStmt(stmt: MethodStmt) -> Stmt {
+        let result = MethodStmt.init(stmt)
+        result.function = expandClasses(stmt.function) as! FunctionStmt
+        return result
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmtStmt(stmt: FunctionStmt) -> Stmt {
+        let result = FunctionStmt.init(stmt)
         if stmt.annotation != nil {
-            catchErrorClosure {
+            result.annotation = catchErrorClosure {
                 try expandClasses(stmt.annotation!)
             }
         }
         
+        result.params = []
+        result.params.reserveCapacity(stmt.params.count)
+        
         for param in stmt.params {
+            var newParam = FunctionParam.init(name: param.name)
             if param.astType != nil {
-                catchErrorClosure {
+                newParam.astType = catchErrorClosure {
                     try expandClasses(param.astType!)
                 }
             }
             if param.initializer != nil {
-                catchErrorClosure {
+                newParam.initializer = catchErrorClosure {
                     try expandClasses(param.initializer!)
                 }
             }
+            result.params.append(newParam)
         }
-        expandClasses(stmt.body)
+        result.body = expandClasses(stmt.body)
+        return result
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
-        catchErrorClosure {
+    func visitExpressionStmtStmt(stmt: ExpressionStmt) -> Stmt {
+        let result = ExpressionStmt.init(stmt)
+        result.expression = (catchErrorClosure {
             try expandClasses(stmt.expression)
-        }
+        } ?? stmt.expression)
+        
+        return result
     }
     
-    func visitIfStmt(stmt: IfStmt) {
-        catchErrorClosure {
+    func visitIfStmtStmt(stmt: IfStmt) -> Stmt {
+        let result = IfStmt.init(stmt)
+        result.condition = (catchErrorClosure {
             try expandClasses(stmt.condition)
-        }
-        expandClasses(stmt.thenBranch)
-        expandClasses(stmt.elseIfBranches)
+        } ?? stmt.condition)
+        result.thenBranch = expandClasses(stmt.thenBranch)
+        result.elseIfBranches = expandClasses(stmt.elseIfBranches) as! [IfStmt]
         if stmt.elseBranch != nil {
-            expandClasses(stmt.elseBranch!)
+            result.elseBranch = expandClasses(stmt.elseBranch!)
         }
+        return result
     }
     
-    func visitOutputStmt(stmt: OutputStmt) {
-        expandClasses(stmt.expressions)
+    func visitOutputStmtStmt(stmt: OutputStmt) -> Stmt {
+        let result = OutputStmt.init(stmt)
+        result.expressions = expandClasses(stmt.expressions)
+        return result
     }
     
-    func visitInputStmt(stmt: InputStmt) {
-        expandClasses(stmt.expressions)
+    func visitInputStmtStmt(stmt: InputStmt) -> Stmt {
+        let result = InputStmt.init(stmt)
+        result.expressions = expandClasses(stmt.expressions)
+        return result
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) {
-        if stmt.value != nil {
-            catchErrorClosure {
+    func visitReturnStmtStmt(stmt: ReturnStmt) -> Stmt {
+        let result = ReturnStmt.init(stmt)
+        if result.value != nil {
+            result.value = catchErrorClosure {
                 try expandClasses(stmt.value!)
             }
         }
+        return result
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) {
-        expandClasses(stmt.variable, stmt.lRange, stmt.rRange)
-        expandClasses(stmt.statements)
+    func visitLoopFromStmtStmt(stmt: LoopFromStmt) -> Stmt {
+        let result = LoopFromStmt.init(stmt)
+        result.variable = (catchErrorClosure {
+            try expandClasses(stmt.variable)
+        } ?? stmt.variable)
+        result.lRange = (catchErrorClosure {
+            try expandClasses(result.lRange)
+        } ?? stmt.lRange)
+        result.rRange = (catchErrorClosure {
+            try expandClasses(result.rRange)
+        } ?? stmt.rRange)
+        
+        result.statements = expandClasses(stmt.statements)
+        
+        return result
     }
     
-    func visitWhileStmt(stmt: WhileStmt) {
-        catchErrorClosure {
+    func visitWhileStmtStmt(stmt: WhileStmt) -> Stmt {
+        let result = WhileStmt.init(stmt)
+        result.expression = (catchErrorClosure {
             try expandClasses(stmt.expression)
-        }
-        expandClasses(stmt.statements)
+        } ?? stmt.expression)
+        result.statements = expandClasses(stmt.statements)
+        return result
     }
     
-    func visitBreakStmt(stmt: BreakStmt) {
-        return
+    func visitBreakStmtStmt(stmt: BreakStmt) -> Stmt {
+        return stmt
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
-        return
+    func visitContinueStmtStmt(stmt: ContinueStmt) -> Stmt {
+        return stmt
     }
     
-    func visitGroupingExpr(expr: GroupingExpr) throws {
-        try expandClasses(expr.expression)
+    func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr {
+        let result = GroupingExpr.init(expr)
+        result.expression = try expandClasses(expr.expression)
+        return result
     }
     
-    func visitLiteralExpr(expr: LiteralExpr) {
-        return
+    func visitLiteralExprExpr(expr: LiteralExpr) -> Expr {
+        return expr
     }
     
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
-        expandClasses(expr.values)
+    func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr {
+        let result = ArrayLiteralExpr.init(expr)
+        result.values = expandClasses(expr.values)
+        return result
     }
     
-    func visitThisExpr(expr: ThisExpr) {
-        return
+    func visitThisExprExpr(expr: ThisExpr) -> Expr {
+        return expr
     }
     
-    func visitSuperExpr(expr: SuperExpr) {
-        return
+    func visitSuperExprExpr(expr: SuperExpr) -> Expr {
+        return expr
     }
     
-    func visitVariableExpr(expr: VariableExpr) {
-        return
+    func visitVariableExprExpr(expr: VariableExpr) -> Expr {
+        return expr
     }
     
-    func visitSubscriptExpr(expr: SubscriptExpr) throws {
-        try expandClasses(expr.expression)
-        try expandClasses(expr.index)
+    func visitSubscriptExprExpr(expr: SubscriptExpr) throws -> Expr {
+        let result = SubscriptExpr.init(expr)
+        result.expression = try expandClasses(expr.expression)
+        result.index = try expandClasses(expr.index)
+        return result
     }
     
-    func visitCallExpr(expr: CallExpr) throws {
-        try expandClasses(expr.callee)
-        expandClasses(expr.arguments)
+    func visitCallExprExpr(expr: CallExpr) throws -> Expr {
+        let result = CallExpr.init(expr)
+        result.callee = try expandClasses(expr.callee)
+        result.arguments = expandClasses(expr.arguments)
+        return result
     }
     
-    func visitGetExpr(expr: GetExpr) throws {
-        try expandClasses(expr.object)
+    func visitGetExprExpr(expr: GetExpr) throws -> Expr {
+        let result = GetExpr.init(expr)
+        result.object = try expandClasses(expr.object)
+        return result
     }
     
-    func visitUnaryExpr(expr: UnaryExpr) throws {
-        try expandClasses(expr.right)
+    func visitUnaryExprExpr(expr: UnaryExpr) throws -> Expr {
+        let result = UnaryExpr.init(expr)
+        result.right = try expandClasses(expr.right)
+        return result
     }
     
-    func visitCastExpr(expr: CastExpr) throws {
-        try expandClasses(expr.value)
-        try expandClasses(expr.toType)
+    func visitCastExprExpr(expr: CastExpr) throws -> Expr {
+        let result = CastExpr.init(expr)
+        result.value = try expandClasses(expr.value)
+        result.toType = try expandClasses(expr.toType)
+        return result
     }
     
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
-        expandClasses(expr.capacity)
-        catchErrorClosure {
+    func visitArrayAllocationExprExpr(expr: ArrayAllocationExpr) -> Expr {
+        let result = ArrayAllocationExpr.init(expr)
+        result.capacity = expandClasses(expr.capacity)
+        result.contains = (catchErrorClosure {
             try expandClasses(expr.contains)
-        }
+        } ?? expr.contains)
+        return result
     }
     
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
-        expandClasses(expr.arguments)
-        catchErrorClosure {
-            try expandClasses(expr.classType)
-        }
+    func visitClassAllocationExprExpr(expr: ClassAllocationExpr) -> Expr {
+        let result = ClassAllocationExpr.init(expr)
+        result.arguments = expandClasses(expr.arguments)
+        result.classType = (catchErrorClosure {
+            try expandClasses(expr.classType) as! AstClassType
+        } ?? expr.classType)
+        return result
     }
     
-    func visitBinaryExpr(expr: BinaryExpr) {
-        expandClasses(expr.left, expr.right)
+    func visitBinaryExprExpr(expr: BinaryExpr) -> Expr {
+        let result = BinaryExpr(expr)
+        result.left = (catchErrorClosure {
+            try expandClasses(expr.left)
+        } ?? expr.left)
+        result.right = (catchErrorClosure {
+            try expandClasses(expr.right)
+        } ?? expr.right)
+        return result
     }
     
-    func visitLogicalExpr(expr: LogicalExpr) {
-        expandClasses(expr.left, expr.right)
+    func visitLogicalExprExpr(expr: LogicalExpr) -> Expr {
+        let result = LogicalExpr(expr)
+        result.left = (catchErrorClosure {
+            try expandClasses(expr.left)
+        } ?? expr.left)
+        result.right = (catchErrorClosure {
+            try expandClasses(expr.right)
+        } ?? expr.right)
+        return result
     }
     
-    func visitSetExpr(expr: SetExpr) {
-        expandClasses(expr.to, expr.value)
+    func visitSetExprExpr(expr: SetExpr) -> Expr {
+        let result = SetExpr.init(expr)
+        result.to = (catchErrorClosure {
+            try expandClasses(expr.to)
+        } ?? expr.to)
+        result.value = (catchErrorClosure {
+            try expandClasses(expr.value)
+        } ?? expr.value)
         if expr.annotation != nil {
-            catchErrorClosure {
-                expr.annotation!
+            result.annotation = catchErrorClosure {
+                try expandClasses(expr.annotation!)
             }
         }
+        
+        return result
     }
     
-    private func expandClasses(_ expression: Expr) throws {
-        try expression.accept(visitor: self)
+    private func expandClasses(_ expression: Expr) throws -> Expr {
+        return try expression.accept(visitor: self)
     }
     
-    private func expandClasses(_ statement: Stmt) {
-        statement.accept(visitor: self)
+    private func expandClasses(_ statement: Stmt) -> Stmt {
+        return statement.accept(visitor: self)
     }
     
-    private func expandClasses(_ expressions: Expr...) {
-        expandClasses(expressions)
+    private func expandClasses(_ expressions: Expr...) -> [Expr] {
+        return expandClasses(expressions)
     }
     
-    private func expandClasses(_ statements: [Stmt]) {
+    private func expandClasses(_ statements: [Stmt]) -> [Stmt] {
+        var expandedStatements: [Stmt] = []
+        expandedStatements.reserveCapacity(statements.count)
         for statement in statements {
-            statement.accept(visitor: self)
+            expandedStatements.append(statement.accept(visitor: self))
         }
+        return expandedStatements
     }
     
-    private func expandClasses(_ expressions: [Expr]) {
+    private func expandClasses(_ expressions: [Expr]) -> [Expr] {
+        var expandedExpressions: [Expr] = []
+        expandedExpressions.reserveCapacity(expandedExpressions.count)
         for expression in expressions {
-            catchErrorClosure {
+            let result = catchErrorClosure {
                 try expression.accept(visitor: self)
             }
+            if result != nil {
+                expandedExpressions.append(result!)
+            }
         }
+        
+        return expandedExpressions
     }
     
     private func expandClasses(_ astType: AstType) throws -> AstType {
