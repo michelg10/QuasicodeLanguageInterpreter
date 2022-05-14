@@ -17,19 +17,30 @@ print(scanErrors)
 print("----- Parser -----")
 let parser = Parser(tokens: tokens)
 let (stmts, classStmts, parseErrors) = parser.parse()
+var ast = stmts
 print("Parsed AST")
 let astPrinter = AstPrinter()
-print(astPrinter.printAst(stmts))
+print(astPrinter.printAst(ast))
 print("\nErrors")
 print(parseErrors)
 
 print("----- Templater -----")
 let templater = Templater()
-let (templatedStmts, templateErrors) = templater.expandClasses(statements: stmts, classStmts: classStmts)
+let (templatedStmts, templateErrors) = templater.expandClasses(statements: ast, classStmts: classStmts)
+ast = templatedStmts
 print("Templated AST")
 print(astPrinter.printAst(templatedStmts))
 print("\nErrors")
 print(templateErrors)
+
+print("----- Resolver -----")
+var symbolTable: [SymbolInfo] = []
+let resolver = Resolver()
+let resolveErrors = resolver.resolveAST(statements: &ast, symbolTable: &symbolTable)
+print("Resolved AST")
+print(astPrinter.printAst(ast))
+print("\nErrors")
+print(resolveErrors)
 
 let end = DispatchTime.now()
 let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds

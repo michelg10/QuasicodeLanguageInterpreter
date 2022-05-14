@@ -189,7 +189,7 @@ class Parser {
         
         currentClassName = nil
         currentClassTemplateParameters = []
-        let result = ClassStmt(keyword: keyword, name: name, templateParameters: templateParameters, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        let result = ClassStmt(keyword: keyword, name: name, thisSymbolTableIndex: nil, templateParameters: templateParameters, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
         classStmts.append(result)
         return result
     }

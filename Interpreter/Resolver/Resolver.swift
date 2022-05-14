@@ -6,12 +6,16 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         case error(String)
     }
     private enum ClassType {
-        case None, Class, Subclass
+        case Class, Subclass
+    }
+    private struct ClassStatus {
+        var classType: ClassType
+        var name: String
     }
     
     // include functions and classes in the symbol table and resolve them like everything else
     private var isInLoop = false
-    private var currentClassType = ClassType.None
+    private var currentClassStatus: ClassStatus? = nil
     private var currentFunction: FunctionType = .none
     private var problems: [InterpreterProblem] = []
     private var scopes: [[String: Int]] = [] // maps variable names to indexes in the symbol table
@@ -20,10 +24,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     func addToSymbolTableAtScope(symbol: SymbolInfo) -> Int {
         let newSymbolId = symbolTable.count
+        
         var newSymbol = symbol
         newSymbol.id = newSymbolId
         symbolTable.append(newSymbol)
-        scopes[scopes.count-1].updateValue(scopes[scopes.count-1].count, forKey: symbol.name)
+        scopes[scopes.count-1].updateValue(newSymbolId, forKey: symbol.name)
         return newSymbolId
     }
     
@@ -84,7 +89,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitThisExpr(expr: ThisExpr) throws {
-        if currentClassType == .None {
+        if currentClassStatus == nil {
             throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
         }
         do {
@@ -95,10 +100,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitSuperExpr(expr: SuperExpr) throws {
-        if currentClassType != .Subclass {
+        if currentClassStatus?.classType != .Subclass {
             throw error(message: "Can't use 'super' outside of a subclass", token: expr.keyword)
         }
-        // nothing (for now)
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
@@ -180,7 +184,22 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 classScope[templateParameters.lexeme] = -1
             }
         }
+        
+        let currentClassName = stmt.name.lexeme
         scopes.append(classScope)
+        do {
+            (stmt.thisSymbolTableIndex, _) = try defineOrGetVariable(name: .init(tokenType: .THIS, lexeme: "this", line: -1, column: -1), allowShadowing: true)
+        } catch {
+            assertionFailure("Failure while defining 'this'")
+        }
+        let previousClassStatus = currentClassStatus
+        var currentClassType = ClassType.Class
+        if stmt.superclass != nil {
+            currentClassType = .Subclass
+        } else {
+            currentClassType = .Class
+        }
+        currentClassStatus = .init(classType: currentClassType, name: currentClassName)
         
         for method in stmt.staticMethods {
             catchErrorClosure {
@@ -220,14 +239,32 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         for method in stmt.methods {
             resolve(method)
         }
+        endScope()
+        currentClassStatus = previousClassStatus
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
+        let previousFunctionStatus = currentFunction
+        if stmt.function.name.lexeme == currentClassStatus?.name {
+            currentFunction = .initializer
+        } else {
+            currentFunction = .method
+        }
         resolveFunction(stmt: stmt.function)
+        currentFunction = previousFunctionStatus
     }
     
     private func resolveFunction(stmt: FunctionStmt) {
-        
+        beginScope()
+        for i in 0..<stmt.params.count {
+            stmt.params[i].symbolTableIndex = catchErrorClosure {
+                try defineOrGetVariable(name: stmt.params[i].name, allowShadowing: true)
+            }?.0
+        }
+        for stmt in stmt.body {
+            resolve(stmt)
+        }
+        endScope()
     }
     
     private func defineFunction(stmt: FunctionStmt) throws -> Int {
@@ -255,10 +292,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitFunctionStmt(stmt: FunctionStmt) {
-        catchErrorClosure {
-            try defineFunction(stmt: stmt)
-        }
+        let previousFunction = currentFunction
+        currentFunction = .function
         resolveFunction(stmt: stmt)
+        currentFunction = previousFunction
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
@@ -398,19 +435,19 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
             
             if let functionStmt = statement as? FunctionStmt {
-                if getSymbolIndex(name: functionStmt.name.lexeme) == nil {
-                    addToSymbolTableAtScope(symbol: FunctionSymbolInfo(id: -1, name: functionStmt.name.lexeme))
+                catchErrorClosure {
+                    try defineFunction(stmt: functionStmt)
                 }
             }
         }
     }
     
-    func resolveAST(statements: [Stmt], symbolTable: inout [SymbolInfo]) {
+    func resolveAST(statements: inout [Stmt], symbolTable: inout [SymbolInfo]) -> [InterpreterProblem] {
         self.symbolTable = symbolTable
         
         isInLoop = false
         currentFunction = .none
-        currentClassType = .None
+        currentClassStatus = nil
         problems = []
         scopes = []
         scopes.append([:])
@@ -419,5 +456,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(statements)
         
         symbolTable = self.symbolTable
+        return problems
     }
 }

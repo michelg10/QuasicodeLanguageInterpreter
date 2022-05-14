@@ -52,6 +52,7 @@ protocol StmtStringVisitor {
 class ClassStmt: Stmt {
     var keyword: Token
     var name: Token
+    var thisSymbolTableIndex: Int?
     var templateParameters: [Token]?
     var superclass: AstClassType?
     var methods: [MethodStmt]
@@ -59,9 +60,10 @@ class ClassStmt: Stmt {
     var fields: [ClassField]
     var staticFields: [ClassField]
     
-    init(keyword: Token, name: Token, templateParameters: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, thisSymbolTableIndex: Int?, templateParameters: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
         self.keyword = keyword
         self.name = name
+        self.thisSymbolTableIndex = thisSymbolTableIndex
         self.templateParameters = templateParameters
         self.superclass = superclass
         self.methods = methods
@@ -72,6 +74,7 @@ class ClassStmt: Stmt {
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.thisSymbolTableIndex = objectToCopy.thisSymbolTableIndex
         self.templateParameters = objectToCopy.templateParameters
         self.superclass = objectToCopy.superclass
         self.methods = objectToCopy.methods

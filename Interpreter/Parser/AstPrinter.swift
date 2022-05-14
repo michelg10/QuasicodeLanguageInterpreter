@@ -201,7 +201,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     
     private func parenthesizeFunctionParam(functionParam: FunctionParam) -> String {
         let initializer = functionParam.initializer == nil ? "" : " = \(functionParam.initializer!.accept(visitor: self))"
-        return "(\(functionParam.name.lexeme){\(astTypeToString(astType: functionParam.astType))}\(initializer)"
+        return "(\(functionParam.name.lexeme){index: \(functionParam.symbolTableIndex == nil ? "nil" : String(functionParam.symbolTableIndex!)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
     }
     
     private func parenthesizeFunctionParams(functionParams: [FunctionParam]) -> String {
@@ -213,7 +213,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{\(astTypeToString(astType: stmt.annotation))}{\(stmt.name.lexeme)}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
+        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), index: \(stmt.symbolTableIndex == nil ? "nil" : String(stmt.symbolTableIndex!))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
