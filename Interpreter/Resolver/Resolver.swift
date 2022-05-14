@@ -409,7 +409,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func error(message: String, token: Token) -> ResolverError {
-        problems.append(.init(message: message, line: token.line, inlineLocation: .init(column: token.column, length: token.lexeme.count)))
+        problems.append(.init(message: message, token: token))
         return ResolverError.error(message)
     }
     
@@ -429,9 +429,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     private func eagerDefineClassesAndFunctions(statements: [Stmt]) {
         // add all class and function names into the undefinables list
+        var classIdCounter = 0
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
-                addToSymbolTableAtScope(symbol: ClassSymbolInfo.init(id: -1, name: classStmt.name.lexeme))
+                let classId = classIdCounter
+                classStmt.symbolTableIndex = addToSymbolTableAtScope(symbol: ClassSymbolInfo.init(id: -1, name: classStmt.name.lexeme, classId: classId))
+                classIdCounter+=1
             }
             
             if let functionStmt = statement as? FunctionStmt {

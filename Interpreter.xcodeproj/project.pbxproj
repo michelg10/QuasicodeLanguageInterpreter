@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
+		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
 		D07B70F6281A7EB4003A672F /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70F5281A7EB4003A672F /* Types.swift */; };
 		D07B70F8281CC9FF003A672F /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70F7281CC9FF003A672F /* Parser.swift */; };
@@ -47,6 +49,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
+		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
 		D07B70F5281A7EB4003A672F /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
 		D07B70F7281CC9FF003A672F /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; usesTabs = 0; };
@@ -86,6 +90,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D06A492E282FEA7A005DE578 /* TypeChecker */ = {
+			isa = PBXGroup;
+			children = (
+				D06A492F282FEACB005DE578 /* TypeChecker.swift */,
+			);
+			path = TypeChecker;
+			sourceTree = "<group>";
+		};
 		D07B70F4281A7EA3003A672F /* Types */ = {
 			isa = PBXGroup;
 			children = (
@@ -119,6 +131,7 @@
 			children = (
 				D0AA39302827B8DF00CF94ED /* PruneNils.swift */,
 				D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */,
+				D06A4931283001F5005DE578 /* UnionFind.swift */,
 			);
 			path = Util;
 			sourceTree = "<group>";
@@ -149,6 +162,7 @@
 				D0AA390E28217DED00CF94ED /* Templater */,
 				D0AA390528215C5E00CF94ED /* Resolver */,
 				D0DD7C542819848300FBD20C /* AstClasses */,
+				D06A492E282FEA7A005DE578 /* TypeChecker */,
 				D07B70F4281A7EA3003A672F /* Types */,
 				D0DD7C292817A48900FBD20C /* Token.swift */,
 				D0DD7C2528179A5C00FBD20C /* TokenType.swift */,
@@ -255,6 +269,7 @@
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
 				D0DD7C2C2817E89F00FBD20C /* InterpreterProblem.swift in Sources */,
 				D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */,
+				D06A4932283001F5005DE578 /* UnionFind.swift in Sources */,
 				D07B70F6281A7EB4003A672F /* Types.swift in Sources */,
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
 				D0AA391A2824231B00CF94ED /* TypeEquality.swift in Sources */,
@@ -271,6 +286,7 @@
 				D07B710D281D0B9D003A672F /* FunctionParam.swift in Sources */,
 				D0DD7C2428179A3300FBD20C /* Scanner.swift in Sources */,
 				D0AA390928215DB200CF94ED /* Resolver.swift in Sources */,
+				D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */,
 				D0DD7C1D28179A1B00FBD20C /* main.swift in Sources */,
 				D07B710F281D0DA7003A672F /* AstType.swift in Sources */,
 			);

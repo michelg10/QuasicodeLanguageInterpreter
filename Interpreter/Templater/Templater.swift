@@ -85,6 +85,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         }
         
         var resultingClass = ClassStmt.init(belongingClass)
+        resultingClass.expandedTemplateParameters = classSignature.templateParameters
         
         let classParameters = belongingClass.templateParameters?.map({ token in
             token.lexeme
@@ -122,7 +123,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         let belongingClassTemplateParameterCount = belongingClass.templateParameters?.count ?? 0
         let givenArguments = asttype.templateArguments?.count ?? 0
         if belongingClassTemplateParameterCount != givenArguments {
-            throw error(token: asttype.name, message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)")
+            throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", token: asttype.name)
         }
         
         let templateArguments = asttype.templateArguments ?? []
@@ -494,8 +495,8 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return (self.statements, problems)
     }
     
-    private func error(token: Token, message: String) -> TemplaterError {
-        problems.append(.init(message: message, line: token.line, inlineLocation: .init(column: token.column, length: token.lexeme.count)))
+    private func error(message: String, token: Token) -> TemplaterError {
+        problems.append(.init(message: message, token: token))
         return TemplaterError.error(message)
     }
 }

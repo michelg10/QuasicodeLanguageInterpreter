@@ -66,7 +66,7 @@ class Parser {
             }
             if match(types: .FUNCTION) {
                 if !isInGlobalScope {
-                    throw error(token: previous(), message: "Fucntion declaration must be in global scope or within a class")
+                    throw error(message: "Fucntion declaration must be in global scope or within a class", token: previous())
                 }
                 return try FunctionDeclaration()
             }
@@ -80,7 +80,7 @@ class Parser {
     private func ClassDeclaration() throws -> Stmt {
         let keyword = previous()
         if !isInGlobalScope {
-            throw error(token: keyword, message: "Class declaration must be global")
+            throw error(message: "Class declaration must be global", token: keyword)
         }
         let name = try consume(type: .IDENTIFIER, message: "Expect class name.")
         currentClassName = name.lexeme
@@ -102,16 +102,15 @@ class Parser {
             let extendsKeyword = previous()
             let extendedClass = try typeSignature(matchArray: false)
             if extendedClass == nil {
-                throw error(token: extendsKeyword, message: "Expect class name")
+                throw error(message: "Expect class name", token: extendsKeyword)
             }
             if !(extendedClass is AstClassType) {
-                throw error(token: previous(), message: "Only classes can be extended!")
+                throw error(message: "Only classes can be extended!", token: previous())
             }
             superclass = extendedClass as? AstClassType
         }
         try consume(type: .EOL, message: "Expect end-of-line after class signature")
         
-        // TODO: consume all of the methods and fields
         var methods: [MethodStmt] = []
         var staticMethods: [MethodStmt] = []
         var fields: [ClassField] = []
@@ -125,17 +124,17 @@ class Parser {
                 switch previous().tokenType {
                 case .PUBLIC:
                     if visibilityModifer != nil {
-                        throw error(token: previous(), message: "Repeated visibility modifier")
+                        throw error(message: "Repeated visibility modifier", token: previous())
                     }
                     visibilityModifer = .PUBLIC
                 case .PRIVATE:
                     if visibilityModifer != nil {
-                        throw error(token: previous(), message: "Repeated visibility modifier")
+                        throw error(message: "Repeated visibility modifier", token: previous())
                     }
                     visibilityModifer = .PRIVATE
                 case .STATIC:
                     if isStatic != nil {
-                        throw error(token: previous(), message: "Repeated static modifier")
+                        throw error(message: "Repeated static modifier", token: previous())
                     }
                     isStatic = true
                 default:
@@ -179,7 +178,7 @@ class Parser {
             } else if match(types: .EOL) {
                 // ignore
             } else {
-                throw error(token: peek(), message: "Expect method or field declaration")
+                throw error(message: "Expect method or field declaration", token: peek())
             }
         }
         
@@ -189,7 +188,7 @@ class Parser {
         
         currentClassName = nil
         currentClassTemplateParameters = []
-        let result = ClassStmt(keyword: keyword, name: name, thisSymbolTableIndex: nil, templateParameters: templateParameters, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, thisSymbolTableIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
         classStmts.append(result)
         return result
     }
@@ -406,7 +405,7 @@ class Parser {
             return SetExpr(to: expr, annotationColon: annotationColon, annotation: annotation, value: value, isFirstAssignment: nil, type: nil)
         } else {
             if annotation != nil {
-                throw error(token: peek(), message: "Expect '=' after type annotation")
+                throw error(message: "Expect '=' after type annotation", token: peek())
             }
         }
         
@@ -495,7 +494,7 @@ class Parser {
         let baseType = peek()
         var allocationType = try typeSignature(matchArray: false)
         if allocationType == nil {
-            throw error(token: newKeyword, message: "Expect type after 'new'")
+            throw error(message: "Expect type after 'new'", token: newKeyword)
         }
         
         if match(types: .LEFT_BRACKET) {
@@ -509,20 +508,20 @@ class Parser {
         } else if match(types: .LEFT_PAREN) {
             let argumentsList = try arguments()
             if !(allocationType! is AstClassType) {
-                throw error(token: baseType, message: "Expect class")
+                throw error(message: "Expect class", token: baseType)
             }
             try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
             return ClassAllocationExpr(classType: allocationType as! AstClassType, arguments: argumentsList, type: nil)
         }
         
-        throw error(token: previous(), message: "Expect expression")
+        throw error(message: "Expect expression", token: previous())
     }
     
     private func unary() throws -> Expr {
         let statePrior = current
         if match(types: .LEFT_PAREN) {
             if isAtEnd() {
-                throw error(token: previous(), message: "Expect ')' after '('")
+                throw error(message: "Expect ')' after '('", token: previous())
             }
             // determine if its a type cast
             let typeCastTo = try typeSignature(matchArray: true)
@@ -623,7 +622,7 @@ class Parser {
             return GroupingExpr(expression: expr, type: nil)
         }
         
-        throw error(token: peek(), message: "Expect expression")
+        throw error(message: "Expect expression", token: peek())
     }
     
     private func arrayLiteral() throws -> Expr {
@@ -643,14 +642,14 @@ class Parser {
         advance()
         if match(types: .LESS) {
             if !(astType! is AstClassType) {
-                throw error(token: peek(), message: "Non-classes cannot be templated")
+                throw error(message: "Non-classes cannot be templated", token: peek())
             }
             var templateArguments: [AstType] = []
             repeat {
                 let nextToken = peek()
                 let typeArgument = try typeSignature(matchArray: true)
                 if typeArgument == nil {
-                    throw error(token: nextToken, message: "Expect type")
+                    throw error(message: "Expect type", token: nextToken)
                 }
                 templateArguments.append(typeArgument!)
             } while match(types: .COMMA)
@@ -711,7 +710,7 @@ class Parser {
             return advance()
         }
         
-        throw error(token: peek(), message: message)
+        throw error(message: message, token: peek())
     }
     
     private func check(type: TokenType) -> Bool {
@@ -756,8 +755,8 @@ class Parser {
         return tokens[current-1]
     }
     
-    private func error(token: Token, message: String) -> ParserError {
-        problems.append(.init(message: message, line: token.line, inlineLocation: .init(column: token.column, length: token.lexeme.count)))
+    private func error(message: String, token: Token) -> ParserError {
+        problems.append(.init(message: message, token: token))
         return ParserError.error(message)
     }
     

@@ -48,6 +48,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return result
     }
     
+    private func stringifyOptionalInt(_ val: Int?) -> String {
+        return (val == nil ? "nil" : String(val!))
+    }
+    
     internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
         return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
@@ -121,7 +125,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitVariableExprString(expr: VariableExpr) -> String {
-        return parenthesize(name: expr.name.lexeme+"{index: \(expr.symbolTableIndex == nil ? "nil" : String(expr.symbolTableIndex!))}")
+        return parenthesize(name: expr.name.lexeme+"{index: \(stringifyOptionalInt(expr.symbolTableIndex))}")
     }
     
     internal func visitSubscriptExprString(expr: SubscriptExpr) -> String {
@@ -177,7 +181,14 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             }
             return partialResult+", "+next.lexeme
         })
-        let classDesc = "{name: \(stmt.name.lexeme), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription)}"
+        let expandedTemplateParametersDescription = stmt.expandedTemplateParameters == nil ? "none" : stmt.expandedTemplateParameters!.reduce("", { partialResult, next in
+            let nextDesc = next.accept(visitor: self)
+            if partialResult == "" {
+                return nextDesc
+            }
+            return partialResult+", "+nextDesc
+        })
+        let classDesc = "{name: \(stmt.name.lexeme), id: \(stringifyOptionalInt(stmt.symbolTableIndex)), thisId: \(stringifyOptionalInt(stmt.thisSymbolTableIndex)), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription), expandedTemplateParameers: \(expandedTemplateParametersDescription)}"
         var result = "(Class\(classDesc) {\n"
         result += indentBlockStmts(blockStmts: stmt.staticMethods)
         result += indentBlockStmts(blockStmts: stmt.methods)
@@ -201,7 +212,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     
     private func parenthesizeFunctionParam(functionParam: FunctionParam) -> String {
         let initializer = functionParam.initializer == nil ? "" : " = \(functionParam.initializer!.accept(visitor: self))"
-        return "(\(functionParam.name.lexeme){index: \(functionParam.symbolTableIndex == nil ? "nil" : String(functionParam.symbolTableIndex!)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
+        return "(\(functionParam.name.lexeme){index: \(stringifyOptionalInt(functionParam.symbolTableIndex)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
     }
     
     private func parenthesizeFunctionParams(functionParams: [FunctionParam]) -> String {
@@ -213,7 +224,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), index: \(stmt.symbolTableIndex == nil ? "nil" : String(stmt.symbolTableIndex!))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
+        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {

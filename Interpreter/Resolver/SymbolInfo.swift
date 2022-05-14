@@ -26,4 +26,5 @@ struct FunctionSymbolInfo: SymbolInfo {
 struct ClassSymbolInfo: SymbolInfo {
     var id: Int
     var name: String
+    var classId: Int
 }

@@ -52,19 +52,23 @@ protocol StmtStringVisitor {
 class ClassStmt: Stmt {
     var keyword: Token
     var name: Token
+    var symbolTableIndex: Int?
     var thisSymbolTableIndex: Int?
     var templateParameters: [Token]?
+    var expandedTemplateParameters: [AstType]?
     var superclass: AstClassType?
     var methods: [MethodStmt]
     var staticMethods: [MethodStmt]
     var fields: [ClassField]
     var staticFields: [ClassField]
     
-    init(keyword: Token, name: Token, thisSymbolTableIndex: Int?, templateParameters: [Token]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, thisSymbolTableIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
         self.keyword = keyword
         self.name = name
+        self.symbolTableIndex = symbolTableIndex
         self.thisSymbolTableIndex = thisSymbolTableIndex
         self.templateParameters = templateParameters
+        self.expandedTemplateParameters = expandedTemplateParameters
         self.superclass = superclass
         self.methods = methods
         self.staticMethods = staticMethods
@@ -74,8 +78,10 @@ class ClassStmt: Stmt {
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.thisSymbolTableIndex = objectToCopy.thisSymbolTableIndex
         self.templateParameters = objectToCopy.templateParameters
+        self.expandedTemplateParameters = objectToCopy.expandedTemplateParameters
         self.superclass = objectToCopy.superclass
         self.methods = objectToCopy.methods
         self.staticMethods = objectToCopy.staticMethods

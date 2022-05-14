@@ -42,6 +42,15 @@ print(astPrinter.printAst(ast))
 print("\nErrors")
 print(resolveErrors)
 
+print("----- Type Checker -----")
+let typeChecker = TypeChecker()
+let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTable: &symbolTable)
+print("Type checked AST")
+print(astPrinter.printAst(ast))
+print("\nErrors")
+print(typeCheckerErrors)
+
+
 let end = DispatchTime.now()
 let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
 let timeInterval = Double(nanoTime) / 1_000_000
