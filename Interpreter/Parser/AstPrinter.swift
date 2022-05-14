@@ -1,8 +1,4 @@
 class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
-    internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
-        return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
-    }
-    
     private func parenthesize(name: String, exprs: [Expr]) -> String {
         var result = "("+name
         for expr in exprs {
@@ -50,6 +46,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         result+=")"
         
         return result
+    }
+    
+    internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
+        return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
     
     internal func visitAstArrayTypeString(asttype: AstArrayType) -> String {
@@ -117,11 +117,11 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitSuperExprString(expr: SuperExpr) -> String {
-        return parenthesize(name: "super.\(expr.keyword.lexeme)")
+        return parenthesize(name: "super.\(expr.property.lexeme)")
     }
     
     internal func visitVariableExprString(expr: VariableExpr) -> String {
-        return parenthesize(name: expr.name.lexeme)
+        return parenthesize(name: expr.name.lexeme+"{index: \(expr.symbolTableIndex == nil ? "nil" : String(expr.symbolTableIndex!))}")
     }
     
     internal func visitSubscriptExprString(expr: SubscriptExpr) -> String {
@@ -163,7 +163,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set{\(astTypeToString(astType: expr.annotation))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Set{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : (expr.isFirstAssignment! ? "yes" : "no"))}", exprs: expr.to, expr.value)
     }
     
     private func classField(field: ClassField) -> String {

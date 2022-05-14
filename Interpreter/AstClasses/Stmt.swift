@@ -121,13 +121,15 @@ class MethodStmt: Stmt {
 class FunctionStmt: Stmt {
     var keyword: Token
     var name: Token
+    var symbolTableIndex: Int?
     var params: [FunctionParam]
-    var annotation: AstType?
+    var annotation: AstType
     var body: [Stmt]
     
-    init(keyword: Token, name: Token, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, params: [FunctionParam], annotation: AstType, body: [Stmt]) {
         self.keyword = keyword
         self.name = name
+        self.symbolTableIndex = symbolTableIndex
         self.params = params
         self.annotation = annotation
         self.body = body
@@ -135,6 +137,7 @@ class FunctionStmt: Stmt {
     init(_ objectToCopy: FunctionStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.params = objectToCopy.params
         self.annotation = objectToCopy.annotation
         self.body = objectToCopy.body

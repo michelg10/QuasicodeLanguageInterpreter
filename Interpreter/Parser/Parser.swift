@@ -161,15 +161,15 @@ class Parser {
                 }
             } else if match(types: .IDENTIFIER) {
                 let fieldName = previous()
-                var typeAnnotation: AstType? = nil
+                var typeAnnotation: AstType = AstAnyType()
                 var initializer: Expr? = nil
                 if match(types: .COLON) {
-                    typeAnnotation = try typeSignature(matchArray: true)
+                    typeAnnotation = (try typeSignature(matchArray: true) ?? AstAnyType())
                 }
                 if match(types: .EQUAL) {
                     initializer = try expression()
                 }
-                let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, type: nil)
+                let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, type: nil, symbolTableIndex: nil)
                 try consume(type: .EOL, message: "Expect end-of-line after field declaration")
                 if isStatic! {
                     staticFields.append(field)
@@ -199,14 +199,14 @@ class Parser {
         let name = try consume(type: .IDENTIFIER, message: "Expect function name")
         try consume(type: .LEFT_PAREN, message: "Expect '(' after function declaration")
         var parameters: [FunctionParam] = []
-        var functionType: AstType? = nil
+        var functionType: AstType = AstAnyType()
         if !check(type: .RIGHT_PAREN) {
             repeat {
                 let parameterName = try consume(type: .IDENTIFIER, message: "Expect parameter name")
-                var parameterType: AstType? = nil
+                var parameterType: AstType = AstAnyType()
                 var initializer: Expr? = nil
                 if match(types: .COLON) {
-                    parameterType = try typeSignature(matchArray: true)
+                    parameterType = try typeSignature(matchArray: true) ?? AstAnyType()
                 }
                 if match(types: .EQUAL) {
                     initializer = try expression()
@@ -217,7 +217,7 @@ class Parser {
         try consume(type: .RIGHT_PAREN, message: "Expect ')' after parameters")
         
         if match(types: .COLON) {
-            functionType = try typeSignature(matchArray: true)
+            functionType = try typeSignature(matchArray: true) ?? AstAnyType()
         }
         try consume(type: .EOL, message: "Expect end-of-line after function signature")
         
@@ -227,7 +227,7 @@ class Parser {
         try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
-        return FunctionStmt(keyword: keyword, name: name, params: parameters, annotation: functionType, body: body)
+        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, params: parameters, annotation: functionType, body: body)
     }
     
     private func statement() throws -> Stmt {
@@ -393,7 +393,9 @@ class Parser {
         var expr = try or()
         
         var annotation: AstType? = nil
+        var annotationColon: Token? = nil
         if match(types: .COLON) {
+            annotationColon = previous()
             annotation = try typeSignature(matchArray: true)
         }
         
@@ -401,7 +403,7 @@ class Parser {
             let equals = previous()
             let value = try expression()
             
-            return SetExpr(to: expr, annotation: annotation, value: value, isFirstAssignment: nil, type: nil)
+            return SetExpr(to: expr, annotationColon: annotationColon, annotation: annotation, value: value, isFirstAssignment: nil, type: nil)
         } else {
             if annotation != nil {
                 throw error(token: peek(), message: "Expect '=' after type annotation")
@@ -591,7 +593,7 @@ class Parser {
             return LiteralExpr(value: nil, type: QsAnyType())
         }
         if match(types: .THIS) {
-            return ThisExpr(keyword: previous(), type: nil)
+            return ThisExpr(keyword: previous(), symbolTableIndex: nil, type: nil)
         }
         if match(types: .INTEGER) {
             return LiteralExpr(value: previous().value, type: QsInt())
@@ -604,7 +606,7 @@ class Parser {
             return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, superclass: nil, methodTypes: [:], fieldTypes: [:]))
         }
         if match(types: .IDENTIFIER) {
-            return VariableExpr(name: previous(), symbolTableIndex: nil, runtimeLocation: nil, type: nil)
+            return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil)
         }
         if match(types: .LEFT_BRACE) {
             return try arrayLiteral()
@@ -613,7 +615,7 @@ class Parser {
             let keyword = previous()
             try consume(type: .DOT, message: "Expect '.' after 'super'.")
             let property = try consume(type: .IDENTIFIER, message: "Expect superclass method name or field")
-            return SuperExpr(keyword: keyword, property: property, type: nil)
+            return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, type: nil)
         }
         if match(types: .LEFT_PAREN) {
             let expr = try expression()
