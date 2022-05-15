@@ -1,4 +1,4 @@
-class TypeChecker: ExprThrowVisitor, StmtVisitor {
+class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
     private enum TypeCheckerError: Error {
         case error(String)
     }
@@ -7,13 +7,17 @@ class TypeChecker: ExprThrowVisitor, StmtVisitor {
         return TypeCheckerError.error(message)
     }
     private class ClassChain {
-        init(upperClass: Int, classStmt: ClassStmt) {
+        init(upperClass: Int, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
             self.upperClass = upperClass
             self.classStmt = classStmt
+            self.parentOf = parentOf
+            self.depth = depth
         }
         
         var upperClass: Int
+        var depth: Int
         var classStmt: ClassStmt
+        var parentOf: [Int]
     }
     private struct AstClassTypeWrapper: Hashable {
         static func == (lhs: TypeChecker.AstClassTypeWrapper, rhs: TypeChecker.AstClassTypeWrapper) -> Bool {
@@ -27,72 +31,167 @@ class TypeChecker: ExprThrowVisitor, StmtVisitor {
         var val: AstClassType
     }
     
+    private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
+        if typesIsEqual(a, b) {
+            return a
+        }
+        if a is QsAnyType || b is QsAnyType {
+            return QsAnyType()
+        }
+        if a is QsNativeType || b is QsNativeType {
+            if !(a is QsNativeType && b is QsNativeType) {
+                // if one of them is a native type but one of them aren't
+                return QsAnyType()
+            }
+            
+            // both of them are of QsNativeType and are different
+            // case 1: one of them is boolean. thus the other one must be int or double
+            if a is QsBoolean || b is QsBoolean {
+                return QsAnyType()
+            }
+            
+            // if none of them are QsBoolean, then one must be QsInt and another must be QsDouble. the common type there is QsDouble, so return that
+            return QsDouble()
+        }
+        if a is QsArray || b is QsArray {
+            if !(a is QsArray && b is QsArray) {
+                // one of them is a QsArray but another isn't
+                return QsAnyType()
+            }
+            
+            // both are QsArrays
+            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains))
+        }
+        
+        struct JumpError: Error { }
+        func jumpUpChain(classChain: ClassChain) throws -> (Int, ClassChain) {
+            let newClassId = classChain.upperClass
+            guard let newChain = idToChain[newClassId] else {
+                throw JumpError()
+            }
+            return (newClassId, newChain)
+        }
+        
+        do {
+            if a is QsClass || b is QsClass {
+                if !(a is QsClass && b is QsClass) {
+                    // one of them is a QsClass but another isn't
+                    return QsAnyType()
+                }
+                var aClassId = (a as! QsClass).id
+                var bClassId = (b as! QsClass).id
+                // they're unequal, so jump up the chain
+                // let the depth of aClass is deeper than bClass
+                guard var aChain = idToChain[aClassId] else {
+                    return QsAnyType()
+                }
+                guard var bChain = idToChain[bClassId] else {
+                    return QsAnyType()
+                }
+                if aChain.depth<bChain.depth {
+                    swap(&aChain, &bChain)
+                    swap(&aClassId, &bClassId)
+                }
+                let depthDiff = abs(aChain.depth - bChain.depth)
+                for _ in 0..<depthDiff {
+                    (aClassId, aChain) = try jumpUpChain(classChain: aChain)
+                }
+                
+                assert(aChain.depth == bChain.depth, "Depth of chains should be identical!")
+                
+                // keep on jumping up for both until they are the same
+                while (aClassId != bClassId) {
+                    if aChain.upperClass == -1 {
+                        return QsAnyType()
+                    }
+                    
+                    (aClassId, aChain) = try jumpUpChain(classChain: aChain)
+                    (bClassId, bChain) = try jumpUpChain(classChain: bChain)
+                }
+                
+                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId)
+            }
+        } catch {
+            return QsAnyType()
+        }
+        return QsAnyType()
+    }
+    
     private var problems: [InterpreterProblem] = []
     private var idToChain: [Int : ClassChain] = [:] // their symbol table IDs
     private var astClassTypeToId: [AstClassTypeWrapper : Int] = [:] // use this to map superclasses to their symbol table IDs
     private var symbolTable: [SymbolInfo] = []
     
-    internal func visitGroupingExpr(expr: GroupingExpr) throws {
-        try typeCheck(expr.expression)
+    internal func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType {
+        return try typeCheck(expr.expression)
     }
     
-    internal func visitLiteralExpr(expr: LiteralExpr) throws {
+    internal func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType {
         // already done
+        return expr.type ?? QsAnyType()
     }
     
-    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
+    internal func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType {
+        if expr.values.count == 0 {
+            return QsAnyType()
+        }
+        let inferredType = (catchErrorClosure {
+            try typeCheck(expr.values[0])
+        } ?? QsAnyType())
+        for i in 1..<expr.values.count {
+            
+        }
+    }
+    
+    internal func visitThisExprQsType(expr: ThisExpr) throws -> QsType {
         
     }
     
-    internal func visitThisExpr(expr: ThisExpr) throws {
+    internal func visitSuperExprQsType(expr: SuperExpr) throws -> QsType {
         
     }
     
-    internal func visitSuperExpr(expr: SuperExpr) throws {
+    internal func visitVariableExprQsType(expr: VariableExpr) throws -> QsType {
         
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) throws {
+    internal func visitSubscriptExprQsType(expr: SubscriptExpr) throws -> QsType {
         
     }
     
-    internal func visitSubscriptExpr(expr: SubscriptExpr) throws {
+    internal func visitCallExprQsType(expr: CallExpr) throws -> QsType {
         
     }
     
-    internal func visitCallExpr(expr: CallExpr) throws {
+    internal func visitGetExprQsType(expr: GetExpr) throws -> QsType {
         
     }
     
-    internal func visitGetExpr(expr: GetExpr) throws {
+    internal func visitUnaryExprQsType(expr: UnaryExpr) throws -> QsType {
         
     }
     
-    internal func visitUnaryExpr(expr: UnaryExpr) throws {
+    internal func visitCastExprQsType(expr: CastExpr) throws -> QsType {
         
     }
     
-    internal func visitCastExpr(expr: CastExpr) throws {
+    internal func visitArrayAllocationExprQsType(expr: ArrayAllocationExpr) throws -> QsType {
         
     }
     
-    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws {
+    internal func visitClassAllocationExprQsType(expr: ClassAllocationExpr) throws -> QsType {
         
     }
     
-    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) throws {
+    internal func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType {
         
     }
     
-    internal func visitBinaryExpr(expr: BinaryExpr) throws {
+    internal func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType {
         
     }
     
-    internal func visitLogicalExpr(expr: LogicalExpr) throws {
-        
-    }
-    
-    internal func visitSetExpr(expr: SetExpr) throws {
+    internal func visitSetExprQsType(expr: SetExpr) throws -> QsType {
         
     }
     
@@ -148,64 +247,95 @@ class TypeChecker: ExprThrowVisitor, StmtVisitor {
         stmt.accept(visitor: self)
     }
     
-    private func typeCheck(_ expr: Expr) throws {
+    private func typeCheck(_ expr: Expr) throws -> QsType {
         try expr.accept(visitor: self)
     }
     
     private func buildClassHierarchy(statements: [Stmt]) {
-        var classIdCount = 0
+        var classStmts: [ClassStmt] = []
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
-                if classStmt.symbolTableIndex == nil {
-                    assertionFailure("Class statement has no symbol table index!")
-                    continue
-                }
-                let currentClassChain = ClassChain(upperClass: -1, classStmt: classStmt)
-                idToChain[classStmt.symbolTableIndex!] = currentClassChain
-                
-                var classAstType = AstClassType(name: classStmt.name, templateArguments: classStmt.expandedTemplateParameters)
-                astClassTypeToId[.init(val: classAstType)] = classStmt.symbolTableIndex!
-                
-                classIdCount = max(classIdCount, ((symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo)?.classId) ?? 0)
+                classStmts.append(classStmt)
             }
+        }
+        var classIdCount = 0
+        for classStmt in classStmts {
+            if classStmt.symbolTableIndex == nil {
+                assertionFailure("Class statement has no symbol table index!")
+                continue
+            }
+            let currentClassChain = ClassChain(upperClass: -1, depth: 1, classStmt: classStmt, parentOf: [])
+            idToChain[classStmt.symbolTableIndex!] = currentClassChain
+            
+            var classAstType = AstClassType(name: classStmt.name, templateArguments: classStmt.expandedTemplateParameters)
+            astClassTypeToId[.init(val: classAstType)] = classStmt.symbolTableIndex!
+            
+            classIdCount = max(classIdCount, ((symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo)?.classId) ?? 0)
         }
         
         let classClusterer = UnionFind(size: classIdCount+1)
         let anyTypeClusterId = classIdCount+1
         // fill in the class chains
-        for statement in statements {
-            if let classStmt = statement as? ClassStmt {
-                if classStmt.symbolTableIndex == nil {
-                    continue
+        for classStmt in classStmts {
+            if classStmt.symbolTableIndex == nil {
+                continue
+            }
+            guard let classSymbol = symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo else {
+                assertionFailure("Expected class symbol info in symbol table")
+                continue
+            }
+            guard let classChain = idToChain[classStmt.symbolTableIndex!] else {
+                assertionFailure("Class chain missing ID!")
+                continue
+            }
+            if classStmt.superclass == nil {
+                classClusterer.unite(anyTypeClusterId, classSymbol.classId)
+                continue
+            }
+            guard let inheritedClass = astClassTypeToId[.init(val: .init(name: .dummyToken(tokenType: .IDENTIFIER, lexeme: classStmt.superclass!.name.lexeme), templateArguments: classStmt.superclass!.templateArguments))] else {
+                assertionFailure("Inherited class not found")
+                continue
+            }
+            guard let inheritedClassSymbol = symbolTable[inheritedClass] as? ClassSymbolInfo else {
+                assertionFailure("Expected class symbol info in symbol table")
+                continue
+            }
+            guard let inheritedClassChainObject = idToChain[inheritedClass] else {
+                assertionFailure("Could not find class chain object")
+                continue
+            }
+            
+            inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
+            // check if the two classes are already related.
+            if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
+                error(message: "'\(classStmt.name.lexeme)' inherits from itself", token: classStmt.name)
+                continue
+            }
+            classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
+            classChain.upperClass = inheritedClass
+        }
+        
+        func fillDepth(_ symbolTableId: Int, depth: Int) {
+            // fills the depth information in
+            guard let classChain = idToChain[symbolTableId] else {
+                return
+            }
+            classChain.depth = depth
+            for children in classChain.parentOf {
+                fillDepth(children, depth: depth+1)
+            }
+        }
+        for classStmt in classStmts {
+            guard let classId = classStmt.symbolTableIndex else {
+                continue
+            }
+            guard let classChain = idToChain[classId] else {
+                continue
+            }
+            if classChain.depth == 1 {
+                for children in classChain.parentOf {
+                    fillDepth(children, depth: 2)
                 }
-                guard let classSymbol = symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo else {
-                    assertionFailure("Expected class symbol info in symbol table")
-                    continue
-                }
-                guard let classChain = idToChain[classStmt.symbolTableIndex!] else {
-                    assertionFailure("Class chain missing ID!")
-                    continue
-                }
-                if classStmt.superclass == nil {
-                    classClusterer.unite(anyTypeClusterId, classSymbol.classId)
-                    continue
-                }
-                guard let inheritedClass = astClassTypeToId[.init(val: .init(name: .dummyToken(tokenType: .IDENTIFIER, lexeme: classStmt.superclass!.name.lexeme), templateArguments: classStmt.superclass!.templateArguments))] else {
-                    assertionFailure("Inherited class not found")
-                    continue
-                }
-                guard let inheritedClassSymbol = symbolTable[inheritedClass] as? ClassSymbolInfo else {
-                    assertionFailure("Expected class symbol info in symbol table")
-                    continue
-                }
-                
-                // check if the two classes are already related.
-                if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
-                    error(message: "'\(classStmt.name)' inherits from itself", token: classStmt.name)
-                    continue
-                }
-                classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
-                classChain.upperClass = inheritedClass
             }
         }
     }

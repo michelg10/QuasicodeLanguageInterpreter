@@ -602,7 +602,7 @@ class Parser {
         }
         if match(types: .STRING) {
             // TODO: this
-            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, superclass: nil, methodTypes: [:], fieldTypes: [:]))
+            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0))
         }
         if match(types: .IDENTIFIER) {
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil)

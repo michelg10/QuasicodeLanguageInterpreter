@@ -1,6 +1,7 @@
 protocol Expr {
     func accept(visitor: ExprVisitor)
     func accept(visitor: ExprThrowVisitor) throws
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
     var type: QsType? { get set }
@@ -42,6 +43,25 @@ protocol ExprThrowVisitor {
     func visitBinaryExpr(expr: BinaryExpr) throws 
     func visitLogicalExpr(expr: LogicalExpr) throws 
     func visitSetExpr(expr: SetExpr) throws 
+}
+
+protocol ExprQsTypeThrowVisitor {
+    func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType
+    func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType
+    func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType
+    func visitThisExprQsType(expr: ThisExpr) throws -> QsType
+    func visitSuperExprQsType(expr: SuperExpr) throws -> QsType
+    func visitVariableExprQsType(expr: VariableExpr) throws -> QsType
+    func visitSubscriptExprQsType(expr: SubscriptExpr) throws -> QsType
+    func visitCallExprQsType(expr: CallExpr) throws -> QsType
+    func visitGetExprQsType(expr: GetExpr) throws -> QsType
+    func visitUnaryExprQsType(expr: UnaryExpr) throws -> QsType
+    func visitCastExprQsType(expr: CastExpr) throws -> QsType
+    func visitArrayAllocationExprQsType(expr: ArrayAllocationExpr) throws -> QsType
+    func visitClassAllocationExprQsType(expr: ClassAllocationExpr) throws -> QsType
+    func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType
+    func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
+    func visitSetExprQsType(expr: SetExpr) throws -> QsType
 }
 
 protocol ExprExprThrowVisitor {
@@ -101,6 +121,9 @@ class GroupingExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitGroupingExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitGroupingExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitGroupingExprExpr(expr: self)
     }
@@ -128,6 +151,9 @@ class LiteralExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitLiteralExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitLiteralExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitLiteralExprExpr(expr: self)
     }
@@ -154,6 +180,9 @@ class ArrayLiteralExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitArrayLiteralExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitArrayLiteralExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitArrayLiteralExprExpr(expr: self)
@@ -184,6 +213,9 @@ class ThisExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitThisExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitThisExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitThisExprExpr(expr: self)
@@ -218,6 +250,9 @@ class SuperExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitSuperExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitSuperExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitSuperExprExpr(expr: self)
     }
@@ -248,6 +283,9 @@ class VariableExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitVariableExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitVariableExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitVariableExprExpr(expr: self)
     }
@@ -277,6 +315,9 @@ class SubscriptExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitSubscriptExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitSubscriptExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitSubscriptExprExpr(expr: self)
@@ -311,6 +352,9 @@ class CallExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitCallExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitCallExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitCallExprExpr(expr: self)
     }
@@ -340,6 +384,9 @@ class GetExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitGetExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitGetExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitGetExprExpr(expr: self)
@@ -371,6 +418,9 @@ class UnaryExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitUnaryExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitUnaryExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitUnaryExprExpr(expr: self)
     }
@@ -400,6 +450,9 @@ class CastExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitCastExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitCastExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitCastExprExpr(expr: self)
@@ -431,6 +484,9 @@ class ArrayAllocationExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitArrayAllocationExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitArrayAllocationExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitArrayAllocationExprExpr(expr: self)
     }
@@ -460,6 +516,9 @@ class ClassAllocationExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitClassAllocationExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitClassAllocationExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitClassAllocationExprExpr(expr: self)
@@ -494,6 +553,9 @@ class BinaryExpr: Expr {
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitBinaryExpr(expr: self)
     }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitBinaryExprQsType(expr: self)
+    }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitBinaryExprExpr(expr: self)
     }
@@ -526,6 +588,9 @@ class LogicalExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitLogicalExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitLogicalExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitLogicalExprExpr(expr: self)
@@ -565,6 +630,9 @@ class SetExpr: Expr {
     }
     func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitSetExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitSetExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitSetExprExpr(expr: self)

@@ -19,19 +19,13 @@ class QsBoolean: QsNativeType {}
 class QsAnyType: QsType {}
 
 class QsClass: QsType {
-    init(name: String, id: Int, superclass: QsClass?, methodTypes: [MethodSignature : QsType], fieldTypes: [String : QsType]) {
+    init(name: String, id: Int) {
         self.name = name
         self.id = id
-        self.superclass = superclass
-        self.methodTypes = methodTypes
-        self.fieldTypes = fieldTypes
     }
     
     let name: String
     let id: Int
-    let superclass: QsClass?
-    let methodTypes: [MethodSignature : QsType]
-    let fieldTypes: [String : QsType]
 }
 
 struct MethodSignature: Hashable {
