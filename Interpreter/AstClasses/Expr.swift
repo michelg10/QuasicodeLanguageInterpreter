@@ -5,6 +5,8 @@ protocol Expr {
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
     var type: QsType? { get set }
+    var startLocation: InterpreterLocation { get set }
+    var endLocation: InterpreterLocation { get set }
 }
 
 protocol ExprVisitor {
@@ -105,14 +107,20 @@ protocol ExprStringVisitor {
 class GroupingExpr: Expr {
     var expression: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(expression: Expr, type: QsType?) {
+    init(expression: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: GroupingExpr) {
         self.expression = objectToCopy.expression
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -135,14 +143,20 @@ class GroupingExpr: Expr {
 class LiteralExpr: Expr {
     var value: Any?
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(value: Any?, type: QsType?) {
+    init(value: Any?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.value = value
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: LiteralExpr) {
         self.value = objectToCopy.value
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -165,14 +179,20 @@ class LiteralExpr: Expr {
 class ArrayLiteralExpr: Expr {
     var values: [Expr]
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(values: [Expr], type: QsType?) {
+    init(values: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.values = values
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ArrayLiteralExpr) {
         self.values = objectToCopy.values
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -196,16 +216,22 @@ class ThisExpr: Expr {
     var keyword: Token
     var symbolTableIndex: Int?
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(keyword: Token, symbolTableIndex: Int?, type: QsType?) {
+    init(keyword: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.symbolTableIndex = symbolTableIndex
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ThisExpr) {
         self.keyword = objectToCopy.keyword
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -230,18 +256,24 @@ class SuperExpr: Expr {
     var property: Token
     var symbolTableIndex: Int?
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(keyword: Token, property: Token, symbolTableIndex: Int?, type: QsType?) {
+    init(keyword: Token, property: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.property = property
         self.symbolTableIndex = symbolTableIndex
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: SuperExpr) {
         self.keyword = objectToCopy.keyword
         self.property = objectToCopy.property
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -265,16 +297,22 @@ class VariableExpr: Expr {
     var name: Token
     var symbolTableIndex: Int?
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(name: Token, symbolTableIndex: Int?, type: QsType?) {
+    init(name: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.name = name
         self.symbolTableIndex = symbolTableIndex
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: VariableExpr) {
         self.name = objectToCopy.name
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -298,16 +336,22 @@ class SubscriptExpr: Expr {
     var expression: Expr
     var index: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(expression: Expr, index: Expr, type: QsType?) {
+    init(expression: Expr, index: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
         self.index = index
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: SubscriptExpr) {
         self.expression = objectToCopy.expression
         self.index = objectToCopy.index
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -332,18 +376,24 @@ class CallExpr: Expr {
     var paren: Token
     var arguments: [Expr]
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(callee: Expr, paren: Token, arguments: [Expr], type: QsType?) {
+    init(callee: Expr, paren: Token, arguments: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.callee = callee
         self.paren = paren
         self.arguments = arguments
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: CallExpr) {
         self.callee = objectToCopy.callee
         self.paren = objectToCopy.paren
         self.arguments = objectToCopy.arguments
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -367,16 +417,22 @@ class GetExpr: Expr {
     var object: Expr
     var name: Token
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(object: Expr, name: Token, type: QsType?) {
+    init(object: Expr, name: Token, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.object = object
         self.name = name
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: GetExpr) {
         self.object = objectToCopy.object
         self.name = objectToCopy.name
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -400,16 +456,22 @@ class UnaryExpr: Expr {
     var opr: Token
     var right: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(opr: Token, right: Expr, type: QsType?) {
+    init(opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.opr = opr
         self.right = right
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: UnaryExpr) {
         self.opr = objectToCopy.opr
         self.right = objectToCopy.right
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -433,16 +495,22 @@ class CastExpr: Expr {
     var toType: AstType
     var value: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(toType: AstType, value: Expr, type: QsType?) {
+    init(toType: AstType, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.toType = toType
         self.value = value
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: CastExpr) {
         self.toType = objectToCopy.toType
         self.value = objectToCopy.value
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -466,16 +534,22 @@ class ArrayAllocationExpr: Expr {
     var contains: AstType
     var capacity: [Expr]
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(contains: AstType, capacity: [Expr], type: QsType?) {
+    init(contains: AstType, capacity: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.contains = contains
         self.capacity = capacity
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ArrayAllocationExpr) {
         self.contains = objectToCopy.contains
         self.capacity = objectToCopy.capacity
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -499,16 +573,22 @@ class ClassAllocationExpr: Expr {
     var classType: AstClassType
     var arguments: [Expr]
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(classType: AstClassType, arguments: [Expr], type: QsType?) {
+    init(classType: AstClassType, arguments: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
         self.arguments = arguments
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ClassAllocationExpr) {
         self.classType = objectToCopy.classType
         self.arguments = objectToCopy.arguments
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -533,18 +613,24 @@ class BinaryExpr: Expr {
     var opr: Token
     var right: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(left: Expr, opr: Token, right: Expr, type: QsType?) {
+    init(left: Expr, opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
         self.opr = opr
         self.right = right
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: BinaryExpr) {
         self.left = objectToCopy.left
         self.opr = objectToCopy.opr
         self.right = objectToCopy.right
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -569,18 +655,24 @@ class LogicalExpr: Expr {
     var opr: Token
     var right: Expr
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(left: Expr, opr: Token, right: Expr, type: QsType?) {
+    init(left: Expr, opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
         self.opr = opr
         self.right = right
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: LogicalExpr) {
         self.left = objectToCopy.left
         self.opr = objectToCopy.opr
         self.right = objectToCopy.right
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {
@@ -607,14 +699,18 @@ class SetExpr: Expr {
     var value: Expr
     var isFirstAssignment: Bool?
     var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(to: Expr, annotationColon: Token?, annotation: AstType?, value: Expr, isFirstAssignment: Bool?, type: QsType?) {
+    init(to: Expr, annotationColon: Token?, annotation: AstType?, value: Expr, isFirstAssignment: Bool?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.to = to
         self.annotationColon = annotationColon
         self.annotation = annotation
         self.value = value
         self.isFirstAssignment = isFirstAssignment
         self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: SetExpr) {
         self.to = objectToCopy.to
@@ -623,6 +719,8 @@ class SetExpr: Expr {
         self.value = objectToCopy.value
         self.isFirstAssignment = objectToCopy.isFirstAssignment
         self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: ExprVisitor) {

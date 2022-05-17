@@ -1,9 +1,13 @@
-class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
+class TypeChecker: ExprVisitor, StmtVisitor {
     private enum TypeCheckerError: Error {
         case error(String)
     }
     private func error(message: String, token: Token) -> TypeCheckerError {
         problems.append(.init(message: message, token: token))
+        return TypeCheckerError.error(message)
+    }
+    private func error(message: String, start: InterpreterLocation, end: InterpreterLocation) -> TypeCheckerError {
+        problems.append(.init(message: message, start: start, end: end))
         return TypeCheckerError.error(message)
     }
     private class ClassChain {
@@ -122,76 +126,97 @@ class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
     private var astClassTypeToId: [AstClassTypeWrapper : Int] = [:] // use this to map superclasses to their symbol table IDs
     private var symbolTable: [SymbolInfo] = []
     
-    internal func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType {
-        return try typeCheck(expr.expression)
+    internal func visitGroupingExpr(expr: GroupingExpr) {
+        typeCheck(expr.expression)
+        expr.type = expr.expression.type
     }
     
-    internal func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType {
+    internal func visitLiteralExpr(expr: LiteralExpr) {
         // already done
-        return expr.type ?? QsAnyType()
     }
     
-    internal func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType {
+    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         if expr.values.count == 0 {
-            return QsAnyType()
+            expr.type = QsAnyType()
+            return
         }
-        let inferredType = (catchErrorClosure {
-            try typeCheck(expr.values[0])
-        } ?? QsAnyType())
+        typeCheck(expr.values[0])
+        var inferredType = expr.values[0].type!
         for i in 1..<expr.values.count {
-            
+            typeCheck(expr.values[i])
+            inferredType = findCommonType(inferredType, expr.values[i].type!)
+        }
+        
+        expr.type = inferredType
+    }
+    
+    internal func visitThisExpr(expr: ThisExpr) {
+        // TODO
+        expr.type = QsAnyType()
+    }
+    
+    internal func visitSuperExpr(expr: SuperExpr) {
+        // TODO
+        expr.type = QsAnyType()
+    }
+    
+    internal func visitVariableExpr(expr: VariableExpr) {
+        if expr.symbolTableIndex == nil {
+            expr.type = QsAnyType()
+            return
+        }
+        guard let variableSymbolEntry = symbolTable[expr.symbolTableIndex!] as? VariableSymbolInfo else {
+            expr.type = QsAnyType()
+            return
+        }
+        if variableSymbolEntry.type == nil {
+            expr.type = QsAnyType()
+            return // this should only happen upon first assignment
+        }
+        expr.type = variableSymbolEntry.type!
+    }
+    
+    internal func visitSubscriptExpr(expr: SubscriptExpr) {
+        // alert: type check!
+        typeCheck(expr.index)
+        if !(expr.index.type! is QsAnyType || expr.index.type is QsInt) {
+            error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
         }
     }
     
-    internal func visitThisExprQsType(expr: ThisExpr) throws -> QsType {
+    internal func visitCallExpr(expr: CallExpr) {
         
     }
     
-    internal func visitSuperExprQsType(expr: SuperExpr) throws -> QsType {
+    internal func visitGetExpr(expr: GetExpr) {
         
     }
     
-    internal func visitVariableExprQsType(expr: VariableExpr) throws -> QsType {
+    internal func visitUnaryExpr(expr: UnaryExpr) {
         
     }
     
-    internal func visitSubscriptExprQsType(expr: SubscriptExpr) throws -> QsType {
+    internal func visitCastExpr(expr: CastExpr) {
         
     }
     
-    internal func visitCallExprQsType(expr: CallExpr) throws -> QsType {
+    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         
     }
     
-    internal func visitGetExprQsType(expr: GetExpr) throws -> QsType {
+    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         
     }
     
-    internal func visitUnaryExprQsType(expr: UnaryExpr) throws -> QsType {
+    internal func visitBinaryExpr(expr: BinaryExpr) {
         
     }
     
-    internal func visitCastExprQsType(expr: CastExpr) throws -> QsType {
+    internal func visitLogicalExpr(expr: LogicalExpr) {
         
     }
     
-    internal func visitArrayAllocationExprQsType(expr: ArrayAllocationExpr) throws -> QsType {
-        
-    }
-    
-    internal func visitClassAllocationExprQsType(expr: ClassAllocationExpr) throws -> QsType {
-        
-    }
-    
-    internal func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType {
-        
-    }
-    
-    internal func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType {
-        
-    }
-    
-    internal func visitSetExprQsType(expr: SetExpr) throws -> QsType {
+    internal func visitSetExpr(expr: SetExpr) {
         
     }
     
@@ -247,8 +272,8 @@ class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
         stmt.accept(visitor: self)
     }
     
-    private func typeCheck(_ expr: Expr) throws -> QsType {
-        try expr.accept(visitor: self)
+    private func typeCheck(_ expr: Expr) {
+        expr.accept(visitor: self)
     }
     
     private func buildClassHierarchy(statements: [Stmt]) {
@@ -267,7 +292,7 @@ class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
             let currentClassChain = ClassChain(upperClass: -1, depth: 1, classStmt: classStmt, parentOf: [])
             idToChain[classStmt.symbolTableIndex!] = currentClassChain
             
-            var classAstType = AstClassType(name: classStmt.name, templateArguments: classStmt.expandedTemplateParameters)
+            var classAstType = AstClassType(name: classStmt.name, templateArguments: classStmt.expandedTemplateParameters, startLocation: .init(start: classStmt.name), endLocation: .init(end: classStmt.name))
             astClassTypeToId[.init(val: classAstType)] = classStmt.symbolTableIndex!
             
             classIdCount = max(classIdCount, ((symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo)?.classId) ?? 0)
@@ -292,7 +317,7 @@ class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
                 classClusterer.unite(anyTypeClusterId, classSymbol.classId)
                 continue
             }
-            guard let inheritedClass = astClassTypeToId[.init(val: .init(name: .dummyToken(tokenType: .IDENTIFIER, lexeme: classStmt.superclass!.name.lexeme), templateArguments: classStmt.superclass!.templateArguments))] else {
+            guard let inheritedClass = astClassTypeToId[.init(val: .init(name: .dummyToken(tokenType: .IDENTIFIER, lexeme: classStmt.superclass!.name.lexeme), templateArguments: classStmt.superclass!.templateArguments, startLocation: .init(start: classStmt.superclass!.name), endLocation: .init(end: classStmt.superclass!.name)))] else {
                 assertionFailure("Inherited class not found")
                 continue
             }
@@ -305,12 +330,12 @@ class TypeChecker: ExprQsTypeThrowVisitor, StmtVisitor {
                 continue
             }
             
-            inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
             // check if the two classes are already related.
             if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
                 error(message: "'\(classStmt.name.lexeme)' inherits from itself", token: classStmt.name)
                 continue
             }
+            inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
             classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
             classChain.upperClass = inheritedClass
         }

@@ -278,7 +278,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 paramsName = paramsName+", "
             }
             let astPrinter = AstPrinter()
-            paramsName+=astPrinter.printAst(param.astType)
+            paramsName+=astPrinter.printAst(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
         }
         let functionSignature = "\(stmt.name.lexeme)(\(paramsName))"
         if let existingId = getOutermostScope()[functionSignature] {

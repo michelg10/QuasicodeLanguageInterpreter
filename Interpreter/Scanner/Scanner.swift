@@ -192,7 +192,7 @@ class Scanner {
                 advance()
                 addToken(type: .BANG_EQUAL)
             } else {
-                problems.append(.init(message: "Unexpected character \(c)", line: line, inlineLocation: .init(column: column, length: 1)))
+                problems.append(.init(message: "Unexpected character \(c)", start: .init(line: line, column: column), end: .init(line: line, column: column)))
             }
         }
     }
@@ -262,13 +262,13 @@ class Scanner {
     
     private func string() {
         let startingQuoteLine = line
-        let startingQuoteInlineLocation = InterpreterProblemInlineLocation.init(column: column-1, length: 1)
+        let startingQuoteLocation = InterpreterLocation.init(line: line, column: column-1)
         var value = ""
         while peek() != "\"" && !isAtEnd() {
             let c = advance()
             if c == "\\" {
                 if isAtEnd() {
-                    problems.append(.init(message: "Empty escape sequence", line: line, inlineLocation: .init(column: column-1, length: 1)))
+                    problems.append(.init(message: "Empty escape sequence", start: .init(line: line, column: column-1), end: .init(line: line, column: column-1)))
                     return
                 }
                 let next = advance()
@@ -288,7 +288,7 @@ class Scanner {
                     value += "\""
                 default:
                     // error!
-                    problems.append(.init(message: "Invalid escape sequence \"\\\(next)\"", line: line, inlineLocation: .init(column: column-1, length: 2)))
+                    problems.append(.init(message: "Invalid escape sequence \"\\\(next)\"", start: .init(line: line, column: column-2), end: .init(line: line, column: column-1)))
                 }
             } else {
                 value = value+String(c)
@@ -296,7 +296,7 @@ class Scanner {
         }
         
         if isAtEnd() {
-            problems.append(.init(message: "Unterminated string literal", line: startingQuoteLine, inlineLocation: startingQuoteInlineLocation))
+            problems.append(.init(message: "Unterminated string literal", start: startingQuoteLocation, end: startingQuoteLocation))
             return
         }
         

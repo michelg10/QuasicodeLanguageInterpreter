@@ -2,6 +2,8 @@ protocol AstType {
     func accept(visitor: AstTypeVisitor)
     func accept(visitor: AstTypeStringVisitor) -> String
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType
+    var startLocation: InterpreterLocation { get set }
+    var endLocation: InterpreterLocation { get set }
 }
 
 protocol AstTypeVisitor {
@@ -36,12 +38,18 @@ protocol AstTypeAstTypeThrowVisitor {
 
 class AstArrayType: AstType {
     var contains: AstType
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(contains: AstType) {
+    init(contains: AstType, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.contains = contains
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstArrayType) {
         self.contains = objectToCopy.contains
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -58,14 +66,20 @@ class AstArrayType: AstType {
 class AstClassType: AstType {
     var name: Token
     var templateArguments: [AstType]?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(name: Token, templateArguments: [AstType]?) {
+    init(name: Token, templateArguments: [AstType]?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.name = name
         self.templateArguments = templateArguments
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstClassType) {
         self.name = objectToCopy.name
         self.templateArguments = objectToCopy.templateArguments
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -82,14 +96,20 @@ class AstClassType: AstType {
 class AstTemplateTypeName: AstType {
     var belongingClass: String
     var name: Token
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init(belongingClass: String, name: Token) {
+    init(belongingClass: String, name: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.belongingClass = belongingClass
         self.name = name
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstTemplateTypeName) {
         self.belongingClass = objectToCopy.belongingClass
         self.name = objectToCopy.name
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -104,10 +124,16 @@ class AstTemplateTypeName: AstType {
 }
 
 class AstIntType: AstType {
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init() {
+    init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstIntType) {
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -122,10 +148,16 @@ class AstIntType: AstType {
 }
 
 class AstDoubleType: AstType {
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init() {
+    init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstDoubleType) {
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -140,10 +172,16 @@ class AstDoubleType: AstType {
 }
 
 class AstBooleanType: AstType {
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init() {
+    init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstBooleanType) {
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {
@@ -158,10 +196,16 @@ class AstBooleanType: AstType {
 }
 
 class AstAnyType: AstType {
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
     
-    init() {
+    init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: AstAnyType) {
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     func accept(visitor: AstTypeVisitor) {

@@ -132,10 +132,10 @@ class FunctionStmt: Stmt {
     var name: Token
     var symbolTableIndex: Int?
     var params: [FunctionParam]
-    var annotation: AstType
+    var annotation: AstType?
     var body: [Stmt]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, params: [FunctionParam], annotation: AstType, body: [Stmt]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex

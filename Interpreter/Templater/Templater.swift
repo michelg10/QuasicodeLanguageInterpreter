@@ -49,9 +49,9 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         for field in fields {
             var newField = field
             if field.astType != nil {
-                newField.astType = (catchErrorClosure {
-                    try expandClasses(field.astType)
-                } ?? AstAnyType())
+                newField.astType = catchErrorClosure {
+                    try expandClasses(field.astType!)
+                }
             }
             
             if field.initializer != nil {
@@ -111,7 +111,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitAstArrayTypeAstType(asttype: AstArrayType) throws -> AstType {
-        return try AstArrayType(contains: expandClasses(asttype.contains))
+        return try AstArrayType(contains: expandClasses(asttype.contains), startLocation: asttype.startLocation, endLocation: asttype.endLocation)
     }
     
     func visitAstClassTypeAstType(asttype: AstClassType) throws -> AstType {
@@ -123,7 +123,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         let belongingClassTemplateParameterCount = belongingClass.templateParameters?.count ?? 0
         let givenArguments = asttype.templateArguments?.count ?? 0
         if belongingClassTemplateParameterCount != givenArguments {
-            throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", token: asttype.name)
+            throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", start: asttype.startLocation, end: asttype.endLocation) // underline the entire ast class
         }
         
         let templateArguments = asttype.templateArguments ?? []
@@ -154,7 +154,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             }
         }
         
-        return AstClassType(name: asttype.name, templateArguments: computedTemplateArguments)
+        return AstClassType(name: asttype.name, templateArguments: computedTemplateArguments, startLocation: asttype.startLocation, endLocation: asttype.endLocation)
     }
     
     func visitAstTemplateTypeNameAstType(asttype: AstTemplateTypeName) -> AstType {
@@ -173,19 +173,19 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitAstIntTypeAstType(asttype: AstIntType) -> AstType {
-        return AstIntType()
+        return asttype
     }
     
     func visitAstDoubleTypeAstType(asttype: AstDoubleType) -> AstType {
-        return AstDoubleType()
+        return asttype
     }
     
     func visitAstBooleanTypeAstType(asttype: AstBooleanType) -> AstType {
-        return AstBooleanType()
+        return asttype
     }
     
     func visitAstAnyTypeAstType(asttype: AstAnyType) -> AstType {
-        return AstAnyType()
+        return asttype
     }
     
     func visitClassStmtStmt(stmt: ClassStmt) -> Stmt {
@@ -201,18 +201,22 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     
     func visitFunctionStmtStmt(stmt: FunctionStmt) -> Stmt {
         let result = FunctionStmt.init(stmt)
-        result.annotation = (catchErrorClosure {
-            try expandClasses(stmt.annotation)
-        } ?? AstAnyType())
+        if stmt.annotation != nil {
+            result.annotation = catchErrorClosure {
+                try expandClasses(stmt.annotation!)
+            }
+        }
         
         result.params = []
         result.params.reserveCapacity(stmt.params.count)
         
         for param in stmt.params {
-            var newParam = FunctionParam.init(name: param.name, astType: AstAnyType())
-            newParam.astType = (catchErrorClosure {
-                try expandClasses(param.astType)
-            } ?? AstAnyType())
+            var newParam = FunctionParam.init(name: param.name, astType: nil)
+            if param.astType != nil {
+                newParam.astType = catchErrorClosure {
+                    try expandClasses(param.astType!)
+                }
+            }
             if param.initializer != nil {
                 newParam.initializer = catchErrorClosure {
                     try expandClasses(param.initializer!)
@@ -497,6 +501,11 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     
     private func error(message: String, token: Token) -> TemplaterError {
         problems.append(.init(message: message, token: token))
+        return TemplaterError.error(message)
+    }
+    
+    private func error(message: String, start: InterpreterLocation, end: InterpreterLocation) -> TemplaterError {
+        problems.append(.init(message: message, start: start, end: end))
         return TemplaterError.error(message)
     }
 }

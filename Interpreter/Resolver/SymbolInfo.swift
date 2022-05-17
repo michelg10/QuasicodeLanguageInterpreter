@@ -11,7 +11,14 @@ enum SymbolType {
     case Variable, Function, Class
 }
 
-struct VariableSymbolInfo: SymbolInfo {
+class VariableSymbolInfo: SymbolInfo {
+    init(id: Int, type: QsType? = nil, name: String, symbolLocation: SymbolLocation) {
+        self.id = id
+        self.type = type
+        self.name = name
+        self.symbolLocation = symbolLocation
+    }
+    
     var id: Int
     var type: QsType?
     var name: String
