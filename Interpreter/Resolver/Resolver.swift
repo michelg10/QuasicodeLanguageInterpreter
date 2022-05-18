@@ -88,6 +88,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    internal func visitStaticClassExpr(expr: StaticClassExpr) throws {
+        // nothing
+    }
+    
     internal func visitThisExpr(expr: ThisExpr) throws {
         if currentClassStatus == nil {
             throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
@@ -105,10 +109,25 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) {
-        catchErrorClosure {
-            (expr.symbolTableIndex, _) = try defineOrGetVariable(name: expr.name, allowShadowing: false)
+    private func defineIdentifierAsVariableOrGet(expr: VariableExpr) -> Bool {
+        // returns whether or not something has been newly defined
+        
+        // check if its a function or a class
+        if let index = getSymbolIndex(name: expr.name.lexeme) {
+            if symbolTable[index] is FunctionNameSymbolInfo || symbolTable[index] is ClassSymbolInfo {
+                expr.symbolTableIndex = index
+                return false
+            }
         }
+        var returnValue: Bool = false
+        catchErrorClosure {
+            (expr.symbolTableIndex, returnValue) = try defineOrGetVariable(name: expr.name, allowShadowing: false)
+        }
+        return returnValue
+    }
+    
+    internal func visitVariableExpr(expr: VariableExpr) {
+        defineIdentifierAsVariableOrGet(expr: expr)
     }
     
     internal func visitSubscriptExpr(expr: SubscriptExpr) throws {
@@ -163,7 +182,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             let assignedVariable = expr.to as! VariableExpr
             
             do {
-                (assignedVariable.symbolTableIndex, expr.isFirstAssignment) = try defineOrGetVariable(name: assignedVariable.name, allowShadowing: false)
+                expr.isFirstAssignment = defineIdentifierAsVariableOrGet(expr: assignedVariable)
                 
                 if !expr.isFirstAssignment! && expr.annotation != nil {
                     problems.append(.init(message: "Cannot retype variable after first assignment", token: expr.annotationColon!))
@@ -174,6 +193,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         } else {
             try resolve(expr.to)
         }
+        try resolve(expr.value)
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
@@ -188,7 +208,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let currentClassName = stmt.name.lexeme
         scopes.append(classScope)
         do {
-            (stmt.thisSymbolTableIndex, _) = try defineOrGetVariable(name: .init(tokenType: .THIS, lexeme: "this", line: -1, column: -1), allowShadowing: true)
+            (stmt.thisSymbolTableIndex, _) = try defineOrGetVariable(name: .init(tokenType: .THIS, lexeme: "this", start: .dub(), end: .dub()), allowShadowing: true)
         } catch {
             assertionFailure("Failure while defining 'this'")
         }
@@ -268,10 +288,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func defineFunction(stmt: FunctionStmt) throws -> Int {
-        if let existingId = getOutermostScope()[stmt.name.lexeme] {
-            throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
-        }
-        
         var paramsName = ""
         for param in stmt.params {
             if paramsName != "" {
@@ -281,11 +297,17 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             paramsName+=astPrinter.printAst(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
         }
         let functionSignature = "\(stmt.name.lexeme)(\(paramsName))"
-        if let existingId = getOutermostScope()[functionSignature] {
+        if getOutermostScope()[functionSignature] != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = addToSymbolTableAtScope(symbol: FunctionSymbolInfo(id: -1, name: functionSignature))
+        let symbolTableIndex = addToSymbolTableAtScope(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt))
+        if let existingNameId = getOutermostScope()[stmt.name.lexeme] {
+            stmt.nameSymbolTableIndex = existingNameId
+            (symbolTable[existingNameId] as! FunctionNameSymbolInfo).belongingFunctions.append(symbolTableIndex)
+        } else {
+            stmt.nameSymbolTableIndex = addToSymbolTableAtScope(symbol: FunctionNameSymbolInfo(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
+        }
         stmt.symbolTableIndex = symbolTableIndex
         
         return symbolTableIndex

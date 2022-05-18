@@ -120,6 +120,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "ArrayLiteral", exprs: expr.values)
     }
     
+    internal func visitStaticClassExprString(expr: StaticClassExpr) -> String {
+        return parenthesize(name: "StaticClass{\(printAst(expr.classType)) \(expr.property.lexeme)}")
+    }
+    
     internal func visitSuperExprString(expr: SuperExpr) -> String {
         return parenthesize(name: "super.\(expr.property.lexeme)")
     }
@@ -224,7 +228,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
+        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {

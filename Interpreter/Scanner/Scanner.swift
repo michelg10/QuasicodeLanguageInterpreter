@@ -3,9 +3,9 @@ class Scanner {
     private var tokens: [Token] = []
     private var problems: [InterpreterProblem] = []
     private var start: String.Index
+    private var startLocation = InterpreterLocation.init(line: 1, column: 1)
     private var current: String.Index
-    private var line = 1
-    private var column = 1
+    private var currentLocation = InterpreterLocation.init(line: 1, column: 1)
     
     func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ s: String.SubSequence) -> String.SubSequence {
         if s.count == 0 {
@@ -104,11 +104,12 @@ class Scanner {
     func scanTokens() -> ([Token], [InterpreterProblem]) {
         while !isAtEnd() {
             start = current
+            startLocation = currentLocation
             scanToken()
         }
         
-        tokens.append(.init(tokenType: .EOL, lexeme: "", line: line, column: 0))
-        tokens.append(.init(tokenType: .EOF, lexeme: "", line: line, column: 0))
+        tokens.append(.init(tokenType: .EOL, lexeme: "", start: .init(line: currentLocation.line, column: 0), end: .init(line: currentLocation.line, column: 0)))
+        tokens.append(.init(tokenType: .EOF, lexeme: "", start: .init(line: currentLocation.line, column: 0), end: .init(line: currentLocation.line, column: 0)))
         return (tokens, problems)
     }
     
@@ -192,7 +193,7 @@ class Scanner {
                 advance()
                 addToken(type: .BANG_EQUAL)
             } else {
-                problems.append(.init(message: "Unexpected character \(c)", start: .init(line: line, column: column), end: .init(line: line, column: column)))
+                problems.append(.init(message: "Unexpected character \(c)", start: currentLocation, end: currentLocation))
             }
         }
     }
@@ -261,14 +262,13 @@ class Scanner {
     }
     
     private func string() {
-        let startingQuoteLine = line
-        let startingQuoteLocation = InterpreterLocation.init(line: line, column: column-1)
+        let startingQuoteLocation = InterpreterLocation.init(line: currentLocation.line, column: currentLocation.column-1)
         var value = ""
         while peek() != "\"" && !isAtEnd() {
             let c = advance()
             if c == "\\" {
                 if isAtEnd() {
-                    problems.append(.init(message: "Empty escape sequence", start: .init(line: line, column: column-1), end: .init(line: line, column: column-1)))
+                    problems.append(.init(message: "Empty escape sequence", start: .init(line: currentLocation.line, column: currentLocation.column-1), end: .init(line: currentLocation.line, column: currentLocation.column-1)))
                     return
                 }
                 let next = advance()
@@ -288,7 +288,7 @@ class Scanner {
                     value += "\""
                 default:
                     // error!
-                    problems.append(.init(message: "Invalid escape sequence \"\\\(next)\"", start: .init(line: line, column: column-2), end: .init(line: line, column: column-1)))
+                    problems.append(.init(message: "Invalid escape sequence \"\\\(next)\"", start: .init(line: currentLocation.line, column: currentLocation.column-2), end: .init(line: currentLocation.line, column: currentLocation.column-1)))
                 }
             } else {
                 value = value+String(c)
@@ -386,10 +386,10 @@ class Scanner {
         
         if !isAtEnd() {
             if value == "\n" {
-                line += 1
-                column = 1
+                currentLocation.line += 1
+                currentLocation.column = 1
             } else {
-                column+=1
+                currentLocation.column+=1 
             }
         }
         
@@ -398,6 +398,6 @@ class Scanner {
     
     private func addToken(type: TokenType, value: Any? = nil) {
         let lexeme: String = String(source[start..<current])
-        tokens.append(.init(tokenType: type, lexeme: lexeme, line: (line - (type == .EOL ? 1 : 0)), column: column, value: value))
+        tokens.append(.init(tokenType: type, lexeme: lexeme, start: startLocation, end: .init(line: currentLocation.line - (type == .EOL ? 1 : 0), column: currentLocation.column), value: value))
     }
 }

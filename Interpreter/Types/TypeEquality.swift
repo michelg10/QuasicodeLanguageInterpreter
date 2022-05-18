@@ -25,6 +25,16 @@ func typesIsEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
     if lhs is QsClass {
         if rhs is QsClass {
             return (lhs as! QsClass).id == (rhs as! QsClass).id
+        } else {
+            return false
+        }
+    }
+    
+    if lhs is QsFunction {
+        if rhs is QsFunction {
+            return (lhs as! QsFunction).nameId == (rhs as! QsClass).id
+        } else {
+            return false
         }
     }
     

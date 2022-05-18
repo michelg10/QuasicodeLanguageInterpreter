@@ -10,12 +10,12 @@ struct InterpreterLocation {
         self.column = column
     }
     init(start: Token) {
-        line = start.line
-        column = start.column
+        line = start.startLocation.line
+        column = start.startLocation.column
     }
     init(end: Token) {
-        line = end.line
-        column = end.column + end.lexeme.count-1
+        line = end.endLocation.line
+        column = end.endLocation.column
     }
     static func dub() -> InterpreterLocation {
         return .init(line: -1, column: -1)
@@ -35,7 +35,7 @@ struct InterpreterProblem {
     
     init(message: String, token: Token) {
         self.message = message
-        self.startLocation = .init(line: token.line, column: token.column)
-        self.endLocation = .init(line: token.line, column: token.column+token.lexeme.count-1)
+        self.startLocation = token.startLocation
+        self.endLocation = token.endLocation
     }
 }

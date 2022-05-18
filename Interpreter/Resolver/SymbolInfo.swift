@@ -24,13 +24,38 @@ class VariableSymbolInfo: SymbolInfo {
     var name: String
     var symbolLocation: SymbolLocation
 }
-struct FunctionSymbolInfo: SymbolInfo {
+class FunctionNameSymbolInfo: SymbolInfo {
+    init(id: Int, name: String, belongingFunctions: [Int]) {
+        self.id = id
+        self.name = name
+        self.belongingFunctions = belongingFunctions
+    }
+    
     // multiple overrided functions are under the same signature
     var id: Int
     var name: String
+    var belongingFunctions: [Int]
 }
-
-struct ClassSymbolInfo: SymbolInfo {
+class FunctionSymbolInfo: SymbolInfo {
+    init(id: Int, name: String, parameters: [QsType], functionStmt: FunctionStmt) {
+        self.id = id
+        self.name = name
+        self.parameters = parameters
+        self.functionStmt = functionStmt
+    }
+    
+    var id: Int
+    var name: String
+    var parameters: [QsType]
+    var functionStmt: FunctionStmt
+}
+class ClassSymbolInfo: SymbolInfo {
+    init(id: Int, name: String, classId: Int) {
+        self.id = id
+        self.name = name
+        self.classId = classId
+    }
+    
     var id: Int
     var name: String
     var classId: Int

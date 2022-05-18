@@ -1,4 +1,4 @@
-class TypeChecker: ExprVisitor, StmtVisitor {
+class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private enum TypeCheckerError: Error {
         case error(String)
     }
@@ -126,6 +126,34 @@ class TypeChecker: ExprVisitor, StmtVisitor {
     private var astClassTypeToId: [AstClassTypeWrapper : Int] = [:] // use this to map superclasses to their symbol table IDs
     private var symbolTable: [SymbolInfo] = []
     
+    func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
+        <#code#>
+    }
+    
+    func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
+        <#code#>
+    }
+    
     internal func visitGroupingExpr(expr: GroupingExpr) {
         typeCheck(expr.expression)
         expr.type = expr.expression.type
@@ -150,6 +178,11 @@ class TypeChecker: ExprVisitor, StmtVisitor {
         expr.type = inferredType
     }
     
+    func visitStaticClassExpr(expr: StaticClassExpr) {
+        // TODO
+        expr.type = QsAnyType()
+    }
+    
     internal func visitThisExpr(expr: ThisExpr) {
         // TODO
         expr.type = QsAnyType()
@@ -161,31 +194,62 @@ class TypeChecker: ExprVisitor, StmtVisitor {
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
+        // first of all, check if its
         if expr.symbolTableIndex == nil {
             expr.type = QsAnyType()
             return
         }
-        guard let variableSymbolEntry = symbolTable[expr.symbolTableIndex!] as? VariableSymbolInfo else {
-            expr.type = QsAnyType()
-            return
+        
+        let symbolEntry = symbolTable[expr.symbolTableIndex!]
+        switch type(of: symbolEntry) {
+        case is VariableSymbolInfo:
+            if (symbolEntry as! VariableSymbolInfo).type == nil {
+                expr.type = QsAnyType()
+            } else {
+                expr.type = (symbolEntry as! VariableSymbolInfo).type!
+            }
+        case is FunctionNameSymbolInfo:
+            expr.type = QsFunction(nameId: (symbolEntry as! FunctionNameSymbolInfo).id)
+        default:
+            assertionFailure("Symbol entry for variable expression must be of type Variable or Function!")
         }
-        if variableSymbolEntry.type == nil {
-            expr.type = QsAnyType()
-            return // this should only happen upon first assignment
-        }
-        expr.type = variableSymbolEntry.type!
     }
     
     internal func visitSubscriptExpr(expr: SubscriptExpr) {
-        // alert: type check!
+        // the index and the expression must both be indexable
         typeCheck(expr.index)
-        if !(expr.index.type! is QsAnyType || expr.index.type is QsInt) {
+        if !(expr.index.type is QsAnyType || expr.index.type is QsInt) {
+            expr.type = QsAnyType()
             error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
+            return
         }
+        typeCheck(expr.expression)
+        if expr.expression.type is QsAnyType {
+            expr.type = QsAnyType()
+            return
+        }
+        // expression must be of type array
+        if let expressionArray = expr.expression.type as? QsArray {
+            expr.type = expressionArray.contains
+            return
+        }
+        // if the expression is neither an any or an array
+        error(message: "Subscripted expression is not an array", start: expr.startLocation, end: expr.endLocation)
+        expr.type = QsAnyType() // fallback
+        return
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        
+        typeCheck(expr.callee)
+        for argument in expr.arguments {
+            typeCheck(argument)
+        }
+        if expr.callee.type! is QsFunction {
+            // TODO: resolve function calls
+            
+        }
+        expr.type = QsAnyType() // fall back to the any type
+        return
     }
     
     internal func visitGetExpr(expr: GetExpr) {
@@ -261,11 +325,11 @@ class TypeChecker: ExprVisitor, StmtVisitor {
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) {
-        
+        // nothing to do
     }
     
     internal func visitContinueStmt(stmt: ContinueStmt) {
-        
+        // nothing to do
     }
     
     private func typeCheck(_ stmt: Stmt) {
@@ -298,7 +362,7 @@ class TypeChecker: ExprVisitor, StmtVisitor {
             classIdCount = max(classIdCount, ((symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo)?.classId) ?? 0)
         }
         
-        let classClusterer = UnionFind(size: classIdCount+1)
+        let classClusterer = UnionFind(size: classIdCount+1+1)
         let anyTypeClusterId = classIdCount+1
         // fill in the class chains
         for classStmt in classStmts {

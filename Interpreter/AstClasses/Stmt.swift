@@ -131,14 +131,16 @@ class FunctionStmt: Stmt {
     var keyword: Token
     var name: Token
     var symbolTableIndex: Int?
+    var nameSymbolTableIndex: Int?
     var params: [FunctionParam]
     var annotation: AstType?
     var body: [Stmt]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
+        self.nameSymbolTableIndex = nameSymbolTableIndex
         self.params = params
         self.annotation = annotation
         self.body = body
@@ -147,6 +149,7 @@ class FunctionStmt: Stmt {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
         self.symbolTableIndex = objectToCopy.symbolTableIndex
+        self.nameSymbolTableIndex = objectToCopy.nameSymbolTableIndex
         self.params = objectToCopy.params
         self.annotation = objectToCopy.annotation
         self.body = objectToCopy.body

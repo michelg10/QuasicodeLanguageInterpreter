@@ -13,6 +13,7 @@ protocol ExprVisitor {
     func visitGroupingExpr(expr: GroupingExpr) 
     func visitLiteralExpr(expr: LiteralExpr) 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) 
+    func visitStaticClassExpr(expr: StaticClassExpr) 
     func visitThisExpr(expr: ThisExpr) 
     func visitSuperExpr(expr: SuperExpr) 
     func visitVariableExpr(expr: VariableExpr) 
@@ -32,6 +33,7 @@ protocol ExprThrowVisitor {
     func visitGroupingExpr(expr: GroupingExpr) throws 
     func visitLiteralExpr(expr: LiteralExpr) throws 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws 
+    func visitStaticClassExpr(expr: StaticClassExpr) throws 
     func visitThisExpr(expr: ThisExpr) throws 
     func visitSuperExpr(expr: SuperExpr) throws 
     func visitVariableExpr(expr: VariableExpr) throws 
@@ -51,6 +53,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType
     func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType
     func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType
+    func visitStaticClassExprQsType(expr: StaticClassExpr) throws -> QsType
     func visitThisExprQsType(expr: ThisExpr) throws -> QsType
     func visitSuperExprQsType(expr: SuperExpr) throws -> QsType
     func visitVariableExprQsType(expr: VariableExpr) throws -> QsType
@@ -70,6 +73,7 @@ protocol ExprExprThrowVisitor {
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr
     func visitLiteralExprExpr(expr: LiteralExpr) throws -> Expr
     func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr
+    func visitStaticClassExprExpr(expr: StaticClassExpr) throws -> Expr
     func visitThisExprExpr(expr: ThisExpr) throws -> Expr
     func visitSuperExprExpr(expr: SuperExpr) throws -> Expr
     func visitVariableExprExpr(expr: VariableExpr) throws -> Expr
@@ -89,6 +93,7 @@ protocol ExprStringVisitor {
     func visitGroupingExprString(expr: GroupingExpr) -> String
     func visitLiteralExprString(expr: LiteralExpr) -> String
     func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String
+    func visitStaticClassExprString(expr: StaticClassExpr) -> String
     func visitThisExprString(expr: ThisExpr) -> String
     func visitSuperExprString(expr: SuperExpr) -> String
     func visitVariableExprString(expr: VariableExpr) -> String
@@ -209,6 +214,45 @@ class ArrayLiteralExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayLiteralExprString(expr: self)
+    }
+}
+
+class StaticClassExpr: Expr {
+    var classType: AstClassType
+    var property: Token
+    var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
+    
+    init(classType: AstClassType, property: Token, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.classType = classType
+        self.property = property
+        self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
+    }
+    init(_ objectToCopy: StaticClassExpr) {
+        self.classType = objectToCopy.classType
+        self.property = objectToCopy.property
+        self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitStaticClassExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitStaticClassExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitStaticClassExprQsType(expr: self)
+    }
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitStaticClassExprExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitStaticClassExprString(expr: self)
     }
 }
 

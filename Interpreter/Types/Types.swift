@@ -16,6 +16,14 @@ class QsDouble: QsNativeType {}
 
 class QsBoolean: QsNativeType {}
 
+class QsFunction: QsType {
+    let nameId: Int
+    
+    init(nameId: Int) {
+        self.nameId = nameId
+    }
+}
+
 class QsAnyType: QsType {}
 
 class QsClass: QsType {

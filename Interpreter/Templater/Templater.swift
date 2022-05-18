@@ -322,6 +322,12 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return result
     }
     
+    func visitStaticClassExprExpr(expr: StaticClassExpr) throws -> Expr {
+        let result = StaticClassExpr.init(expr)
+        result.classType = try expandClasses(expr.classType) as! AstClassType
+        return result
+    }
+    
     func visitThisExprExpr(expr: ThisExpr) -> Expr {
         return expr
     }

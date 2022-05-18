@@ -2,6 +2,7 @@ protocol AstType {
     func accept(visitor: AstTypeVisitor)
     func accept(visitor: AstTypeStringVisitor) -> String
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType
     var startLocation: InterpreterLocation { get set }
     var endLocation: InterpreterLocation { get set }
 }
@@ -36,6 +37,16 @@ protocol AstTypeAstTypeThrowVisitor {
     func visitAstAnyTypeAstType(asttype: AstAnyType) throws -> AstType
 }
 
+protocol AstTypeQsTypeVisitor {
+    func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType
+    func visitAstClassTypeQsType(asttype: AstClassType) -> QsType
+    func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType
+    func visitAstIntTypeQsType(asttype: AstIntType) -> QsType
+    func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType
+    func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType
+    func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType
+}
+
 class AstArrayType: AstType {
     var contains: AstType
     var startLocation: InterpreterLocation
@@ -60,6 +71,9 @@ class AstArrayType: AstType {
     }
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstArrayTypeAstType(asttype: self)
+    }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstArrayTypeQsType(asttype: self)
     }
 }
 
@@ -91,6 +105,9 @@ class AstClassType: AstType {
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstClassTypeAstType(asttype: self)
     }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstClassTypeQsType(asttype: self)
+    }
 }
 
 class AstTemplateTypeName: AstType {
@@ -121,6 +138,9 @@ class AstTemplateTypeName: AstType {
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstTemplateTypeNameAstType(asttype: self)
     }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstTemplateTypeNameQsType(asttype: self)
+    }
 }
 
 class AstIntType: AstType {
@@ -144,6 +164,9 @@ class AstIntType: AstType {
     }
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstIntTypeAstType(asttype: self)
+    }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstIntTypeQsType(asttype: self)
     }
 }
 
@@ -169,6 +192,9 @@ class AstDoubleType: AstType {
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstDoubleTypeAstType(asttype: self)
     }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstDoubleTypeQsType(asttype: self)
+    }
 }
 
 class AstBooleanType: AstType {
@@ -193,6 +219,9 @@ class AstBooleanType: AstType {
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstBooleanTypeAstType(asttype: self)
     }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstBooleanTypeQsType(asttype: self)
+    }
 }
 
 class AstAnyType: AstType {
@@ -216,6 +245,9 @@ class AstAnyType: AstType {
     }
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstAnyTypeAstType(asttype: self)
+    }
+    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+        visitor.visitAstAnyTypeQsType(asttype: self)
     }
 }
 

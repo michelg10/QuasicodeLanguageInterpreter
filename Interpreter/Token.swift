@@ -1,19 +1,19 @@
 struct Token {
     let tokenType: TokenType
     let lexeme: String
-    let line: Int
-    let column: Int
+    let startLocation: InterpreterLocation
+    let endLocation: InterpreterLocation
     let value: Any?
     
     static func dummyToken(tokenType: TokenType, lexeme: String) -> Token {
-        return .init(tokenType: tokenType, lexeme: lexeme, line: -1, column: -1)
+        return .init(tokenType: tokenType, lexeme: lexeme, start: .dub(), end: .dub())
     }
     
-    init(tokenType: TokenType, lexeme: String, line: Int, column: Int, value: Any? = nil) {
+    init(tokenType: TokenType, lexeme: String, start: InterpreterLocation, end: InterpreterLocation, value: Any? = nil) {
         self.tokenType = tokenType
         self.lexeme = lexeme
-        self.line = line
-        self.column = column
+        self.startLocation = start
+        self.endLocation = end
         self.value = value
     }
 }

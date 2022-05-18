@@ -226,7 +226,7 @@ class Parser {
         try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
-        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, params: parameters, annotation: functionType, body: body)
+        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, nameSymbolTableIndex: nil, params: parameters, annotation: functionType, body: body)
     }
     
     private func statement() throws -> Stmt {
@@ -269,7 +269,7 @@ class Parser {
         let whileOrUntil = previous()
         var condition = try expression()
         if whileOrUntil.tokenType == .UNTIL {
-            let untilAsUnaryNotOpr = Token.init(tokenType: .NOT, lexeme: whileOrUntil.lexeme, line: whileOrUntil.line, column: whileOrUntil.column, value: whileOrUntil.value)
+            let untilAsUnaryNotOpr = Token.init(tokenType: .NOT, lexeme: whileOrUntil.lexeme, start: .init(start: whileOrUntil), end: .init(end: whileOrUntil), value: whileOrUntil.value)
             condition = UnaryExpr(opr: untilAsUnaryNotOpr, right: condition, type: nil, startLocation: .init(start: whileOrUntil), endLocation: .init(end: whileOrUntil))
         }
         let statements = block(additionalEndMarkers: [])
@@ -346,7 +346,7 @@ class Parser {
                 statements.append(toInsert)
             }
         }
-        isInGlobalScope = false
+        isInGlobalScope = previousIsInGlobalScope
         return statements
     }
     
@@ -602,10 +602,18 @@ class Parser {
             return LiteralExpr(value: previous().value, type: QsDouble(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .STRING) {
-            // TODO: this
+            // TODO: define the string class
             return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
+        let statePrior = current
         if match(types: .IDENTIFIER) {
+            if tokenToAstType(previous()) is AstClassType {
+                current = statePrior
+                let classSignature = try typeSignature(matchArray: false)
+                try consume(type: .DOT, message: "Expected member name or constructor call after type name")
+                let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
+                return StaticClassExpr(classType: classSignature as! AstClassType, property: property, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
+            }
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .LEFT_BRACE) {
@@ -613,8 +621,8 @@ class Parser {
         }
         if match(types: .SUPER) {
             let keyword = previous()
-            try consume(type: .DOT, message: "Expect '.' after 'super'.")
-            let property = try consume(type: .IDENTIFIER, message: "Expect superclass method name or field")
+            try consume(type: .DOT, message: "Expected '.' after 'super'.")
+            let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
             return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
         }
         if match(types: .LEFT_PAREN) {
