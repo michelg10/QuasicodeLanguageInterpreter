@@ -125,33 +125,39 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var idToChain: [Int : ClassChain] = [:] // their symbol table IDs
     private var astClassTypeToId: [AstClassTypeWrapper : Int] = [:] // use this to map superclasses to their symbol table IDs
     private var symbolTable: [SymbolInfo] = []
+//    private var functionNamesToId: [String : Int] = [:] // maps function names to symbol table IDs
     
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
-        <#code#>
+        return QsArray(contains: typeCheck(asttype.contains))
     }
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
-        <#code#>
+        guard let symbolTableId = astClassTypeToId[.init(val: asttype)] else {
+            return QsAnyType()
+        }
+        return QsClass(name: asttype.name.lexeme, id: symbolTableId)
     }
     
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
-        <#code#>
+        // shouldn't happen
+        assertionFailure("AstTemplateType shouldn't exist in visited")
+        return QsAnyType()
     }
     
     func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
-        <#code#>
+        return QsInt()
     }
     
     func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
-        <#code#>
+        return QsDouble()
     }
     
     func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
-        <#code#>
+        return QsDouble()
     }
     
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
-        <#code#>
+        return QsAnyType()
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {
@@ -245,10 +251,75 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             typeCheck(argument)
         }
         if expr.callee.type! is QsFunction {
-            // TODO: resolve function calls
+            // Resolve function calls
+            guard let functionNameSymbolEntry = symbolTable[(expr.callee.type! as! QsFunction).nameId] as? FunctionNameSymbolInfo else {
+                assertionFailure("Symbol at index is not a function name symbol")
+                expr.type = QsAnyType()
+                return
+            }
+            // Resolve based on a "match level": the lower the level, the greater it is
+            var bestMatches: [Int] = []
+            var bestMatchLevel = Int.max
+            let belongingFunctions = functionNameSymbolEntry.belongingFunctions;
+            for belongingFunction in belongingFunctions {
+                guard let functionSymbolEntry = symbolTable[belongingFunction] as? FunctionSymbolInfo else {
+                    assertionFailure("Symbol at index is not a function symbol")
+                    expr.type = QsAnyType()
+                    return
+                }
+                if functionSymbolEntry.parameters.count != expr.arguments.count {
+                    continue
+                }
+                // determine match level between the functions
+                var matchLevel = 1
+                for i in 0..<expr.arguments.count {
+                    let givenType = expr.arguments[i].type!
+                    let expectedType = functionSymbolEntry.parameters[i]
+                    if typesIsEqual(givenType, expectedType) {
+                        matchLevel = max(matchLevel, 1)
+                        continue
+                    }
+                    let commonType = findCommonType(givenType, expectedType)
+                    if typesIsEqual(commonType, expectedType) {
+                        if expectedType is QsAnyType {
+                            // the given type is being casted to an any
+                            matchLevel = max(matchLevel, 3)
+                        } else {
+                            matchLevel = max(matchLevel, 2)
+                        }
+                    } else {
+                        matchLevel = Int.max
+                        break
+                    }
+                }
+                if matchLevel < bestMatchLevel {
+                    bestMatchLevel = matchLevel
+                    bestMatches = [belongingFunction]
+                } else if matchLevel == bestMatchLevel {
+                    bestMatches.append(belongingFunction)
+                }
+                
+            }
+            // TODO: Support polymorphism: prevent different return types for overrided functions
+            // TODO: Make it a compilation error for polymorphic functions to return different return types
+            // TODO: What about initializers? Prevent these from being called
+            // TODO: Assignable
+            // TODO: Default parameters
+            if bestMatchLevel == Int.max || bestMatches.count == 0 {
+                error(message: "No matching function to call", start: expr.startLocation, end: expr.endLocation)
+                expr.type = QsAnyType() // fallback
+                return
+            }
+            if bestMatches.count>1 {
+                error(message: "Function call is ambiguous", start: expr.startLocation, end: expr.endLocation)
+                expr.type = QsAnyType()
+                return
+            }
+            
+            print("Resolved with function \(bestMatches[0])")
             
         }
-        expr.type = QsAnyType() // fall back to the any type
+        expr.type = QsAnyType() // fallback to the any type
         return
     }
     
@@ -340,6 +411,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.accept(visitor: self)
     }
     
+    private func typeCheck(_ type: AstType) -> QsType {
+        return type.accept(visitor: self)
+    }
+    
     private func buildClassHierarchy(statements: [Stmt]) {
         var classStmts: [ClassStmt] = []
         for statement in statements {
@@ -429,11 +504,36 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+//    private func logFunctionNamesToId(statements: [Stmt]) {
+//        for statement in statements {
+//            if statement is FunctionStmt {
+//                functionNamesToId[(statement as! FunctionStmt).name.lexeme] = (statement as! FunctionStmt).nameSymbolTableIndex
+//            }
+//        }
+//    }
+    
+    private func fillFunctionParameters() {
+        for symbolTable in symbolTable {
+            guard let functionSymbol = symbolTable as? FunctionSymbolInfo else {
+                continue
+            }
+            for param in functionSymbol.functionStmt.params {
+                var paramType: QsType = QsAnyType()
+                if param.astType != nil {
+                    paramType = typeCheck(param.astType!)
+                }
+                functionSymbol.parameters.append(paramType)
+            }
+        }
+    }
+    
     func typeCheckAst(statements: [Stmt], symbolTable: inout [SymbolInfo]) -> [InterpreterProblem] {
         idToChain = [:]
         self.symbolTable = symbolTable
         
         buildClassHierarchy(statements: statements)
+        fillFunctionParameters()
+//        logFunctionNamesToId(statements: statements)
         
         symbolTable = self.symbolTable
         return problems

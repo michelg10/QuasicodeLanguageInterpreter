@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087E9F283551F300B28BF3 /* SymbolTable.swift */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -49,6 +50,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D0087E9F283551F300B28BF3 /* SymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTable.swift; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -90,6 +92,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D0087E9E283550A400B28BF3 /* SymbolTable */ = {
+			isa = PBXGroup;
+			children = (
+				D0087E9F283551F300B28BF3 /* SymbolTable.swift */,
+			);
+			path = SymbolTable;
+			sourceTree = "<group>";
+		};
 		D06A492E282FEA7A005DE578 /* TypeChecker */ = {
 			isa = PBXGroup;
 			children = (
@@ -158,6 +168,7 @@
 				D0DD7C1C28179A1B00FBD20C /* main.swift */,
 				D0AA392E2827B8C300CF94ED /* Util */,
 				D0DD7C312818392A00FBD20C /* Scanner */,
+				D0087E9E283550A400B28BF3 /* SymbolTable */,
 				D0DD7C512819824B00FBD20C /* Parser */,
 				D0AA390E28217DED00CF94ED /* Templater */,
 				D0AA390528215C5E00CF94ED /* Resolver */,
@@ -264,6 +275,7 @@
 			files = (
 				D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */,
 				D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */,
+				D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */,
 				D07B70F8281CC9FF003A672F /* Parser.swift in Sources */,
 				D0AA390B282166ED00CF94ED /* SymbolInfo.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
