@@ -245,7 +245,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         result.thenBranch = expandClasses(stmt.thenBranch) as! BlockStmt
         result.elseIfBranches = expandClasses(stmt.elseIfBranches) as! [IfStmt]
         if stmt.elseBranch != nil {
-            result.elseBranch = expandClasses(stmt.elseBranch!) as! BlockStmt
+            result.elseBranch = (expandClasses(stmt.elseBranch!) as! BlockStmt)
         }
         return result
     }

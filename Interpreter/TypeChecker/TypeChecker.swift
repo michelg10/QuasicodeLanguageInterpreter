@@ -1,38 +1,9 @@
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
-    private enum TypeCheckerError: Error {
-        case error(String)
-    }
-    private func error(message: String, token: Token) -> TypeCheckerError {
-        problems.append(.init(message: message, token: token))
-        return TypeCheckerError.error(message)
-    }
-    private func error(message: String, start: InterpreterLocation, end: InterpreterLocation) -> TypeCheckerError {
-        problems.append(.init(message: message, start: start, end: end))
-        return TypeCheckerError.error(message)
-    }
-    private class ClassChain {
-        init(upperClass: Int, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
-            self.upperClass = upperClass
-            self.classStmt = classStmt
-            self.parentOf = parentOf
-            self.depth = depth
-        }
-        
-        var upperClass: Int
-        var depth: Int
-        var classStmt: ClassStmt
-        var parentOf: [Int]
-    }
-    private struct AstClassTypeWrapper: Hashable {
-        static func == (lhs: TypeChecker.AstClassTypeWrapper, rhs: TypeChecker.AstClassTypeWrapper) -> Bool {
-            return typesIsEqual(lhs.val, rhs.val)
-        }
-        
-        func hash(into hasher: inout Hasher) {
-            hashTypeIntoHasher(val, &hasher)
-        }
-        
-        var val: AstClassType
+    private var problems: [InterpreterProblem] = []
+    private var symbolTable: SymbolTables = .init()
+    
+    private func getClassChain(id: Int) -> ClassChain? {
+        return (symbolTable.getSymbol(id: id) as? ClassSymbolInfo)?.classChain
     }
     
     private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
@@ -70,7 +41,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         struct JumpError: Error { }
         func jumpUpChain(classChain: ClassChain) throws -> (Int, ClassChain) {
             let newClassId = classChain.upperClass
-            guard let newChain = idToChain[newClassId] else {
+            guard let newChain = getClassChain(id: newClassId) else {
                 throw JumpError()
             }
             return (newClassId, newChain)
@@ -86,10 +57,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 var bClassId = (b as! QsClass).id
                 // they're unequal, so jump up the chain
                 // let the depth of aClass is deeper than bClass
-                guard var aChain = idToChain[aClassId] else {
+                guard var aChain = getClassChain(id: aClassId) else {
                     return QsAnyType()
                 }
-                guard var bChain = idToChain[bClassId] else {
+                guard var bChain = getClassChain(id: bClassId) else {
                     return QsAnyType()
                 }
                 if aChain.depth<bChain.depth {
@@ -120,10 +91,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         return QsAnyType()
     }
-    
-    private var problems: [InterpreterProblem] = []
-    private var idToChain: [Int : ClassChain] = [:] // their symbol table IDs
-    private var symbolTable: SymbolTables = .init()
     
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
         return QsArray(contains: typeCheck(asttype.contains))
@@ -205,7 +172,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         let symbolEntry = symbolTable.getSymbol(id: expr.symbolTableIndex!)
-        switch type(of: symbolEntry) {
+        switch symbolEntry {
         case is VariableSymbolInfo:
             if (symbolEntry as! VariableSymbolInfo).type == nil {
                 expr.type = QsAnyType()
@@ -430,14 +397,19 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Class statement has no symbol table index!")
                 continue
             }
+            guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo else {
+                assertionFailure("Symbol table symbol is not a class symbol")
+                continue
+            }
             let currentClassChain = ClassChain(upperClass: -1, depth: 1, classStmt: classStmt, parentOf: [])
-            idToChain[classStmt.symbolTableIndex!] = currentClassChain
+            classSymbolInfo.classChain = currentClassChain
             
             classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo)?.classId) ?? 0)
         }
         
         let classClusterer = UnionFind(size: classIdCount+1+1)
         let anyTypeClusterId = classIdCount+1
+        
         // fill in the class chains
         for classStmt in classStmts {
             if classStmt.symbolTableIndex == nil {
@@ -447,8 +419,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
-            guard let classChain = idToChain[classStmt.symbolTableIndex!] else {
-                assertionFailure("Class chain missing ID!")
+            guard let classChain = classSymbol.classChain else {
+                assertionFailure("Class chain missing!")
                 continue
             }
             if classStmt.superclass == nil {
@@ -463,8 +435,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
-            guard let inheritedClassChainObject = idToChain[inheritedClassSymbol.id] else {
-                assertionFailure("Could not find class chain object")
+            guard let inheritedClassChainObject = inheritedClassSymbol.classChain else {
+                assertionFailure("Class chain for inherited class missing!")
                 continue
             }
             
@@ -480,7 +452,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         func fillDepth(_ symbolTableId: Int, depth: Int) {
             // fills the depth information in
-            guard let classChain = idToChain[symbolTableId] else {
+            guard let classChain = getClassChain(id: symbolTableId) else {
                 return
             }
             classChain.depth = depth
@@ -492,7 +464,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             guard let classId = classStmt.symbolTableIndex else {
                 continue
             }
-            guard let classChain = idToChain[classId] else {
+            guard let classChain = getClassChain(id: classId) else {
                 continue
             }
             if classChain.depth == 1 {
@@ -519,14 +491,24 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
-        idToChain = [:]
         self.symbolTable = symbolTables
         
         buildClassHierarchy(statements: statements)
         fillFunctionParameters()
-//        logFunctionNamesToId(statements: statements)
         
         symbolTables = self.symbolTable
         return problems
+    }
+    
+    private enum TypeCheckerError: Error {
+        case error(String)
+    }
+    private func error(message: String, token: Token) -> TypeCheckerError {
+        problems.append(.init(message: message, token: token))
+        return TypeCheckerError.error(message)
+    }
+    private func error(message: String, start: InterpreterLocation, end: InterpreterLocation) -> TypeCheckerError {
+        problems.append(.init(message: message, start: start, end: end))
+        return TypeCheckerError.error(message)
     }
 }

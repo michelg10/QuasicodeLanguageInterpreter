@@ -43,16 +43,31 @@ class FunctionSymbolInfo: SymbolInfo {
     var parameters: [QsType]
     var functionStmt: FunctionStmt
 }
+class ClassChain {
+    init(upperClass: Int, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
+        self.upperClass = upperClass
+        self.classStmt = classStmt
+        self.parentOf = parentOf
+        self.depth = depth
+    }
+    
+    var upperClass: Int
+    var depth: Int
+    var classStmt: ClassStmt
+    var parentOf: [Int]
+}
 class ClassSymbolInfo: SymbolInfo {
-    init(id: Int, name: String, classId: Int) {
+    init(id: Int, name: String, classId: Int, classChain: ClassChain?) {
         self.id = id
         self.name = name
         self.classId = classId
+        self.classChain = classChain
     }
     
     var id: Int
     var name: String
     var classId: Int
+    var classChain: ClassChain?
 }
 
 class ClassNameSymbolInfo: SymbolInfo {

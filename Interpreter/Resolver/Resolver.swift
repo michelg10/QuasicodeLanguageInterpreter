@@ -419,10 +419,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbolInfo(id: -1, name: classSignature, classId: classId))
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbolInfo(id: -1, name: classSignature, classId: classId, classChain: nil))
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {
-            guard let classNameSymbolInfo = existingNameSymbolInfo as? ClassNameSymbolInfo else {
+            guard existingNameSymbolInfo is ClassNameSymbolInfo else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
             // do nothing about it
