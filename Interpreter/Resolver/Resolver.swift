@@ -18,57 +18,28 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var currentClassStatus: ClassStatus? = nil
     private var currentFunction: FunctionType = .none
     private var problems: [InterpreterProblem] = []
-    private var scopes: [[String: Int]] = [] // maps variable names to indexes in the symbol table
-    private var symbolTable: [SymbolInfo] = []
-    private var currentLocation = SymbolLocation.Global
-    
-    func addToSymbolTableAtScope(symbol: SymbolInfo) -> Int {
-        let newSymbolId = symbolTable.count
-        
-        var newSymbol = symbol
-        newSymbol.id = newSymbolId
-        symbolTable.append(newSymbol)
-        scopes[scopes.count-1].updateValue(newSymbolId, forKey: symbol.name)
-        return newSymbolId
-    }
+    private var symbolTable: SymbolTables = .init()
     
     private func createVariableAtScope(variableName: String) -> Int {
-        addToSymbolTableAtScope(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName, symbolLocation: currentLocation))
-    }
-    
-    private func getOutermostScope() -> [String : Int] {
-        return scopes[scopes.count-1]
-    }
-    
-    private func getSymbolIndex(name: String) -> Int? {
-        for i in 0..<scopes.count {
-            let scope = scopes[scopes.count-i-1]
-            if let result = scope[name] {
-                return result
-            }
-        }
-        return nil
+        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName))
     }
     
     private func defineOrGetVariable(name: Token, allowShadowing: Bool) throws -> (Int, Bool) {
         // returns a tuple with its symbol table index and whether or not it is a new variable
-        if let variableIndex = getSymbolIndex(name: name.lexeme) {
-            if !(symbolTable[variableIndex] is VariableSymbolInfo) {
+        if let variableIndex = symbolTable.getSymbolIndex(name: name.lexeme) {
+            if !(symbolTable.getSymbol(id: variableIndex) is VariableSymbolInfo) {
                 throw error(message: "Invalid redeclaration of '\(name.lexeme)'", token: name)
-            }
-            if variableIndex == -1 {
-                // not allowed
-                throw error(message: "Invalid use of identifier '\(name.lexeme)'", token: name)
             }
         }
         
         if allowShadowing {
-            if let variableIndex = getOutermostScope()[name.lexeme] {
-                return (variableIndex, false)
+            // only return if there's a variable in the current scope
+            if let variableInfo = symbolTable.queryAtScope(name.lexeme) {
+                return (variableInfo.id, false)
             }
         } else {
-            if let variableIndex = getSymbolIndex(name: name.lexeme) {
-                return (variableIndex, false)
+            if let variableInfo = symbolTable.query(name.lexeme) {
+                return (variableInfo.id, false)
             }
         }
         return (createVariableAtScope(variableName: name.lexeme), true)
@@ -113,9 +84,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         // returns whether or not something has been newly defined
         
         // check if its a function or a class
-        if let index = getSymbolIndex(name: expr.name.lexeme) {
-            if symbolTable[index] is FunctionNameSymbolInfo || symbolTable[index] is ClassSymbolInfo {
-                expr.symbolTableIndex = index
+        if let symbolInfo = symbolTable.query(expr.name.lexeme) {
+            if symbolInfo is FunctionNameSymbolInfo || symbolInfo is ClassSymbolInfo {
+                expr.symbolTableIndex = symbolInfo.id
                 return false
             }
         }
@@ -206,7 +177,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         let currentClassName = stmt.name.lexeme
-        scopes.append(classScope)
+        stmt.scopeIndex = symbolTable.createAndEnterScope()
         do {
             (stmt.thisSymbolTableIndex, _) = try defineOrGetVariable(name: .init(tokenType: .THIS, lexeme: "this", start: .dub(), end: .dub()), allowShadowing: true)
         } catch {
@@ -259,7 +230,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         for method in stmt.methods {
             resolve(method)
         }
-        endScope()
+        symbolTable.exitScope()
         currentClassStatus = previousClassStatus
     }
     
@@ -275,7 +246,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func resolveFunction(stmt: FunctionStmt) {
-        beginScope()
+        stmt.scopeIndex = symbolTable.createAndEnterScope()
         for i in 0..<stmt.params.count {
             stmt.params[i].symbolTableIndex = catchErrorClosure {
                 try defineOrGetVariable(name: stmt.params[i].name, allowShadowing: true)
@@ -284,7 +255,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         for stmt in stmt.body {
             resolve(stmt)
         }
-        endScope()
+        symbolTable.exitScope()
     }
     
     private func defineFunction(stmt: FunctionStmt) throws -> Int {
@@ -297,18 +268,21 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             paramsName+=astPrinter.printAst(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
         }
         let functionSignature = "\(stmt.name.lexeme)(\(paramsName))"
-        if getOutermostScope()[functionSignature] != nil {
+        if symbolTable.queryAtScope(functionSignature) != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = addToSymbolTableAtScope(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt))
-        if let existingNameId = getOutermostScope()[stmt.name.lexeme] {
-            stmt.nameSymbolTableIndex = existingNameId
-            (symbolTable[existingNameId] as! FunctionNameSymbolInfo).belongingFunctions.append(symbolTableIndex)
-        } else {
-            stmt.nameSymbolTableIndex = addToSymbolTableAtScope(symbol: FunctionNameSymbolInfo(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
-        }
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt))
         stmt.symbolTableIndex = symbolTableIndex
+        if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {
+            guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbolInfo else {
+                throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
+            }
+            stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
+            functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
+        } else {
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbolInfo(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
+        }
         
         return symbolTableIndex
     }
@@ -331,16 +305,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             try resolve(stmt.condition)
         }
         
-        beginScope()
         resolve(stmt.thenBranch)
-        endScope()
         
         resolve(stmt.elseIfBranches)
         
         if stmt.elseBranch != nil {
-            beginScope()
             resolve(stmt.elseBranch!)
-            endScope()
         }
     }
     
@@ -388,9 +358,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         isInLoop = true
-        beginScope()
-        resolve(stmt.statements)
-        endScope()
+        resolve(stmt.body)
         
         isInLoop = previousLoopState
     }
@@ -403,9 +371,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         isInLoop = true
-        beginScope()
-        resolve(stmt.statements)
-        endScope()
+        resolve(stmt.body)
         
         isInLoop = previousLoopState
     }
@@ -422,12 +388,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    private func beginScope() {
-        scopes.append([:])
-    }
-    
-    private func endScope() {
-        scopes.popLast()
+    internal func visitBlockStmt(stmt: BlockStmt) {
+        stmt.scopeIndex = symbolTable.createAndEnterScope()
+        resolve(stmt.statements)
+        symbolTable.exitScope()
     }
     
     private func error(message: String, token: Token) -> ResolverError {
@@ -449,13 +413,34 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    private func defineClass(stmt: ClassStmt, classId: Int) throws -> Int {
+        let classSignature = classSignature(className: stmt.name.lexeme, templateAstTypes: stmt.expandedTemplateParameters)
+        if symbolTable.queryAtScope(classSignature) != nil {
+            throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
+        }
+        
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbolInfo(id: -1, name: classSignature, classId: classId))
+        stmt.symbolTableIndex = symbolTableIndex
+        if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {
+            guard let classNameSymbolInfo = existingNameSymbolInfo as? ClassNameSymbolInfo else {
+                throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
+            }
+            // do nothing about it
+        } else {
+            symbolTable.addToSymbolTable(symbol: ClassNameSymbolInfo(id: -1, name: stmt.name.lexeme))
+        }
+        
+        return symbolTableIndex
+    }
+    
     private func eagerDefineClassesAndFunctions(statements: [Stmt]) {
         // add all class and function names into the undefinables list
         var classIdCounter = 0
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
-                let classId = classIdCounter
-                classStmt.symbolTableIndex = addToSymbolTableAtScope(symbol: ClassSymbolInfo.init(id: -1, name: classStmt.name.lexeme, classId: classId))
+                catchErrorClosure {
+                    try defineClass(stmt: classStmt, classId: classIdCounter)
+                }
                 classIdCounter+=1
             }
             
@@ -467,15 +452,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func resolveAST(statements: inout [Stmt], symbolTable: inout [SymbolInfo]) -> [InterpreterProblem] {
+    func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTable
         
         isInLoop = false
         currentFunction = .none
         currentClassStatus = nil
         problems = []
-        scopes = []
-        scopes.append([:])
         
         eagerDefineClassesAndFunctions(statements: statements)
         resolve(statements)

@@ -26,23 +26,27 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return result
     }
     
-    private func encapsulateBlock(blockStmts: [Stmt]) -> String {
+    private func encapsulateBlock(stmts: [Stmt], scopeIndex: Int?) -> String {
         var result=""
-        result += "{\n\(indentBlockStmts(blockStmts: blockStmts))"
+        result += "{ (scopeIndex: \(stringifyOptionalInt(scopeIndex)))\n\(indentBlockStmts(blockStmts: stmts))"
         
         result+="}"
         
         return result
     }
     
-    private func parenthesizeBlock(name: String, exprs: [Expr], blockStmts: [Stmt]) -> String {
+    private func encapsulateBlock(blockStmt: BlockStmt) -> String {
+        return encapsulateBlock(stmts: blockStmt.statements, scopeIndex: blockStmt.scopeIndex)
+    }
+    
+    private func parenthesizeBlock(name: String, exprs: [Expr], blockStmt: BlockStmt) -> String {
         var result = "("+name
         
         for expr in exprs {
             result += " "
             result += expr.accept(visitor: self)
         }
-        result += " "+encapsulateBlock(blockStmts: blockStmts)
+        result += " "+encapsulateBlock(stmts: blockStmt.statements, scopeIndex: blockStmt.scopeIndex)
         result+=")"
         
         return result
@@ -228,7 +232,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(blockStmts: stmt.body)))"
+        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
@@ -245,14 +249,14 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         
         result += stmt.condition.accept(visitor: self)
         
-        result += " \(encapsulateBlock(blockStmts: stmt.thenBranch))"
+        result += " \(encapsulateBlock(blockStmt: stmt.thenBranch))"
         
         for elseIfBranch in stmt.elseIfBranches {
             result += " "+ifStmt(stmt: elseIfBranch, isElseIf: true)
         }
         
         if stmt.elseBranch != nil {
-            result += " Else \(encapsulateBlock(blockStmts: stmt.elseBranch!))"
+            result += " Else \(encapsulateBlock(blockStmt: stmt.elseBranch!))"
         }
         
         return result
@@ -278,11 +282,11 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {
-        return parenthesizeBlock(name: "LoopFrom", exprs: [stmt.variable, stmt.lRange, stmt.rRange], blockStmts: stmt.statements)
+        return parenthesizeBlock(name: "LoopFrom", exprs: [stmt.variable, stmt.lRange, stmt.rRange], blockStmt: stmt.body)
     }
     
     internal func visitWhileStmtString(stmt: WhileStmt) -> String {
-        return parenthesizeBlock(name: "While", exprs: [stmt.expression], blockStmts: stmt.statements)
+        return parenthesizeBlock(name: "While", exprs: [stmt.expression], blockStmt: stmt.body)
     }
     
     internal func visitBreakStmtString(stmt: BreakStmt) -> String {
@@ -291,6 +295,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     
     internal func visitContinueStmtString(stmt: ContinueStmt) -> String {
         return parenthesize(name: "Continue")
+    }
+    
+    func visitBlockStmtString(stmt: BlockStmt) -> String {
+        return encapsulateBlock(stmts: stmt.statements, scopeIndex: stmt.scopeIndex)
     }
     
     func printAst(_ astType: AstType) -> String {

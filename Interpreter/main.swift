@@ -34,7 +34,7 @@ print("\nErrors")
 print(templateErrors)
 
 print("----- Resolver -----")
-var symbolTable: [SymbolInfo] = []
+var symbolTable: SymbolTables = .init()
 let resolver = Resolver()
 let resolveErrors = resolver.resolveAST(statements: &ast, symbolTable: &symbolTable)
 print("Resolved AST")
@@ -44,7 +44,7 @@ print(resolveErrors)
 
 print("----- Type Checker -----")
 let typeChecker = TypeChecker()
-let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTable: &symbolTable)
+let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTables: &symbolTable)
 print("Type checked AST")
 print(astPrinter.printAst(ast))
 print("\nErrors")

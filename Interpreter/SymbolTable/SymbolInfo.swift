@@ -1,7 +1,3 @@
-enum SymbolLocation {
-    case Global, Local, Field(String), StaticField(String)
-}
-
 protocol SymbolInfo {
     var id: Int { get set }
     var name: String { get set }
@@ -12,17 +8,15 @@ enum SymbolType {
 }
 
 class VariableSymbolInfo: SymbolInfo {
-    init(id: Int, type: QsType? = nil, name: String, symbolLocation: SymbolLocation) {
+    init(id: Int, type: QsType? = nil, name: String) {
         self.id = id
         self.type = type
         self.name = name
-        self.symbolLocation = symbolLocation
     }
     
     var id: Int
     var type: QsType?
     var name: String
-    var symbolLocation: SymbolLocation
 }
 class FunctionNameSymbolInfo: SymbolInfo {
     init(id: Int, name: String, belongingFunctions: [Int]) {
@@ -59,4 +53,14 @@ class ClassSymbolInfo: SymbolInfo {
     var id: Int
     var name: String
     var classId: Int
+}
+
+class ClassNameSymbolInfo: SymbolInfo {
+    init(id: Int, name: String) {
+        self.id = id
+        self.name = name
+    }
+    
+    var id: Int
+    var name: String
 }

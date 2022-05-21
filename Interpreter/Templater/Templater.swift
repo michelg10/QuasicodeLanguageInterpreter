@@ -84,7 +84,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             return
         }
         
-        var resultingClass = ClassStmt.init(belongingClass)
+        let resultingClass = ClassStmt.init(belongingClass)
         resultingClass.expandedTemplateParameters = classSignature.templateParameters
         
         let classParameters = belongingClass.templateParameters?.map({ token in
@@ -242,10 +242,10 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         result.condition = (catchErrorClosure {
             try expandClasses(stmt.condition)
         } ?? stmt.condition)
-        result.thenBranch = expandClasses(stmt.thenBranch)
+        result.thenBranch = expandClasses(stmt.thenBranch) as! BlockStmt
         result.elseIfBranches = expandClasses(stmt.elseIfBranches) as! [IfStmt]
         if stmt.elseBranch != nil {
-            result.elseBranch = expandClasses(stmt.elseBranch!)
+            result.elseBranch = expandClasses(stmt.elseBranch!) as! BlockStmt
         }
         return result
     }
@@ -284,7 +284,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             try expandClasses(stmt.rRange)
         } ?? stmt.rRange)
         
-        result.statements = expandClasses(stmt.statements)
+        result.body = expandClasses(stmt.body) as! BlockStmt
         
         return result
     }
@@ -294,7 +294,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         result.expression = (catchErrorClosure {
             try expandClasses(stmt.expression)
         } ?? stmt.expression)
-        result.statements = expandClasses(stmt.statements)
+        result.body = expandClasses(stmt.body) as! BlockStmt
         return result
     }
     
@@ -304,6 +304,12 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     
     func visitContinueStmtStmt(stmt: ContinueStmt) -> Stmt {
         return stmt
+    }
+    
+    func visitBlockStmtStmt(stmt: BlockStmt) -> Stmt {
+        let result = BlockStmt.init(stmt)
+        result.statements = expandClasses(result.statements)
+        return result
     }
     
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr {

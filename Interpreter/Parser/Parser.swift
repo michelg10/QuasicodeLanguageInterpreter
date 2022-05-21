@@ -188,7 +188,7 @@ class Parser {
         
         currentClassName = nil
         currentClassTemplateParameters = []
-        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, thisSymbolTableIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, thisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
         classStmts.append(result)
         return result
     }
@@ -226,7 +226,7 @@ class Parser {
         try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
-        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, nameSymbolTableIndex: nil, params: parameters, annotation: functionType, body: body)
+        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: parameters, annotation: functionType, body: body.statements)
     }
     
     private func statement() throws -> Stmt {
@@ -272,9 +272,9 @@ class Parser {
             let untilAsUnaryNotOpr = Token.init(tokenType: .NOT, lexeme: whileOrUntil.lexeme, start: .init(start: whileOrUntil), end: .init(end: whileOrUntil), value: whileOrUntil.value)
             condition = UnaryExpr(opr: untilAsUnaryNotOpr, right: condition, type: nil, startLocation: .init(start: whileOrUntil), endLocation: .init(end: whileOrUntil))
         }
-        let statements = block(additionalEndMarkers: [])
+        let body = block(additionalEndMarkers: [])
         
-        return WhileStmt(expression: condition, statements: statements)
+        return WhileStmt(expression: condition, body: body)
     }
     
     private func loopFrom() throws -> Stmt {
@@ -285,9 +285,9 @@ class Parser {
         let rRange = try expression()
         try consume(type: .EOL, message: "Expect end-of-line after upper looping range")
         
-        let statements = block(additionalEndMarkers: [])
+        let body = block(additionalEndMarkers: [])
         
-        return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, statements: statements)
+        return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, body: body)
     }
     
     private func LoopStatement() throws -> Stmt {
@@ -337,7 +337,7 @@ class Parser {
         return expressions
     }
     
-    private func block(additionalEndMarkers: [TokenType]) -> [Stmt] {
+    private func block(additionalEndMarkers: [TokenType]) -> BlockStmt {
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = true
         var statements: [Stmt] = []
@@ -347,16 +347,16 @@ class Parser {
             }
         }
         isInGlobalScope = previousIsInGlobalScope
-        return statements
+        return .init(statements: statements, scopeIndex: nil)
     }
     
     private func IfStatement() throws -> Stmt {
         let condition = try expression()
         try consume(type: .THEN, message: "Expect 'then' after if condition")
         try consume(type: .EOL, message: "Expect end-of-line after if condition")
-        let thenBranch: [Stmt] = block(additionalEndMarkers: [.ELSE])
+        let thenBranch: BlockStmt = block(additionalEndMarkers: [.ELSE])
         var elseIfBranches: [IfStmt] = []
-        var elseBranch: [Stmt]? = nil
+        var elseBranch: BlockStmt? = nil
         
         while match(types: .ELSE) {
             if match(types: .IF) {

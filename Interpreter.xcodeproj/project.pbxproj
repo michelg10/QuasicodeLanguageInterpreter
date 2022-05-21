@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087E9F283551F300B28BF3 /* SymbolTable.swift */; };
+		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -51,6 +52,7 @@
 
 /* Begin PBXFileReference section */
 		D0087E9F283551F300B28BF3 /* SymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTable.swift; sourceTree = "<group>"; };
+		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -96,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				D0087E9F283551F300B28BF3 /* SymbolTable.swift */,
+				D0AA390A282166ED00CF94ED /* SymbolInfo.swift */,
 			);
 			path = SymbolTable;
 			sourceTree = "<group>";
@@ -123,7 +126,6 @@
 			isa = PBXGroup;
 			children = (
 				D0AA390828215DB200CF94ED /* Resolver.swift */,
-				D0AA390A282166ED00CF94ED /* SymbolInfo.swift */,
 			);
 			path = Resolver;
 			sourceTree = "<group>";
@@ -211,6 +213,7 @@
 				D0AA39132823C88500CF94ED /* AstTypeHasher.swift */,
 				D07B710C281D0B9D003A672F /* FunctionParam.swift */,
 				D0AA38D6281E80F300CF94ED /* ClassField.swift */,
+				D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */,
 			);
 			path = AstClasses;
 			sourceTree = "<group>";
@@ -286,6 +289,7 @@
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
 				D0AA391A2824231B00CF94ED /* TypeEquality.swift in Sources */,
 				D0AA39162824229600CF94ED /* TypeHashValues.swift in Sources */,
+				D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */,
 				D0DD7C2A2817A48900FBD20C /* Token.swift in Sources */,
 				D0AA39312827B8DF00CF94ED /* PruneNils.swift in Sources */,
 				D07B7111281D6920003A672F /* AstPrinter.swift in Sources */,

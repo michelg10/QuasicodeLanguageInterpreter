@@ -123,16 +123,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private var problems: [InterpreterProblem] = []
     private var idToChain: [Int : ClassChain] = [:] // their symbol table IDs
-    private var astClassTypeToId: [AstClassTypeWrapper : Int] = [:] // use this to map superclasses to their symbol table IDs
-    private var symbolTable: [SymbolInfo] = []
-//    private var functionNamesToId: [String : Int] = [:] // maps function names to symbol table IDs
+    private var symbolTable: SymbolTables = .init()
     
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
         return QsArray(contains: typeCheck(asttype.contains))
     }
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
-        guard let symbolTableId = astClassTypeToId[.init(val: asttype)] else {
+        let classSignature = classSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
+        guard let symbolTableId = symbolTable.queryGlobal(classSignature)?.id else {
             return QsAnyType()
         }
         return QsClass(name: asttype.name.lexeme, id: symbolTableId)
@@ -200,13 +199,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
-        // first of all, check if its
         if expr.symbolTableIndex == nil {
             expr.type = QsAnyType()
             return
         }
         
-        let symbolEntry = symbolTable[expr.symbolTableIndex!]
+        let symbolEntry = symbolTable.getSymbol(id: expr.symbolTableIndex!)
         switch type(of: symbolEntry) {
         case is VariableSymbolInfo:
             if (symbolEntry as! VariableSymbolInfo).type == nil {
@@ -252,7 +250,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         if expr.callee.type! is QsFunction {
             // Resolve function calls
-            guard let functionNameSymbolEntry = symbolTable[(expr.callee.type! as! QsFunction).nameId] as? FunctionNameSymbolInfo else {
+            guard let functionNameSymbolEntry = symbolTable.getSymbol(id: (expr.callee.type! as! QsFunction).nameId) as? FunctionNameSymbolInfo else {
                 assertionFailure("Symbol at index is not a function name symbol")
                 expr.type = QsAnyType()
                 return
@@ -262,7 +260,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             var bestMatchLevel = Int.max
             let belongingFunctions = functionNameSymbolEntry.belongingFunctions;
             for belongingFunction in belongingFunctions {
-                guard let functionSymbolEntry = symbolTable[belongingFunction] as? FunctionSymbolInfo else {
+                guard let functionSymbolEntry = symbolTable.getSymbol(id: belongingFunction) as? FunctionSymbolInfo else {
                     assertionFailure("Symbol at index is not a function symbol")
                     expr.type = QsAnyType()
                     return
@@ -403,6 +401,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // nothing to do
     }
     
+    func visitBlockStmt(stmt: BlockStmt) {
+        
+    }
+    
     private func typeCheck(_ stmt: Stmt) {
         stmt.accept(visitor: self)
     }
@@ -431,10 +433,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let currentClassChain = ClassChain(upperClass: -1, depth: 1, classStmt: classStmt, parentOf: [])
             idToChain[classStmt.symbolTableIndex!] = currentClassChain
             
-            var classAstType = AstClassType(name: classStmt.name, templateArguments: classStmt.expandedTemplateParameters, startLocation: .init(start: classStmt.name), endLocation: .init(end: classStmt.name))
-            astClassTypeToId[.init(val: classAstType)] = classStmt.symbolTableIndex!
-            
-            classIdCount = max(classIdCount, ((symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo)?.classId) ?? 0)
+            classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo)?.classId) ?? 0)
         }
         
         let classClusterer = UnionFind(size: classIdCount+1+1)
@@ -444,7 +443,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if classStmt.symbolTableIndex == nil {
                 continue
             }
-            guard let classSymbol = symbolTable[classStmt.symbolTableIndex!] as? ClassSymbolInfo else {
+            guard let classSymbol = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo else {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
@@ -456,15 +455,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 classClusterer.unite(anyTypeClusterId, classSymbol.classId)
                 continue
             }
-            guard let inheritedClass = astClassTypeToId[.init(val: .init(name: .dummyToken(tokenType: .IDENTIFIER, lexeme: classStmt.superclass!.name.lexeme), templateArguments: classStmt.superclass!.templateArguments, startLocation: .init(start: classStmt.superclass!.name), endLocation: .init(end: classStmt.superclass!.name)))] else {
+            guard let inheritedClassSymbol = symbolTable.queryGlobal(classSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
                 assertionFailure("Inherited class not found")
                 continue
             }
-            guard let inheritedClassSymbol = symbolTable[inheritedClass] as? ClassSymbolInfo else {
+            guard let inheritedClassSymbol = inheritedClassSymbol as? ClassSymbolInfo else {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
-            guard let inheritedClassChainObject = idToChain[inheritedClass] else {
+            guard let inheritedClassChainObject = idToChain[inheritedClassSymbol.id] else {
                 assertionFailure("Could not find class chain object")
                 continue
             }
@@ -476,7 +475,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
             classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
-            classChain.upperClass = inheritedClass
+            classChain.upperClass = inheritedClassSymbol.id
         }
         
         func fillDepth(_ symbolTableId: Int, depth: Int) {
@@ -504,16 +503,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-//    private func logFunctionNamesToId(statements: [Stmt]) {
-//        for statement in statements {
-//            if statement is FunctionStmt {
-//                functionNamesToId[(statement as! FunctionStmt).name.lexeme] = (statement as! FunctionStmt).nameSymbolTableIndex
-//            }
-//        }
-//    }
-    
     private func fillFunctionParameters() {
-        for symbolTable in symbolTable {
+        for symbolTable in symbolTable.getAllSymbols() {
             guard let functionSymbol = symbolTable as? FunctionSymbolInfo else {
                 continue
             }
@@ -527,15 +518,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func typeCheckAst(statements: [Stmt], symbolTable: inout [SymbolInfo]) -> [InterpreterProblem] {
+    func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
         idToChain = [:]
-        self.symbolTable = symbolTable
+        self.symbolTable = symbolTables
         
         buildClassHierarchy(statements: statements)
         fillFunctionParameters()
 //        logFunctionNamesToId(statements: statements)
         
-        symbolTable = self.symbolTable
+        symbolTables = self.symbolTable
         return problems
     }
 }

@@ -17,6 +17,7 @@ protocol StmtVisitor {
     func visitWhileStmt(stmt: WhileStmt) 
     func visitBreakStmt(stmt: BreakStmt) 
     func visitContinueStmt(stmt: ContinueStmt) 
+    func visitBlockStmt(stmt: BlockStmt) 
 }
 
 protocol StmtStmtVisitor {
@@ -32,6 +33,7 @@ protocol StmtStmtVisitor {
     func visitWhileStmtStmt(stmt: WhileStmt) -> Stmt
     func visitBreakStmtStmt(stmt: BreakStmt) -> Stmt
     func visitContinueStmtStmt(stmt: ContinueStmt) -> Stmt
+    func visitBlockStmtStmt(stmt: BlockStmt) -> Stmt
 }
 
 protocol StmtStringVisitor {
@@ -47,6 +49,7 @@ protocol StmtStringVisitor {
     func visitWhileStmtString(stmt: WhileStmt) -> String
     func visitBreakStmtString(stmt: BreakStmt) -> String
     func visitContinueStmtString(stmt: ContinueStmt) -> String
+    func visitBlockStmtString(stmt: BlockStmt) -> String
 }
 
 class ClassStmt: Stmt {
@@ -54,6 +57,7 @@ class ClassStmt: Stmt {
     var name: Token
     var symbolTableIndex: Int?
     var thisSymbolTableIndex: Int?
+    var scopeIndex: Int?
     var templateParameters: [Token]?
     var expandedTemplateParameters: [AstType]?
     var superclass: AstClassType?
@@ -62,11 +66,12 @@ class ClassStmt: Stmt {
     var fields: [ClassField]
     var staticFields: [ClassField]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, thisSymbolTableIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, thisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
         self.thisSymbolTableIndex = thisSymbolTableIndex
+        self.scopeIndex = scopeIndex
         self.templateParameters = templateParameters
         self.expandedTemplateParameters = expandedTemplateParameters
         self.superclass = superclass
@@ -80,6 +85,7 @@ class ClassStmt: Stmt {
         self.name = objectToCopy.name
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.thisSymbolTableIndex = objectToCopy.thisSymbolTableIndex
+        self.scopeIndex = objectToCopy.scopeIndex
         self.templateParameters = objectToCopy.templateParameters
         self.expandedTemplateParameters = objectToCopy.expandedTemplateParameters
         self.superclass = objectToCopy.superclass
@@ -132,15 +138,17 @@ class FunctionStmt: Stmt {
     var name: Token
     var symbolTableIndex: Int?
     var nameSymbolTableIndex: Int?
+    var scopeIndex: Int?
     var params: [FunctionParam]
     var annotation: AstType?
     var body: [Stmt]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
         self.nameSymbolTableIndex = nameSymbolTableIndex
+        self.scopeIndex = scopeIndex
         self.params = params
         self.annotation = annotation
         self.body = body
@@ -150,6 +158,7 @@ class FunctionStmt: Stmt {
         self.name = objectToCopy.name
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.nameSymbolTableIndex = objectToCopy.nameSymbolTableIndex
+        self.scopeIndex = objectToCopy.scopeIndex
         self.params = objectToCopy.params
         self.annotation = objectToCopy.annotation
         self.body = objectToCopy.body
@@ -189,11 +198,11 @@ class ExpressionStmt: Stmt {
 
 class IfStmt: Stmt {
     var condition: Expr
-    var thenBranch: [Stmt]
+    var thenBranch: BlockStmt
     var elseIfBranches: [IfStmt]
-    var elseBranch: [Stmt]?
+    var elseBranch: BlockStmt?
     
-    init(condition: Expr, thenBranch: [Stmt], elseIfBranches: [IfStmt], elseBranch: [Stmt]?) {
+    init(condition: Expr, thenBranch: BlockStmt, elseIfBranches: [IfStmt], elseBranch: BlockStmt?) {
         self.condition = condition
         self.thenBranch = thenBranch
         self.elseIfBranches = elseIfBranches
@@ -287,19 +296,19 @@ class LoopFromStmt: Stmt {
     var variable: Expr
     var lRange: Expr
     var rRange: Expr
-    var statements: [Stmt]
+    var body: BlockStmt
     
-    init(variable: Expr, lRange: Expr, rRange: Expr, statements: [Stmt]) {
+    init(variable: Expr, lRange: Expr, rRange: Expr, body: BlockStmt) {
         self.variable = variable
         self.lRange = lRange
         self.rRange = rRange
-        self.statements = statements
+        self.body = body
     }
     init(_ objectToCopy: LoopFromStmt) {
         self.variable = objectToCopy.variable
         self.lRange = objectToCopy.lRange
         self.rRange = objectToCopy.rRange
-        self.statements = objectToCopy.statements
+        self.body = objectToCopy.body
     }
 
     func accept(visitor: StmtVisitor) {
@@ -315,15 +324,15 @@ class LoopFromStmt: Stmt {
 
 class WhileStmt: Stmt {
     var expression: Expr
-    var statements: [Stmt]
+    var body: BlockStmt
     
-    init(expression: Expr, statements: [Stmt]) {
+    init(expression: Expr, body: BlockStmt) {
         self.expression = expression
-        self.statements = statements
+        self.body = body
     }
     init(_ objectToCopy: WhileStmt) {
         self.expression = objectToCopy.expression
-        self.statements = objectToCopy.statements
+        self.body = objectToCopy.body
     }
 
     func accept(visitor: StmtVisitor) {
@@ -376,6 +385,30 @@ class ContinueStmt: Stmt {
     }
     func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitContinueStmtString(stmt: self)
+    }
+}
+
+class BlockStmt: Stmt {
+    var statements: [Stmt]
+    var scopeIndex: Int?
+    
+    init(statements: [Stmt], scopeIndex: Int?) {
+        self.statements = statements
+        self.scopeIndex = scopeIndex
+    }
+    init(_ objectToCopy: BlockStmt) {
+        self.statements = objectToCopy.statements
+        self.scopeIndex = objectToCopy.scopeIndex
+    }
+
+    func accept(visitor: StmtVisitor) {
+        visitor.visitBlockStmt(stmt: self)
+    }
+    func accept(visitor: StmtStmtVisitor) -> Stmt {
+        visitor.visitBlockStmtStmt(stmt: self)
+    }
+    func accept(visitor: StmtStringVisitor) -> String {
+        visitor.visitBlockStmtString(stmt: self)
     }
 }
 
