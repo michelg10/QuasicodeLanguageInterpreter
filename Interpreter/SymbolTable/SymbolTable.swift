@@ -81,4 +81,41 @@ class SymbolTables {
         return allSymbols
     }
     
+    public func printTable() {
+        var tableToPrint: [[String]] = []
+        for symbol in allSymbols {
+            tableToPrint.append(printSymbol(symbol: symbol))
+        }
+        if tableToPrint.count == 0 {
+            return
+        }
+        var lengths: [Int] = Array(repeating: 0, count: tableToPrint[0].count)
+        for row in tableToPrint {
+            for i in 0..<row.count {
+                lengths[i] = max(lengths[i], row[i].count)
+            }
+        }
+        
+        // output it
+        for row in tableToPrint {
+            for i in 0..<row.count {
+                let isLastColumn = i==row.count-1
+                var output = ""
+                let whitespaceCount = lengths[i]-row[i].count
+                if i==0 {
+                    // its the ID, deal with it separately
+                    for j in 0..<whitespaceCount {
+                        output+="0"
+                    }
+                    output+=row[i]
+                } else {
+                    output=row[i]
+                    for j in 0..<whitespaceCount {
+                        output+=" "
+                    }
+                }
+                print(output, terminator: (isLastColumn ? "\n" : " | "))
+            }
+        }
+    }
 }

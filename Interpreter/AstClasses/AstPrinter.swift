@@ -52,10 +52,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return result
     }
     
-    private func stringifyOptionalInt(_ val: Int?) -> String {
-        return (val == nil ? "nil" : String(val!))
-    }
-    
     internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
         return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
@@ -197,7 +193,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             return partialResult+", "+nextDesc
         })
         let classDesc = "{name: \(stmt.name.lexeme), id: \(stringifyOptionalInt(stmt.symbolTableIndex)), thisId: \(stringifyOptionalInt(stmt.thisSymbolTableIndex)), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription), expandedTemplateParameers: \(expandedTemplateParametersDescription)}"
-        var result = "(Class\(classDesc) {\n"
+        var result = "(Class\(classDesc) { (scopeIndex: \(stringifyOptionalInt(stmt.scopeIndex)))\n"
         result += indentBlockStmts(blockStmts: stmt.staticMethods)
         result += indentBlockStmts(blockStmts: stmt.methods)
         for field in stmt.staticFields {

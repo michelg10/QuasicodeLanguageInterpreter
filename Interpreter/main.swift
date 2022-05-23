@@ -47,6 +47,8 @@ let typeChecker = TypeChecker()
 let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTables: &symbolTable)
 print("Type checked AST")
 print(astPrinter.printAst(ast))
+print("Symbol table")
+symbolTable.printTable()
 print("\nErrors")
 print(typeCheckerErrors)
 

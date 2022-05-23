@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087E9F283551F300B28BF3 /* SymbolTable.swift */; };
 		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
+		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
+		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
+		D052DEF0283B321300C060FE /* stringifyOptional.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEF283B321300C060FE /* stringifyOptional.swift */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -53,6 +56,9 @@
 /* Begin PBXFileReference section */
 		D0087E9F283551F300B28BF3 /* SymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTable.swift; sourceTree = "<group>"; };
 		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
+		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
+		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
+		D052DEEF283B321300C060FE /* stringifyOptional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stringifyOptional.swift; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -98,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				D0087E9F283551F300B28BF3 /* SymbolTable.swift */,
+				D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */,
 				D0AA390A282166ED00CF94ED /* SymbolInfo.swift */,
 			);
 			path = SymbolTable;
@@ -115,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				D07B70F5281A7EB4003A672F /* Types.swift */,
+				D052DEED283B303600C060FE /* TypePrinter.swift */,
 				D0AA39152824229600CF94ED /* TypeHashValues.swift */,
 				D0AA3917282422A600CF94ED /* TypeHasher.swift */,
 				D0AA39192824231B00CF94ED /* TypeEquality.swift */,
@@ -144,6 +152,7 @@
 				D0AA39302827B8DF00CF94ED /* PruneNils.swift */,
 				D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */,
 				D06A4931283001F5005DE578 /* UnionFind.swift */,
+				D052DEEF283B321300C060FE /* stringifyOptional.swift */,
 			);
 			path = Util;
 			sourceTree = "<group>";
@@ -198,7 +207,6 @@
 			isa = PBXGroup;
 			children = (
 				D07B70F7281CC9FF003A672F /* Parser.swift */,
-				D07B7110281D6920003A672F /* AstPrinter.swift */,
 			);
 			path = Parser;
 			sourceTree = "<group>";
@@ -214,6 +222,7 @@
 				D07B710C281D0B9D003A672F /* FunctionParam.swift */,
 				D0AA38D6281E80F300CF94ED /* ClassField.swift */,
 				D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */,
+				D07B7110281D6920003A672F /* AstPrinter.swift */,
 			);
 			path = AstClasses;
 			sourceTree = "<group>";
@@ -295,8 +304,11 @@
 				D07B7111281D6920003A672F /* AstPrinter.swift in Sources */,
 				D0DD7C562819849600FBD20C /* Expr.swift in Sources */,
 				D0AA39142823C88500CF94ED /* AstTypeHasher.swift in Sources */,
+				D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */,
+				D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */,
 				D0DD7C532819847E00FBD20C /* Stmt.swift in Sources */,
 				D0AA3918282422A600CF94ED /* TypeHasher.swift in Sources */,
+				D052DEF0283B321300C060FE /* stringifyOptional.swift in Sources */,
 				D09DE7CC282B9080007AFAFA /* CatchErrorClosure.swift in Sources */,
 				D0AA391028217F6400CF94ED /* Templater.swift in Sources */,
 				D07B710D281D0B9D003A672F /* FunctionParam.swift in Sources */,

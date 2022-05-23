@@ -192,14 +192,19 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         currentClassStatus = .init(classType: currentClassType, name: currentClassName)
         
+        guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbolInfo else {
+            assertionFailure("Symbol at class statement is not a class symbol")
+            return
+        }
+        
         for method in stmt.staticMethods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function)
+                try defineFunction(stmt: method.function, withinClass: classSymbol.classId)
             }
         }
         for method in stmt.methods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function)
+                try defineFunction(stmt: method.function, withinClass: classSymbol.classId)
             }
         }
         
@@ -258,7 +263,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         symbolTable.exitScope()
     }
     
-    private func defineFunction(stmt: FunctionStmt) throws -> Int {
+    private func defineFunction(stmt: FunctionStmt, withinClass: Int?) throws -> Int {
         var paramsName = ""
         for param in stmt.params {
             if paramsName != "" {
@@ -272,7 +277,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt))
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt, withinClass: withinClass, overridedBy: []))
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {
             guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbolInfo else {
@@ -446,7 +451,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             
             if let functionStmt = statement as? FunctionStmt {
                 catchErrorClosure {
-                    try defineFunction(stmt: functionStmt)
+                    try defineFunction(stmt: functionStmt, withinClass: nil)
                 }
             }
         }

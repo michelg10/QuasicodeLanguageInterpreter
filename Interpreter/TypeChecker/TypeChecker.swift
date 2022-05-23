@@ -265,8 +265,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
                 
             }
-            // TODO: Support polymorphism: prevent different return types for overrided functions
-            // TODO: Make it a compilation error for polymorphic functions to return different return types
+            // TODO: Support polymorphism
             // TODO: What about initializers? Prevent these from being called
             // TODO: Assignable
             // TODO: Default parameters
@@ -289,7 +288,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitGetExpr(expr: GetExpr) {
-        
+        // TODO
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {
@@ -385,6 +384,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func buildClassHierarchy(statements: [Stmt]) {
+        // TODO: Make it a compilation error for polymorphic functions to return different return types
         var classStmts: [ClassStmt] = []
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
@@ -401,7 +401,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Symbol table symbol is not a class symbol")
                 continue
             }
-            let currentClassChain = ClassChain(upperClass: -1, depth: 1, classStmt: classStmt, parentOf: [])
+            let currentClassChain = ClassChain(upperClass: -1, depth: -1, classStmt: classStmt, parentOf: [])
             classSymbolInfo.classChain = currentClassChain
             
             classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo)?.classId) ?? 0)
@@ -425,6 +425,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             if classStmt.superclass == nil {
                 classClusterer.unite(anyTypeClusterId, classSymbol.classId)
+                classChain.depth = 1
                 continue
             }
             guard let inheritedClassSymbol = symbolTable.queryGlobal(classSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
@@ -468,9 +469,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 continue
             }
             if classChain.depth == 1 {
-                for children in classChain.parentOf {
-                    fillDepth(children, depth: 2)
-                }
+                fillDepth(classId, depth: 1)
             }
         }
     }
@@ -495,6 +494,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         buildClassHierarchy(statements: statements)
         fillFunctionParameters()
+        
+        for statement in statements {
+            typeCheck(statement)
+        }
         
         symbolTables = self.symbolTable
         return problems
