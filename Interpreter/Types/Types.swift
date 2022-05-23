@@ -37,9 +37,14 @@ class QsClass: QsType {
 }
 
 struct MethodSignature: Hashable {
+    let name: String
     let parameters: [QsType]
     
     static func == (lhs: MethodSignature, rhs: MethodSignature) -> Bool {
+        if lhs.name != rhs.name {
+            return false
+        }
+        
         if lhs.parameters.count != rhs.parameters.count {
             return false
         }
@@ -56,5 +61,12 @@ struct MethodSignature: Hashable {
         for i in parameters {
             hashTypeIntoHasher(i, &hasher)
         }
+    }
+    
+    init(functionStmt: FunctionStmt) {
+        self.name = functionStmt.name.lexeme
+        self.parameters = functionStmt.params.map({ functionParam in
+            functionParam.type!
+        })
     }
 }

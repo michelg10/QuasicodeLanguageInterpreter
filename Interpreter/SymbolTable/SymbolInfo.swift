@@ -2,6 +2,11 @@ protocol SymbolInfo {
     var id: Int { get set }
     var name: String { get set }
 }
+protocol FunctionLikeSymbol: SymbolInfo {
+    var returnType: QsType { get set }
+    func getParamCount() -> Int
+    func getUnderlyingFunctionStmt() -> FunctionStmt
+}
 
 enum SymbolType {
     case Variable, Function, Class
@@ -31,22 +36,51 @@ class FunctionNameSymbolInfo: SymbolInfo {
     var name: String
     var belongingFunctions: [Int]
 }
-class FunctionSymbolInfo: SymbolInfo {
-    init(id: Int, name: String, parameters: [QsType], functionStmt: FunctionStmt, withinClass: Int?, overridedBy: [Int]) {
+class FunctionSymbolInfo: SymbolInfo, FunctionLikeSymbol {
+    init(id: Int, name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = id
         self.name = name
-        self.parameters = parameters
         self.functionStmt = functionStmt
-        self.withinClass = withinClass
-        self.overridedBy = overridedBy
+        self.returnType = returnType
     }
     
     var id: Int
     var name: String
-    var parameters: [QsType]
     var functionStmt: FunctionStmt
-    var withinClass: Int?
+    var returnType: QsType
+    
+    func getParamCount() -> Int {
+        return functionStmt.params.count
+    }
+    
+    func getUnderlyingFunctionStmt() -> FunctionStmt {
+        return functionStmt
+    }
+}
+class MethodSymbolInfo: SymbolInfo, FunctionLikeSymbol {
+    init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType) {
+        self.id = id
+        self.name = name
+        self.withinClass = withinClass
+        self.overridedBy = overridedBy
+        self.methodStmt = methodStmt
+        self.returnType = returnType
+    }
+    
+    var id: Int
+    var name: String
+    var withinClass: Int
     var overridedBy: [Int]
+    var methodStmt: MethodStmt
+    var returnType: QsType
+    
+    func getParamCount() -> Int {
+        return methodStmt.function.params.count
+    }
+    
+    func getUnderlyingFunctionStmt() -> FunctionStmt {
+        return methodStmt.function
+    }
 }
 class ClassChain {
     init(upperClass: Int, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {

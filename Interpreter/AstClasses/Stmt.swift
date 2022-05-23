@@ -108,16 +108,19 @@ class ClassStmt: Stmt {
 
 class MethodStmt: Stmt {
     var isStatic: Bool
+    var staticKeyword: Token?
     var visibilityModifier: VisibilityModifier
     var function: FunctionStmt
     
-    init(isStatic: Bool, visibilityModifier: VisibilityModifier, function: FunctionStmt) {
+    init(isStatic: Bool, staticKeyword: Token?, visibilityModifier: VisibilityModifier, function: FunctionStmt) {
         self.isStatic = isStatic
+        self.staticKeyword = staticKeyword
         self.visibilityModifier = visibilityModifier
         self.function = function
     }
     init(_ objectToCopy: MethodStmt) {
         self.isStatic = objectToCopy.isStatic
+        self.staticKeyword = objectToCopy.staticKeyword
         self.visibilityModifier = objectToCopy.visibilityModifier
         self.function = objectToCopy.function
     }

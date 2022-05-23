@@ -199,12 +199,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         
         for method in stmt.staticMethods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function, withinClass: classSymbol.classId)
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
             }
         }
         for method in stmt.methods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function, withinClass: classSymbol.classId)
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
             }
         }
         
@@ -243,6 +243,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let previousFunctionStatus = currentFunction
         if stmt.function.name.lexeme == currentClassStatus?.name {
             currentFunction = .initializer
+            if stmt.isStatic {
+                error(message: "Initializer declaration cannot be marked 'static'", token: stmt.staticKeyword!)
+            }
         } else {
             currentFunction = .method
         }
@@ -263,7 +266,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         symbolTable.exitScope()
     }
     
-    private func defineFunction(stmt: FunctionStmt, withinClass: Int?) throws -> Int {
+    private func defineFunction(stmt: FunctionStmt) throws -> Int {
+        try defineFunction(stmt: stmt, methodStmt: nil, withinClass: nil)
+    }
+    
+    private func defineFunction(stmt: FunctionStmt, methodStmt: MethodStmt?, withinClass: Int?) throws -> Int {
         var paramsName = ""
         for param in stmt.params {
             if paramsName != "" {
@@ -276,8 +283,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         if symbolTable.queryAtScope(functionSignature) != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
-        
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, parameters: [], functionStmt: stmt, withinClass: withinClass, overridedBy: []))
+        var symbolTableIndex = -1
+        if withinClass == nil {
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType()))
+        } else {
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbolInfo(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType()))
+        }
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {
             guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbolInfo else {
@@ -451,7 +462,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             
             if let functionStmt = statement as? FunctionStmt {
                 catchErrorClosure {
-                    try defineFunction(stmt: functionStmt, withinClass: nil)
+                    try defineFunction(stmt: functionStmt)
                 }
             }
         }

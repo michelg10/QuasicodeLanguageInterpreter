@@ -11,6 +11,9 @@ func printSymbol(symbol: SymbolInfo) -> [String] {
     case is FunctionSymbolInfo:
         symbolType = "Function"
         result = printFunctionInfo(symbol as! FunctionSymbolInfo)
+    case is MethodSymbolInfo:
+        symbolType = "Method"
+        result = printMethodInfo(symbol as! MethodSymbolInfo)
     case is ClassSymbolInfo:
         symbolType = "Class"
         result = printClassInfo(symbol as! ClassSymbolInfo)
@@ -29,15 +32,10 @@ func printFunctionNameInfo(_ symbol: FunctionNameSymbolInfo) -> String {
     return "belongingFunctions: \(symbol.belongingFunctions)"
 }
 func printFunctionInfo(_ symbol: FunctionSymbolInfo) -> String {
-    let parametersDescription = symbol.parameters.reduce("") { partialResult, next in
-        var result = partialResult
-        if result != "" {
-            result+=", "
-        }
-        result+=printType(next)
-        return result
-    }
-    return "withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), parameters: [\(parametersDescription)]"
+    return ""
+}
+func printMethodInfo(_ symbol: MethodSymbolInfo) -> String {
+    return "withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy)"
 }
 func printClassInfo(_ symbol: ClassSymbolInfo) -> String {
     return "classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.classChain?.depth)), parentOf: \(stringifyOptionalIntArray(symbol.classChain?.parentOf)), upperClass: \(stringifyOptionalInt(symbol.classChain?.upperClass))"

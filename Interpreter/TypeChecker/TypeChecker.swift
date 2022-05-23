@@ -227,19 +227,19 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             var bestMatchLevel = Int.max
             let belongingFunctions = functionNameSymbolEntry.belongingFunctions;
             for belongingFunction in belongingFunctions {
-                guard let functionSymbolEntry = symbolTable.getSymbol(id: belongingFunction) as? FunctionSymbolInfo else {
+                guard let functionSymbolEntry = symbolTable.getSymbol(id: belongingFunction) as? FunctionLikeSymbol else {
                     assertionFailure("Symbol at index is not a function symbol")
                     expr.type = QsAnyType()
                     return
                 }
-                if functionSymbolEntry.parameters.count != expr.arguments.count {
+                if functionSymbolEntry.getParamCount() != expr.arguments.count {
                     continue
                 }
                 // determine match level between the functions
                 var matchLevel = 1
                 for i in 0..<expr.arguments.count {
                     let givenType = expr.arguments[i].type!
-                    let expectedType = functionSymbolEntry.parameters[i]
+                    let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].type!
                     if typesIsEqual(givenType, expectedType) {
                         matchLevel = max(matchLevel, 1)
                         continue
@@ -461,6 +461,120 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 fillDepth(children, depth: depth+1)
             }
         }
+        var methodsChain: [[MethodSignature : Int]] = []
+        func findMethodInChain(signature: MethodSignature) -> Int? {
+            for i in 0..<methodsChain.count {
+                let methodChain = methodsChain[methodsChain.count-i-1]
+                if let resultingId = methodChain[signature] {
+                    return resultingId
+                }
+            }
+            return nil
+        }
+        func processOverrideMethods(classId: Int) -> [MethodSignature : [Int]] {
+            // within the class specified by classId:
+            // record functions into the methods in chain (if they're new)
+            // report errors if return types and static is inconsistent
+            // log all the functions that override methods from the top of the hierarchy into the return value
+            // continue down the class hierarchy
+            
+            // record functions into the methods
+            guard let classSymbol = symbolTable.getSymbol(id: classId) as? ClassSymbolInfo else {
+                assertionFailure("Expected class symbol")
+                return [:]
+            }
+            guard let classChain = classSymbol.classChain else {
+                assertionFailure("Expected class chain")
+                return [:]
+            }
+            let classStmt = classChain.classStmt
+            var newMethodChain: [MethodSignature : Int] = [:]
+            var overrides: [MethodSignature : [Int]] = [:]
+            var currentClassSignatureToSymbolIdDict: [MethodSignature : Int] = [:]
+            
+            func addOverride(methodSignature: MethodSignature, functionId: Int) {
+                if overrides[methodSignature] == nil {
+                    overrides[methodSignature] = [functionId]
+                    return
+                }
+                overrides[methodSignature]!.append(functionId)
+            }
+            func addOverride(methodSignature: MethodSignature, functionIds: [Int]) {
+                if overrides[methodSignature] == nil {
+                    overrides[methodSignature] = functionIds
+                    return
+                }
+                overrides[methodSignature]!.append(contentsOf: functionIds)
+            }
+            
+            
+            func handleMethod(_ method: MethodStmt) {
+                let signature = MethodSignature.init(functionStmt: method.function)
+                let existingMethod = findMethodInChain(signature: signature)
+                if method.function.symbolTableIndex == nil || method.function.nameSymbolTableIndex == nil {
+                    // an error probably occured, dont process it
+                    return
+                }
+                currentClassSignatureToSymbolIdDict[signature] = method.function.symbolTableIndex!
+                guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbolInfo else {
+                    assertionFailure("Expected method symbol info!")
+                    return
+                }
+                if existingMethod == nil {
+                    // record function into the chain
+                    newMethodChain[.init(functionStmt: method.function)] = method.function.symbolTableIndex!
+                } else {
+                    // check consistency with the function currently in the chain
+                    guard let existingMethodSymbolInfo = (symbolTable.getSymbol(id: existingMethod!) as? MethodSymbolInfo) else {
+                        return
+                    }
+                    // check static consistency
+                    if method.isStatic != existingMethodSymbolInfo.methodStmt.isStatic {
+                        error(message: "Static does not match for overriding method", token: (method.isStatic ? method.staticKeyword! : method.function.name))
+                    }
+                    // check return type consistency
+                    if !typesIsEqual(existingMethodSymbolInfo.returnType, currentMethodSymbol.returnType) {
+                        let annotation = method.function.annotation
+                        if annotation == nil {
+                            error(message: "Return type does not match for overriding method", token: method.function.keyword)
+                        } else {
+                            error(message: "Return type does not match for overriding method", start: annotation!.startLocation, end: annotation!.endLocation)
+                        }
+                    }
+                    
+                    // log this override
+                    addOverride(methodSignature: signature, functionId: method.function.symbolTableIndex!)
+                }
+            }
+            for method in classStmt.methods {
+                handleMethod(method)
+            }
+            for method in classStmt.staticMethods {
+                handleMethod(method)
+            }
+            
+            methodsChain.append(newMethodChain)
+            
+            for childClass in classChain.parentOf {
+                let childClassOverrides = processOverrideMethods(classId: childClass)
+                for (childOverrideSignature, overridingIds) in childClassOverrides {
+                    if let methodSymbolId = currentClassSignatureToSymbolIdDict[childOverrideSignature] {
+                        // the method that the child is overriding resides in this class. log it.
+                        if let methodInfo = (symbolTable.getSymbol(id: methodSymbolId) as? MethodSymbolInfo) {
+                            methodInfo.overridedBy = overridingIds
+                        }
+                    }
+                    if newMethodChain[childOverrideSignature] == nil {
+                        // the method did not originate from this class. propogate it back through the class hierarchy
+                        addOverride(methodSignature: childOverrideSignature, functionIds: overridingIds)
+                    }
+                }
+            }
+            
+            methodsChain.popLast()
+            
+            return overrides
+        }
         for classStmt in classStmts {
             guard let classId = classStmt.symbolTableIndex else {
                 continue
@@ -470,21 +584,28 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             if classChain.depth == 1 {
                 fillDepth(classId, depth: 1)
+                processOverrideMethods(classId: classId)
             }
         }
     }
     
-    private func fillFunctionParameters() {
+    private func typeFunctions() {
+        // assign types to their parameters and their return types
         for symbolTable in symbolTable.getAllSymbols() {
-            guard let functionSymbol = symbolTable as? FunctionSymbolInfo else {
+            guard var functionSymbol = symbolTable as? FunctionLikeSymbol else {
                 continue
             }
-            for param in functionSymbol.functionStmt.params {
+            let functionStmt = functionSymbol.getUnderlyingFunctionStmt()
+            if functionStmt.annotation != nil {
+                functionSymbol.returnType = typeCheck(functionStmt.annotation!)
+            }
+            for i in 0..<functionStmt.params.count {
+                let param = functionStmt.params[i]
                 var paramType: QsType = QsAnyType()
                 if param.astType != nil {
                     paramType = typeCheck(param.astType!)
                 }
-                functionSymbol.parameters.append(paramType)
+                functionStmt.params[i].type = paramType
             }
         }
     }
@@ -493,7 +614,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         self.symbolTable = symbolTables
         
         buildClassHierarchy(statements: statements)
-        fillFunctionParameters()
+        typeFunctions()
         
         for statement in statements {
             typeCheck(statement)

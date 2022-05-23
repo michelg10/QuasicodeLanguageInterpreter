@@ -115,6 +115,7 @@ class Parser {
         var staticMethods: [MethodStmt] = []
         var fields: [ClassField] = []
         var staticFields: [ClassField] = []
+        var staticKeyword: Token? = nil
         
         while !check(type: .END) && !isAtEnd() {
             var visibilityModifer: VisibilityModifier? = nil
@@ -136,6 +137,7 @@ class Parser {
                     if isStatic != nil {
                         throw error(message: "Repeated static modifier", token: previous())
                     }
+                    staticKeyword = previous()
                     isStatic = true
                 default:
                     continue
@@ -152,7 +154,7 @@ class Parser {
             
             if match(types: .FUNCTION) {
                 let function = try FunctionDeclaration()
-                let method = MethodStmt.init(isStatic: isStatic!, visibilityModifier: visibilityModifer!, function: function as! FunctionStmt)
+                let method = MethodStmt.init(isStatic: isStatic!, staticKeyword: staticKeyword, visibilityModifier: visibilityModifer!, function: function as! FunctionStmt)
                 if isStatic! {
                     staticMethods.append(method)
                 } else {
