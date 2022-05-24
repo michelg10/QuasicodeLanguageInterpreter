@@ -419,14 +419,18 @@ class CallExpr: Expr {
     var callee: Expr
     var paren: Token
     var arguments: [Expr]
+    var uniqueFunctionCall: Int?
+    var polymorphicCallClassIdToIdDict: [Int : Int]?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(callee: Expr, paren: Token, arguments: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(callee: Expr, paren: Token, arguments: [Expr], uniqueFunctionCall: Int?, polymorphicCallClassIdToIdDict: [Int : Int]?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.callee = callee
         self.paren = paren
         self.arguments = arguments
+        self.uniqueFunctionCall = uniqueFunctionCall
+        self.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -435,6 +439,8 @@ class CallExpr: Expr {
         self.callee = objectToCopy.callee
         self.paren = objectToCopy.paren
         self.arguments = objectToCopy.arguments
+        self.uniqueFunctionCall = objectToCopy.uniqueFunctionCall
+        self.polymorphicCallClassIdToIdDict = objectToCopy.polymorphicCallClassIdToIdDict
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation

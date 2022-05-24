@@ -137,9 +137,16 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitCallExprString(expr: CallExpr) -> String {
+        var callsFunction = "none"
+        if expr.uniqueFunctionCall != nil {
+            callsFunction = "Unique<\(expr.uniqueFunctionCall!)>"
+        }
+        if expr.polymorphicCallClassIdToIdDict != nil {
+            callsFunction = "Polymorph<\(expr.polymorphicCallClassIdToIdDict!.description)>"
+        }
         var exprs = [expr.callee]
         exprs.append(contentsOf: expr.arguments)
-        return parenthesize(name: "call", exprs: exprs)
+        return parenthesize(name: "call{callsFunction: \(callsFunction)}", exprs: exprs)
     }
     
     internal func visitGetExprString(expr: GetExpr) -> String {

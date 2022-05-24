@@ -560,7 +560,7 @@ class Parser {
         var argumentsList: [Expr] = try arguments()
         
         let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
-        return CallExpr(callee: callee, paren: paren, arguments: argumentsList, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
+        return CallExpr(callee: callee, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
     }
     
     private func secondary() throws -> Expr {

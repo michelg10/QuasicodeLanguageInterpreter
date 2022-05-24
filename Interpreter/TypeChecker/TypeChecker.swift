@@ -265,8 +265,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
                 
             }
-            // TODO: Support polymorphism
-            // TODO: What about initializers? Prevent these from being called
             // TODO: Assignable
             // TODO: Default parameters
             if bestMatchLevel == Int.max || bestMatches.count == 0 {
@@ -280,19 +278,48 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return
             }
             
-            print("Resolved with function \(bestMatches[0])")
+            let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
+            if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbolInfo {
+                expr.uniqueFunctionCall = bestMatches[0]
+                expr.type = typedResolvedFunctionSymbol.returnType
+            } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbolInfo {
+                var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
+                expr.type = typedResolvedFunctionSymbol.returnType
+                polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
+                for overrides in typedResolvedFunctionSymbol.overridedBy {
+                    guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbolInfo else {
+                        continue
+                    }
+                    polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
+                }
+                expr.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
+            } else {
+                assertionFailure("Expect FunctionLike symbol")
+            }
             
+            return
         }
+        error(message: "Expression cannot be called", start: expr.startLocation, end: expr.endLocation)
         expr.type = QsAnyType() // fallback to the any type
         return
     }
     
     internal func visitGetExpr(expr: GetExpr) {
-        // TODO
+        // TODO: Do not allow initializers to be get. they don't exist
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {
-        
+        typeCheck(expr.right)
+        if expr.opr.tokenType == .NOT {
+            if expr.right.type is QsBoolean {
+                expr.type = QsBoolean()
+                return
+            }
+        } else if expr.opr.tokenType == .MINUS {
+            
+        } else {
+            assertionFailure("Unexpected unary expression token type \(expr.opr.tokenType)")
+        }
     }
     
     internal func visitCastExpr(expr: CastExpr) {
@@ -332,7 +359,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
-        
+        typeCheck(stmt.expression)
     }
     
     internal func visitIfStmt(stmt: IfStmt) {
@@ -384,7 +411,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func buildClassHierarchy(statements: [Stmt]) {
-        // TODO: Make it a compilation error for polymorphic functions to return different return types
         var classStmts: [ClassStmt] = []
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
@@ -613,8 +639,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTables
         
-        buildClassHierarchy(statements: statements)
         typeFunctions()
+        buildClassHierarchy(statements: statements)
         
         for statement in statements {
             typeCheck(statement)
