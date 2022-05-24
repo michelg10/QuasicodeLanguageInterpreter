@@ -285,9 +285,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var symbolTableIndex = -1
         if withinClass == nil {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType()))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbolInfo(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType()))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbolInfo(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false)))
         }
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScope(stmt.name.lexeme) {

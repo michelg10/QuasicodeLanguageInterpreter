@@ -11,31 +11,31 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return a
         }
         if a is QsAnyType || b is QsAnyType {
-            return QsAnyType()
+            return QsAnyType(assignable: false)
         }
         if a is QsNativeType || b is QsNativeType {
             if !(a is QsNativeType && b is QsNativeType) {
                 // if one of them is a native type but one of them aren't
-                return QsAnyType()
+                return QsAnyType(assignable: false)
             }
             
             // both of them are of QsNativeType and are different
             // case 1: one of them is boolean. thus the other one must be int or double
             if a is QsBoolean || b is QsBoolean {
-                return QsAnyType()
+                return QsAnyType(assignable: false)
             }
             
             // if none of them are QsBoolean, then one must be QsInt and another must be QsDouble. the common type there is QsDouble, so return that
-            return QsDouble()
+            return QsDouble(assignable: false)
         }
         if a is QsArray || b is QsArray {
             if !(a is QsArray && b is QsArray) {
                 // one of them is a QsArray but another isn't
-                return QsAnyType()
+                return QsAnyType(assignable: false)
             }
             
             // both are QsArrays
-            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains))
+            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains), assignable: false)
         }
         
         struct JumpError: Error { }
@@ -51,17 +51,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if a is QsClass || b is QsClass {
                 if !(a is QsClass && b is QsClass) {
                     // one of them is a QsClass but another isn't
-                    return QsAnyType()
+                    return QsAnyType(assignable: false)
                 }
                 var aClassId = (a as! QsClass).id
                 var bClassId = (b as! QsClass).id
                 // they're unequal, so jump up the chain
                 // let the depth of aClass is deeper than bClass
                 guard var aChain = getClassChain(id: aClassId) else {
-                    return QsAnyType()
+                    return QsAnyType(assignable: false)
                 }
                 guard var bChain = getClassChain(id: bClassId) else {
-                    return QsAnyType()
+                    return QsAnyType(assignable: false)
                 }
                 if aChain.depth<bChain.depth {
                     swap(&aChain, &bChain)
@@ -77,53 +77,53 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // keep on jumping up for both until they are the same
                 while (aClassId != bClassId) {
                     if aChain.upperClass == -1 {
-                        return QsAnyType()
+                        return QsAnyType(assignable: false)
                     }
                     
                     (aClassId, aChain) = try jumpUpChain(classChain: aChain)
                     (bClassId, bChain) = try jumpUpChain(classChain: bChain)
                 }
                 
-                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId)
+                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId, assignable: false)
             }
         } catch {
-            return QsAnyType()
+            return QsAnyType(assignable: false)
         }
-        return QsAnyType()
+        return QsAnyType(assignable: false)
     }
     
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
-        return QsArray(contains: typeCheck(asttype.contains))
+        return QsArray(contains: typeCheck(asttype.contains), assignable: false)
     }
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
         let classSignature = classSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
         guard let symbolTableId = symbolTable.queryGlobal(classSignature)?.id else {
-            return QsAnyType()
+            return QsAnyType(assignable: false)
         }
-        return QsClass(name: asttype.name.lexeme, id: symbolTableId)
+        return QsClass(name: asttype.name.lexeme, id: symbolTableId, assignable: false)
     }
     
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
         // shouldn't happen
         assertionFailure("AstTemplateType shouldn't exist in visited")
-        return QsAnyType()
+        return QsAnyType(assignable: false)
     }
     
     func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
-        return QsInt()
+        return QsInt(assignable: false)
     }
     
     func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
-        return QsDouble()
+        return QsDouble(assignable: false)
     }
     
     func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
-        return QsDouble()
+        return QsDouble(assignable: false)
     }
     
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
-        return QsAnyType()
+        return QsAnyType(assignable: false)
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {
@@ -137,7 +137,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         if expr.values.count == 0 {
-            expr.type = QsAnyType()
+            expr.type = QsAnyType(assignable: false)
             return
         }
         typeCheck(expr.values[0])
@@ -152,22 +152,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     func visitStaticClassExpr(expr: StaticClassExpr) {
         // TODO
-        expr.type = QsAnyType()
+        expr.type = QsAnyType(assignable: true)
     }
     
     internal func visitThisExpr(expr: ThisExpr) {
         // TODO
-        expr.type = QsAnyType()
+        expr.type = QsAnyType(assignable: false)
     }
     
     internal func visitSuperExpr(expr: SuperExpr) {
         // TODO
-        expr.type = QsAnyType()
+        expr.type = QsAnyType(assignable: true) // could be assignable or not assignable
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
         if expr.symbolTableIndex == nil {
-            expr.type = QsAnyType()
+            expr.type = QsAnyType(assignable: true)
             return
         }
         
@@ -175,7 +175,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         switch symbolEntry {
         case is VariableSymbolInfo:
             if (symbolEntry as! VariableSymbolInfo).type == nil {
-                expr.type = QsAnyType()
+                expr.type = QsAnyType(assignable: true)
             } else {
                 expr.type = (symbolEntry as! VariableSymbolInfo).type!
             }
@@ -190,23 +190,24 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // the index and the expression must both be indexable
         typeCheck(expr.index)
         if !(expr.index.type is QsAnyType || expr.index.type is QsInt) {
-            expr.type = QsAnyType()
+            expr.type = QsAnyType(assignable: true)
             error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
             return
         }
         typeCheck(expr.expression)
         if expr.expression.type is QsAnyType {
-            expr.type = QsAnyType()
+            expr.type = QsAnyType(assignable: true)
             return
         }
         // expression must be of type array
         if let expressionArray = expr.expression.type as? QsArray {
             expr.type = expressionArray.contains
+            expr.type!.assignable = true
             return
         }
         // if the expression is neither an any or an array
         error(message: "Subscripted expression is not an array", start: expr.startLocation, end: expr.endLocation)
-        expr.type = QsAnyType() // fallback
+        expr.type = QsAnyType(assignable: true) // fallback
         return
     }
     
@@ -219,7 +220,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             // Resolve function calls
             guard let functionNameSymbolEntry = symbolTable.getSymbol(id: (expr.callee.type! as! QsFunction).nameId) as? FunctionNameSymbolInfo else {
                 assertionFailure("Symbol at index is not a function name symbol")
-                expr.type = QsAnyType()
+                expr.type = QsAnyType(assignable: false)
                 return
             }
             // Resolve based on a "match level": the lower the level, the greater it is
@@ -229,7 +230,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             for belongingFunction in belongingFunctions {
                 guard let functionSymbolEntry = symbolTable.getSymbol(id: belongingFunction) as? FunctionLikeSymbol else {
                     assertionFailure("Symbol at index is not a function symbol")
-                    expr.type = QsAnyType()
+                    expr.type = QsAnyType(assignable: false)
                     return
                 }
                 if functionSymbolEntry.getParamCount() != expr.arguments.count {
@@ -265,16 +266,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
                 
             }
-            // TODO: Assignable
             // TODO: Default parameters
             if bestMatchLevel == Int.max || bestMatches.count == 0 {
                 error(message: "No matching function to call", start: expr.startLocation, end: expr.endLocation)
-                expr.type = QsAnyType() // fallback
+                expr.type = QsAnyType(assignable: false) // fallback
                 return
             }
             if bestMatches.count>1 {
                 error(message: "Function call is ambiguous", start: expr.startLocation, end: expr.endLocation)
-                expr.type = QsAnyType()
+                expr.type = QsAnyType(assignable: false)
                 return
             }
             
@@ -296,11 +296,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             } else {
                 assertionFailure("Expect FunctionLike symbol")
             }
+            expr.type!.assignable = false
             
             return
         }
         error(message: "Expression cannot be called", start: expr.startLocation, end: expr.endLocation)
-        expr.type = QsAnyType() // fallback to the any type
+        expr.type = QsAnyType(assignable: false) // fallback to the any type
         return
     }
     
@@ -312,7 +313,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.right)
         if expr.opr.tokenType == .NOT {
             if expr.right.type is QsBoolean {
-                expr.type = QsBoolean()
+                expr.type = QsBoolean(assignable: false)
                 return
             }
         } else if expr.opr.tokenType == .MINUS {
@@ -627,7 +628,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             for i in 0..<functionStmt.params.count {
                 let param = functionStmt.params[i]
-                var paramType: QsType = QsAnyType()
+                var paramType: QsType = QsAnyType(assignable: false)
                 if param.astType != nil {
                     paramType = typeCheck(param.astType!)
                 }

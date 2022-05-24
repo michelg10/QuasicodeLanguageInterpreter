@@ -1,37 +1,75 @@
-protocol QsType {}
+protocol QsType {
+    var assignable: Bool { get set }
+}
 
 class QsArray: QsType {
-    init(contains: QsType) {
+    init(contains: QsType, assignable: Bool) {
+        self.assignable = assignable
         self.contains = contains
     }
     
+    var assignable: Bool
     let contains: QsType
 }
 
 protocol QsNativeType: QsType {}
 
-class QsInt: QsNativeType {}
+class QsInt: QsNativeType {
+    init(assignable: Bool) {
+        self.assignable = assignable
+    }
+    
+    var assignable: Bool
+}
 
-class QsDouble: QsNativeType {}
+class QsDouble: QsNativeType {
+    init(assignable: Bool) {
+        self.assignable = assignable
+    }
+    
+    var assignable: Bool
+}
 
-class QsBoolean: QsNativeType {}
+class QsBoolean: QsNativeType {
+    init(assignable: Bool) {
+        self.assignable = assignable
+    }
+    
+    var assignable: Bool
+}
 
 class QsFunction: QsType {
     let nameId: Int
+    var assignable: Bool {
+        get {
+            return false
+        }
+        set {
+            
+        }
+    }
     
     init(nameId: Int) {
         self.nameId = nameId
     }
 }
 
-class QsAnyType: QsType {}
+class QsAnyType: QsType {
+    init(assignable: Bool) {
+        self.assignable = assignable
+    }
+    
+    var assignable: Bool
+}
 
 class QsClass: QsType {
-    init(name: String, id: Int) {
+    init(name: String, id: Int, assignable: Bool) {
+        self.assignable = assignable
         self.name = name
         self.id = id
     }
     
+    var assignable: Bool
     let name: String
     let id: Int
 }

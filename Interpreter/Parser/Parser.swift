@@ -586,26 +586,26 @@ class Parser {
     
     private func primary() throws -> Expr {
         if match(types: .TRUE) {
-            return LiteralExpr(value: true, type: QsBoolean(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: true, type: QsBoolean(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .FALSE) {
-            return LiteralExpr(value: false, type: QsBoolean(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: false, type: QsBoolean(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .NULL) {
-            return LiteralExpr(value: nil, type: QsAnyType(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: nil, type: QsAnyType(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .THIS) {
             return ThisExpr(keyword: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .INTEGER) {
-            return LiteralExpr(value: previous().value, type: QsInt(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: previous().value, type: QsInt(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .FLOAT) {
-            return LiteralExpr(value: previous().value, type: QsDouble(), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: previous().value, type: QsDouble(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .STRING) {
             // TODO: define the string class
-            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         let statePrior = current
         if match(types: .IDENTIFIER) {
