@@ -146,6 +146,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             typeCheck(expr.values[i])
             inferredType = findCommonType(inferredType, expr.values[i].type!)
         }
+        // add in the implicit type conversions
+        for i in 0..<expr.values.count {
+            if !typesIsEqual(inferredType, expr.values[i].type!) {
+                expr.values[i] = ImplicitCastExpr(expression: expr.values[i], type: inferredType, startLocation: expr.startLocation, endLocation: expr.endLocation)
+            }
+        }
         
         expr.type = inferredType
     }
@@ -178,6 +184,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type = QsAnyType(assignable: true)
             } else {
                 expr.type = (symbolEntry as! VariableSymbolInfo).type!
+                expr.type!.assignable = true
             }
         case is FunctionNameSymbolInfo:
             expr.type = QsFunction(nameId: (symbolEntry as! FunctionNameSymbolInfo).id)
@@ -187,25 +194,23 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSubscriptExpr(expr: SubscriptExpr) {
+        // TODO: add an "object" type
         // the index and the expression must both be indexable
         typeCheck(expr.index)
-        if !(expr.index.type is QsAnyType || expr.index.type is QsInt) {
+        if expr.index.type is QsInt {
+            // do nothing
+        } else {
             expr.type = QsAnyType(assignable: true)
             error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
             return
         }
         typeCheck(expr.expression)
-        if expr.expression.type is QsAnyType {
-            expr.type = QsAnyType(assignable: true)
-            return
-        }
         // expression must be of type array
         if let expressionArray = expr.expression.type as? QsArray {
             expr.type = expressionArray.contains
             expr.type!.assignable = true
             return
         }
-        // if the expression is neither an any or an array
         error(message: "Subscripted expression is not an array", start: expr.startLocation, end: expr.endLocation)
         expr.type = QsAnyType(assignable: true) // fallback
         return
@@ -267,6 +272,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 
             }
             // TODO: Default parameters
+            // TODO: Implicit casts
             if bestMatchLevel == Int.max || bestMatches.count == 0 {
                 error(message: "No matching function to call", start: expr.startLocation, end: expr.endLocation)
                 expr.type = QsAnyType(assignable: false) // fallback
@@ -306,37 +312,85 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitGetExpr(expr: GetExpr) {
-        // TODO: Do not allow initializers to be get. they don't exist
+        // TODO: Do not allow initializers to be get. they don't exist (from the perspective of the language)
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {
         typeCheck(expr.right)
-        if expr.opr.tokenType == .NOT {
+        switch expr.opr.tokenType {
+        case .NOT:
+            expr.type = QsBoolean(assignable: false)
             if expr.right.type is QsBoolean {
-                expr.type = QsBoolean(assignable: false)
+                // do nothing
+            } else {
+                error(message: "Type '' cannot be used as a boolean", start: expr.right.startLocation, end: expr.right.endLocation)
+            }
+        case .MINUS:
+            if isNumericType(expr.right.type!) {
+                expr.type = expr.right.type
+                expr.type!.assignable = false
                 return
             }
-        } else if expr.opr.tokenType == .MINUS {
-            
-        } else {
+        default:
+            expr.type = QsAnyType(assignable: false)
             assertionFailure("Unexpected unary expression token type \(expr.opr.tokenType)")
         }
     }
     
     internal func visitCastExpr(expr: CastExpr) {
-        
+        typeCheck(expr.value)
+        let castTo = typeCheck(expr.toType)
+        expr.type = castTo
+        if typesIsEqual(castTo, expr.value.type!) {
+            return
+        }
+        // allowed type casts: [any type] -> any, any -> [any type], int -> double, double -> int
+        if castTo is QsAnyType {
+            return // allow casting to any type
+        }
+        if expr.value.type is QsAnyType {
+            return // allow any to be cast to anything
+        }
+        if isNumericType(expr.value.type!) && isNumericType(castTo) {
+            return // allow int -> double and double -> int
+        }
+        error(message: "Type '' cannot be cast to ''", start: expr.toType.startLocation, end: expr.toType.endLocation)
     }
     
     internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
-        
+        var expressionType = typeCheck(expr.contains)
+        for capacity in expr.capacity {
+            typeCheck(capacity)
+            if !(capacity.type! is QsInt) {
+                error(message: "Expect type 'int' for array capacity", start: expr.startLocation, end: expr.endLocation)
+                expr.type = QsAnyType(assignable: false)
+                return
+            }
+            expressionType = QsArray(contains: expressionType, assignable: false)
+        }
+        expr.type = expressionType
     }
     
     internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
-        
+        // TODO: use code from the call expr for this
+        expr.type = QsAnyType(assignable: false)
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
-        
+        typeCheck(expr.left)
+        typeCheck(expr.right)
+        switch expr.opr.tokenType {
+        case .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL:
+            if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                expr.type = QsBoolean(assignable: false)
+                return
+            } else {
+                // string comparison
+            }
+        default:
+            // TODO
+            break
+        }
     }
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
@@ -345,6 +399,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitSetExpr(expr: SetExpr) {
         
+    }
+    
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+        assertionFailure("Implicit cast expression should not be visited!")
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {

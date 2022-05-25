@@ -2,7 +2,8 @@ import Foundation
 
 let DEBUG = true
 
-let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
+//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 
 let start = DispatchTime.now()
 

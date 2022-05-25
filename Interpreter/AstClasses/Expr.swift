@@ -27,6 +27,7 @@ protocol ExprVisitor {
     func visitBinaryExpr(expr: BinaryExpr) 
     func visitLogicalExpr(expr: LogicalExpr) 
     func visitSetExpr(expr: SetExpr) 
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) 
 }
 
 protocol ExprThrowVisitor {
@@ -47,6 +48,7 @@ protocol ExprThrowVisitor {
     func visitBinaryExpr(expr: BinaryExpr) throws 
     func visitLogicalExpr(expr: LogicalExpr) throws 
     func visitSetExpr(expr: SetExpr) throws 
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
 }
 
 protocol ExprQsTypeThrowVisitor {
@@ -67,6 +69,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType
     func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
     func visitSetExprQsType(expr: SetExpr) throws -> QsType
+    func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
 }
 
 protocol ExprExprThrowVisitor {
@@ -87,6 +90,7 @@ protocol ExprExprThrowVisitor {
     func visitBinaryExprExpr(expr: BinaryExpr) throws -> Expr
     func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
     func visitSetExprExpr(expr: SetExpr) throws -> Expr
+    func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
 }
 
 protocol ExprStringVisitor {
@@ -107,6 +111,7 @@ protocol ExprStringVisitor {
     func visitBinaryExprString(expr: BinaryExpr) -> String
     func visitLogicalExprString(expr: LogicalExpr) -> String
     func visitSetExprString(expr: SetExpr) -> String
+    func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
 class GroupingExpr: Expr {
@@ -787,6 +792,42 @@ class SetExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSetExprString(expr: self)
+    }
+}
+
+class ImplicitCastExpr: Expr {
+    var expression: Expr
+    var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
+    
+    init(expression: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.expression = expression
+        self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
+    }
+    init(_ objectToCopy: ImplicitCastExpr) {
+        self.expression = objectToCopy.expression
+        self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitImplicitCastExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitImplicitCastExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitImplicitCastExprQsType(expr: self)
+    }
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitImplicitCastExprExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitImplicitCastExprString(expr: self)
     }
 }
 

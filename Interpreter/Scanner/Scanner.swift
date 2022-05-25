@@ -67,9 +67,16 @@ class Scanner {
         "and"      : .AND,
         "or"       : .OR,
         "not"      : .NOT,
+        "MOD"      : .MOD,
+        "DIV"      : .DIV,
+        "AND"      : .AND,
+        "OR"       : .OR,
+        "NOT"      : .NOT,
         
         "OUTPUT"   : .OUTPUT,
         "INPUT"    : .INPUT,
+        "output"   : .OUTPUT,
+        "input"    : .INPUT,
         
         "function" : .FUNCTION,
         "return"   : .RETURN,

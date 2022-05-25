@@ -14,6 +14,10 @@ class QsArray: QsType {
 
 protocol QsNativeType: QsType {}
 
+func isNumericType(_ type: QsType) -> Bool {
+    return type is QsInt || type is QsDouble
+}
+
 class QsInt: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable

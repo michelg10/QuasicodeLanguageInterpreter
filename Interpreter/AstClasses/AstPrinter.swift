@@ -181,6 +181,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "Set{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : (expr.isFirstAssignment! ? "yes" : "no"))}", exprs: expr.to, expr.value)
     }
     
+    func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
+        return parenthesize(name: "ImplicitCast{to: \(printType(expr.type))}", exprs: expr.expression)
+    }
+    
     private func classField(field: ClassField) -> String {
         return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){\(astTypeToString(astType: field.astType))} = \(field.initializer == nil ? "NoInit" : field.initializer!.accept(visitor: self))"
     }

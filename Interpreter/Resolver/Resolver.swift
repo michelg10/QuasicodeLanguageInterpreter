@@ -19,9 +19,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var currentFunction: FunctionType = .none
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
+    private var isInGlobalScope = false
     
     private func createVariableAtScope(variableName: String) -> Int {
-        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName))
+        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName, isInGlobalScope: isInGlobalScope))
     }
     
     private func defineOrGetVariable(name: Token, allowShadowing: Bool) throws -> (Int, Bool) {
@@ -98,7 +99,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
-        defineIdentifierAsVariableOrGet(expr: expr)
+        let newlyDefined = defineIdentifierAsVariableOrGet(expr: expr)
+        if newlyDefined {
+            error(message: "Use of unknown identifier \(expr.name.lexeme)", start: expr.startLocation, end: expr.endLocation)
+        }
     }
     
     internal func visitSubscriptExpr(expr: SubscriptExpr) throws {
@@ -167,7 +171,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         try resolve(expr.value)
     }
     
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) throws {
+        assertionFailure("Implicit cast expression present in Resolver")
+    }
+    
     internal func visitClassStmt(stmt: ClassStmt) {
+        let previousIsInGlobalScope = isInGlobalScope
+        isInGlobalScope = false
         // add template names, method names
         var classScope: [String : Int] = [:]
         if stmt.templateParameters != nil {
@@ -237,6 +247,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         symbolTable.exitScope()
         currentClassStatus = previousClassStatus
+        isInGlobalScope = previousIsInGlobalScope
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
@@ -254,6 +265,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func resolveFunction(stmt: FunctionStmt) {
+        let previousIsInGlobalScope = isInGlobalScope
+        isInGlobalScope = false
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         for i in 0..<stmt.params.count {
             stmt.params[i].symbolTableIndex = catchErrorClosure {
@@ -264,6 +277,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             resolve(stmt)
         }
         symbolTable.exitScope()
+        isInGlobalScope = previousIsInGlobalScope
     }
     
     private func defineFunction(stmt: FunctionStmt) throws -> Int {
@@ -406,12 +420,19 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     internal func visitBlockStmt(stmt: BlockStmt) {
         stmt.scopeIndex = symbolTable.createAndEnterScope()
+        let previousInGlobalScope = isInGlobalScope
+        isInGlobalScope = false
         resolve(stmt.statements)
+        isInGlobalScope = previousInGlobalScope
         symbolTable.exitScope()
     }
     
     private func error(message: String, token: Token) -> ResolverError {
         problems.append(.init(message: message, token: token))
+        return ResolverError.error(message)
+    }
+    private func error(message: String, start: InterpreterLocation, end: InterpreterLocation) -> ResolverError {
+        problems.append(.init(message: message, start: start, end: end))
         return ResolverError.error(message)
     }
     
@@ -468,15 +489,32 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    private func eagerDefineGlobalVariables(statements: [Stmt]) {
+        for statement in statements {
+            guard let expressionStmt = statement as? ExpressionStmt else {
+                continue
+            }
+            guard let setExpr = expressionStmt.expression as? SetExpr else {
+                continue
+            }
+            guard let variableExpr = setExpr.to as? VariableExpr else {
+                continue
+            }
+            defineIdentifierAsVariableOrGet(expr: variableExpr)
+        }
+    }
+    
     func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTable
         
+        isInGlobalScope = true
         isInLoop = false
         currentFunction = .none
         currentClassStatus = nil
         problems = []
         
         eagerDefineClassesAndFunctions(statements: statements)
+        eagerDefineGlobalVariables(statements: statements)
         resolve(statements)
         
         symbolTable = self.symbolTable
