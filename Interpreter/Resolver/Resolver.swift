@@ -22,7 +22,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var isInGlobalScope = false
     
     private func createVariableAtScope(variableName: String, globalDefiningSetExpr: SetExpr? = nil) -> Int {
-        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName, isInGlobalScope: isInGlobalScope, globalDefiningSetExpr: globalDefiningSetExpr))
+        if isInGlobalScope {
+            return symbolTable.addToSymbolTable(symbol: GlobalVariableSymbolInfo(id: 0, type: nil, name: variableName, globalDefiningSetExpr: globalDefiningSetExpr!, globalStatus: .uninit))
+        } else {
+            return symbolTable.addToSymbolTable(symbol: VariableSymbolInfo(id: 0, type: nil, name: variableName))
+        }
     }
     
     private func defineOrGetVariable(name: Token, allowShadowing: Bool, globalDefiningSetExpr: SetExpr? = nil) throws -> (Int, Bool) {

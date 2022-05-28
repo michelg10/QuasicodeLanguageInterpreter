@@ -2,6 +2,9 @@ func printSymbol(symbol: SymbolInfo) -> [String] {
     var result = ""
     var symbolType = ""
     switch symbol {
+    case is GlobalVariableSymbolInfo:
+        symbolType = "GlobalVariable"
+        result = printGlobalVariableInfo(symbol as! GlobalVariableSymbolInfo)
     case is VariableSymbolInfo:
         symbolType = "Variable"
         result = printVariableInfo(symbol as! VariableSymbolInfo)
@@ -24,6 +27,9 @@ func printSymbol(symbol: SymbolInfo) -> [String] {
         result = "Unexpected symbol type \(type(of: symbol))"
     }
     return [String(symbol.id), String(symbol.name), symbolType, result]
+}
+func printGlobalVariableInfo(_ symbol: GlobalVariableSymbolInfo) -> String {
+    return "\(printVariableInfo(symbol)), status: \(symbol.globalStatus)"
 }
 func printVariableInfo(_ symbol: VariableSymbolInfo) -> String {
     return "type: \(printType(symbol.type))"
