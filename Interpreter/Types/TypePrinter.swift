@@ -5,19 +5,19 @@ func printType(_ value: QsType?) -> String {
     // reserve non-negative numbers for class IDs
     switch value! {
     case is QsInt:
-        return "<Int>"
+        return "int"
     case is QsDouble:
-        return "<Double>"
+        return "double"
     case is QsBoolean:
-        return "<Boolean>"
+        return "boolean"
     case is QsAnyType:
-        return "<Any>"
+        return "any"
     case is QsClass:
-        return "<Class \((value as! QsClass).id)>"
+        return "\((value as! QsClass).name)"
     case is QsArray:
-        return "<Array(contains: \(printType(value)))>"
+        return "[\(printType(value))]"
     case is QsFunction:
-        return "<Function \((value as! QsFunction).nameId)>"
+        return "Function(\((value as! QsFunction).nameId))"
     default:
         return "<Unknown \"\(type(of: value))\">"
     }

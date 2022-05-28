@@ -296,12 +296,12 @@ class ReturnStmt: Stmt {
 }
 
 class LoopFromStmt: Stmt {
-    var variable: Expr
+    var variable: VariableExpr
     var lRange: Expr
     var rRange: Expr
     var body: BlockStmt
     
-    init(variable: Expr, lRange: Expr, rRange: Expr, body: BlockStmt) {
+    init(variable: VariableExpr, lRange: Expr, rRange: Expr, body: BlockStmt) {
         self.variable = variable
         self.lRange = lRange
         self.rRange = rRange

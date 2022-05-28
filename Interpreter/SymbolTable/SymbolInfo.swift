@@ -13,7 +13,7 @@ enum SymbolType {
 }
 
 class VariableSymbolInfo: SymbolInfo {
-    init(id: Int, type: QsType? = nil, name: String, isInGlobalScope: Bool) {
+    init(id: Int, type: QsType? = nil, name: String, isInGlobalScope: Bool, globalDefiningSetExpr: SetExpr?) {
         self.id = id
         self.type = type
         self.name = name
@@ -24,6 +24,7 @@ class VariableSymbolInfo: SymbolInfo {
     var type: QsType?
     var name: String
     var isInGlobalScope: Bool
+    var globalDefiningSetExpr: SetExpr?
 }
 class FunctionNameSymbolInfo: SymbolInfo {
     // Represents a collection of functions underneath the same name, in the same scope

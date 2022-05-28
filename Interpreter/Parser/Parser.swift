@@ -280,7 +280,12 @@ class Parser {
     }
     
     private func loopFrom() throws -> Stmt {
-        let iteratingVariable = try secondary()
+        let iteratingVariableIdentifier = try consume(type: .IDENTIFIER, message: "Expect looping variable")
+        // check if its a class type
+        if tokenToAstType(previous()) is AstClassType {
+            throw error(message: "Expect looping variable", token: previous())
+        }
+        let iteratingVariable = VariableExpr(name: iteratingVariableIdentifier, symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         try consume(type: .FROM, message: "Expect 'from' after looping variable")
         let lRange = try expression()
         try consume(type: .TO, message: "Expect 'to' after lower looping range")

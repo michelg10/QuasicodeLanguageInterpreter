@@ -275,7 +275,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     func visitLoopFromStmtStmt(stmt: LoopFromStmt) -> Stmt {
         let result = LoopFromStmt.init(stmt)
         result.variable = (catchErrorClosure {
-            try expandClasses(stmt.variable)
+            try expandClasses(stmt.variable) as! VariableExpr
         } ?? stmt.variable)
         result.lRange = (catchErrorClosure {
             try expandClasses(stmt.lRange)

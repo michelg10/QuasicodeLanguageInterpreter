@@ -21,11 +21,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var symbolTable: SymbolTables = .init()
     private var isInGlobalScope = false
     
-    private func createVariableAtScope(variableName: String) -> Int {
-        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName, isInGlobalScope: isInGlobalScope))
+    private func createVariableAtScope(variableName: String, globalDefiningSetExpr: SetExpr? = nil) -> Int {
+        symbolTable.addToSymbolTable(symbol: VariableSymbolInfo.init(id: 0, type: nil, name: variableName, isInGlobalScope: isInGlobalScope, globalDefiningSetExpr: globalDefiningSetExpr))
     }
     
-    private func defineOrGetVariable(name: Token, allowShadowing: Bool) throws -> (Int, Bool) {
+    private func defineOrGetVariable(name: Token, allowShadowing: Bool, globalDefiningSetExpr: SetExpr? = nil) throws -> (Int, Bool) {
         // returns a tuple with its symbol table index and whether or not it is a new variable
         if let variableIndex = symbolTable.getSymbolIndex(name: name.lexeme) {
             if !(symbolTable.getSymbol(id: variableIndex) is VariableSymbolInfo) {
@@ -43,7 +43,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 return (variableInfo.id, false)
             }
         }
-        return (createVariableAtScope(variableName: name.lexeme), true)
+        return (createVariableAtScope(variableName: name.lexeme, globalDefiningSetExpr: globalDefiningSetExpr), true)
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) throws {
@@ -81,7 +81,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    private func defineIdentifierAsVariableOrGet(expr: VariableExpr) -> Bool {
+    private func defineIdentifierAsVariableOrGet(expr: VariableExpr, globalDefiningSetExpr: SetExpr? = nil) -> Bool {
         // returns whether or not something has been newly defined
         
         // check if its a function or a class
@@ -93,7 +93,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var returnValue: Bool = false
         catchErrorClosure {
-            (expr.symbolTableIndex, returnValue) = try defineOrGetVariable(name: expr.name, allowShadowing: false)
+            (expr.symbolTableIndex, returnValue) = try defineOrGetVariable(name: expr.name, allowShadowing: false, globalDefiningSetExpr: globalDefiningSetExpr)
         }
         return returnValue
     }
@@ -500,7 +500,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             guard let variableExpr = setExpr.to as? VariableExpr else {
                 continue
             }
-            defineIdentifierAsVariableOrGet(expr: variableExpr)
+            defineIdentifierAsVariableOrGet(expr: variableExpr, globalDefiningSetExpr: setExpr)
         }
     }
     

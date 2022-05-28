@@ -126,6 +126,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return QsAnyType(assignable: false)
     }
     
+    // TODO: add an "object" type
+    
     internal func visitGroupingExpr(expr: GroupingExpr) {
         typeCheck(expr.expression)
         expr.type = expr.expression.type
@@ -194,15 +196,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSubscriptExpr(expr: SubscriptExpr) {
-        // TODO: add an "object" type
         // the index and the expression must both be indexable
         typeCheck(expr.index)
         if expr.index.type is QsInt {
             // do nothing
         } else {
-            expr.type = QsAnyType(assignable: true)
             error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
-            return
         }
         typeCheck(expr.expression)
         // expression must be of type array
@@ -217,6 +216,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) {
+        // TODO
         typeCheck(expr.callee)
         for argument in expr.arguments {
             typeCheck(argument)
@@ -323,13 +323,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if expr.right.type is QsBoolean {
                 // do nothing
             } else {
-                error(message: "Type '' cannot be used as a boolean", start: expr.right.startLocation, end: expr.right.endLocation)
+                error(message: "Type '\(printType(expr.right.type!))' cannot be used as a boolean", start: expr.right.startLocation, end: expr.right.endLocation)
+                expr.type = QsBoolean(assignable: false)
             }
         case .MINUS:
             if isNumericType(expr.right.type!) {
                 expr.type = expr.right.type
                 expr.type!.assignable = false
                 return
+            } else {
+                error(message: "Type '\(printType(expr.right.type!))' cannot be used as 'int' or 'double'", start: expr.right.startLocation, end: expr.right.endLocation)
+                expr.type = QsDouble(assignable: false)
             }
         default:
             expr.type = QsAnyType(assignable: false)
@@ -354,7 +358,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if isNumericType(expr.value.type!) && isNumericType(castTo) {
             return // allow int -> double and double -> int
         }
-        error(message: "Type '' cannot be cast to ''", start: expr.toType.startLocation, end: expr.toType.endLocation)
+        error(message: "Type '\(printType(expr.value.type))' cannot be cast to '\(castTo))'", start: expr.toType.startLocation, end: expr.toType.endLocation)
     }
     
     internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
@@ -377,6 +381,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
+        // TODO
         typeCheck(expr.left)
         typeCheck(expr.right)
         switch expr.opr.tokenType {
@@ -388,17 +393,60 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // string comparison
             }
         default:
-            // TODO
+            
             break
         }
     }
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
-        
+        // TODO
+    }
+    
+    private func typeVariable(variable: VariableExpr, type: QsType) {
+        // adds the type of a variable into the symbol table and also updates the type in the variableExpr
+        guard let symbol = symbolTable.getSymbol(id: variable.symbolTableIndex!) as? VariableSymbolInfo else {
+            return
+        }
+        symbol.type = type
+        variable.type = type
     }
     
     internal func visitSetExpr(expr: SetExpr) {
+        typeCheck(expr.to)
+        typeCheck(expr.value)
+        if !expr.to.type!.assignable {
+            error(message: "Cannot assign to immutable value", start: expr.to.startLocation, end: expr.to.endLocation)
+            expr.type = QsAnyType(assignable: false)
+            return
+        }
+        if expr.isFirstAssignment == true {
+            // this SHOULD mean that its also a variable expression
+            if expr.annotation != nil {
+                let variableType = typeCheck(expr.annotation!)
+                typeVariable(variable: expr.to as! VariableExpr, type: variableType)
+                let commonType = findCommonType(variableType, expr.to.type!)
+                if !typesIsEqual(commonType, variableType) {
+                    error(message: "Type '\(printType(expr.to.type))' cannot be cast to '\(printType(variableType))'", start: expr.to.startLocation, end: expr.to.endLocation)
+                }
+                expr.type = variableType
+                expr.type!.assignable = false
+                return
+            } else {
+                typeVariable(variable: expr.to as! VariableExpr, type: expr.value.type!)
+                expr.type = expr.to.type!
+                expr.type!.assignable = false
+                return
+            }
+        }
         
+        // assignment can be to: fields within classes or variables.
+        let commonType = findCommonType(expr.to.type!, expr.value.type!)
+        if !typesIsEqual(commonType, expr.to.type!) {
+            error(message: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", start: expr.to.startLocation, end: expr.to.endLocation)
+        }
+        expr.type = expr.to.type!
+        expr.type!.assignable = false
+        return
     }
     
     func visitImplicitCastExpr(expr: ImplicitCastExpr) {
@@ -406,15 +454,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
-        
+        // TODO
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
-        
+        // TODO
     }
     
     internal func visitFunctionStmt(stmt: FunctionStmt) {
-        
+        // TODO
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
@@ -422,27 +470,62 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitIfStmt(stmt: IfStmt) {
-        
+        typeCheck(stmt.condition)
+        if !(stmt.condition.type is QsBoolean) {
+            error(message: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", start: stmt.condition.startLocation, end: stmt.condition.endLocation)
+        }
+        typeCheck(stmt.thenBranch)
+        for elseIfBranch in stmt.elseIfBranches {
+            typeCheck(elseIfBranch)
+        }
+        if stmt.elseBranch != nil {
+            typeCheck(stmt.elseBranch!)
+        }
     }
     
     internal func visitOutputStmt(stmt: OutputStmt) {
-        
+        for expression in stmt.expressions {
+            typeCheck(expression)
+        }
     }
     
     internal func visitInputStmt(stmt: InputStmt) {
+        // TODO
         
+        for expression in stmt.expressions {
+            typeCheck(expression)
+            if !expression.type!.assignable {
+                error(message: "Cannot assign to immutable value", start: expression.startLocation, end: expression.endLocation)
+            }
+            if !(expression.type is QsInt || expression.type is QsAnyType || expression.type is QsDouble) { // TODO: include string
+                error(message: "Cannot input to type '\(printType(expression.type!))'", start: expression.startLocation, end: expression.endLocation)
+            }
+        }
     }
     
     internal func visitReturnStmt(stmt: ReturnStmt) {
-        
+        // TODO
     }
     
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
-        
+        typeCheck(stmt.lRange)
+        typeCheck(stmt.rRange)
+        typeCheck(stmt.variable)
+        if !(stmt.lRange.type is QsInt) {
+            error(message: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", start: stmt.lRange.startLocation, end: stmt.lRange.endLocation)
+        }
+        if !(stmt.rRange.type is QsInt) {
+            error(message: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", start: stmt.rRange.startLocation, end: stmt.rRange.endLocation)
+        }
+        typeCheck(stmt.body)
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) {
-        
+        typeCheck(stmt.expression)
+        if !(stmt.expression.type is QsBoolean) {
+            error(message: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", start: stmt.expression.startLocation, end: stmt.expression.endLocation)
+        }
+        typeCheck(stmt.body)
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) {
@@ -454,7 +537,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitBlockStmt(stmt: BlockStmt) {
-        
+        for statement in stmt.statements {
+            typeCheck(statement)
+        }
     }
     
     private func typeCheck(_ stmt: Stmt) {
@@ -692,6 +777,21 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
                 functionStmt.params[i].type = paramType
             }
+        }
+    }
+    
+    private func typeGlobals(statements: [Stmt]) {
+        for statement in statements {
+            guard let expressionStmt = statement as? ExpressionStmt else {
+                continue
+            }
+            guard let setExpr = expressionStmt.expression as? SetExpr else {
+                continue
+            }
+            guard let variableExpr = setExpr.to as? VariableExpr else {
+                continue
+            }
+            // TODO: resolve globals while handling circular references (global a=b, global b=a)
         }
     }
     

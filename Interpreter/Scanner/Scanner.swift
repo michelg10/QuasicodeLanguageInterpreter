@@ -252,7 +252,7 @@ class Scanner {
         let literalString = source[start..<current]
         
         if isDouble {
-            addToken(type: .DOUBLE, value: Double(literalString))
+            addToken(type: .FLOAT, value: Double(literalString))
         } else {
             addToken(type: .INTEGER, value: Int(literalString))
         }
