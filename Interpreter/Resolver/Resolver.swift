@@ -23,16 +23,16 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     private func createVariableAtScope(variableName: String, globalDefiningAssignExpr: AssignExpr? = nil) -> Int {
         if isInGlobalScope {
-            return symbolTable.addToSymbolTable(symbol: GlobalVariableSymbolInfo(id: 0, type: nil, name: variableName, globalDefiningAssignExpr: globalDefiningAssignExpr!, globalStatus: .uninit))
+            return symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(id: 0, type: nil, name: variableName, globalDefiningAssignExpr: globalDefiningAssignExpr!, globalStatus: .uninit))
         } else {
-            return symbolTable.addToSymbolTable(symbol: VariableSymbolInfo(id: 0, type: nil, name: variableName))
+            return symbolTable.addToSymbolTable(symbol: VariableSymbol(id: 0, type: nil, name: variableName))
         }
     }
     
     private func defineOrGetVariable(name: Token, allowShadowing: Bool, globalDefiningAssignExpr: AssignExpr? = nil) throws -> (Int, Bool) {
         // returns a tuple with its symbol table index and whether or not it is a new variable
         if let variableIndex = symbolTable.getSymbolIndex(name: name.lexeme) {
-            if !(symbolTable.getSymbol(id: variableIndex) is VariableSymbolInfo) {
+            if !(symbolTable.getSymbol(id: variableIndex) is VariableSymbol) {
                 throw error(message: "Invalid redeclaration of '\(name.lexeme)'", token: name)
             }
         }
@@ -89,9 +89,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         // returns whether or not something has been newly defined
         
         // check if its a function or a class
-        if let symbolInfo = symbolTable.query(expr.name.lexeme) {
-            if symbolInfo is FunctionNameSymbolInfo || symbolInfo is ClassSymbolInfo {
-                expr.symbolTableIndex = symbolInfo.id
+        if let symbol = symbolTable.query(expr.name.lexeme) {
+            if symbol is FunctionNameSymbol || symbol is ClassSymbol {
+                expr.symbolTableIndex = symbol.id
                 return false
             }
         }
@@ -164,11 +164,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         // first figure out if it is a variable declaration (is first assignment)
         if expr.isFirstAssignment == nil {
             if let existingSymbol = symbolTable.query(expr.to.name.lexeme) {
-                if !(existingSymbol is VariableSymbolInfo) {
+                if !(existingSymbol is VariableSymbol) {
                     // error!
-                    if existingSymbol is FunctionNameSymbolInfo {
+                    if existingSymbol is FunctionNameSymbol {
                         error(message: "Cannot assign to value: '\(expr.to.name.lexeme) is a function", token: expr.to.name)
-                    } else if existingSymbol is ClassSymbolInfo {
+                    } else if existingSymbol is ClassSymbol {
                         error(message: "Cannot assign to value: '\(expr.to.name.lexeme) is a class", token: expr.to.name)
                     }
                 }
@@ -224,7 +224,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         currentClassStatus = .init(classType: currentClassType, name: currentClassName)
         
-        guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbolInfo else {
+        guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbol else {
             assertionFailure("Symbol at class statement is not a class symbol")
             return
         }
@@ -321,19 +321,19 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var symbolTableIndex = -1
         if withinClass == nil {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbolInfo(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbolInfo(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false)))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false)))
         }
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
-            guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbolInfo else {
+            guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbol else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
             stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
             functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
         } else {
-            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbolInfo(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
         }
         
         return symbolTableIndex
@@ -478,15 +478,15 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbolInfo(id: -1, name: classSignature, classId: classId, classChain: nil))
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil))
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
-            guard existingNameSymbolInfo is ClassNameSymbolInfo else {
+            guard existingNameSymbolInfo is ClassNameSymbol else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
             // do nothing about it
         } else {
-            symbolTable.addToSymbolTable(symbol: ClassNameSymbolInfo(id: -1, name: stmt.name.lexeme))
+            symbolTable.addToSymbolTable(symbol: ClassNameSymbol(id: -1, name: stmt.name.lexeme))
         }
         
         return symbolTableIndex

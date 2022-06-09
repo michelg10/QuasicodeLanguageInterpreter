@@ -1,8 +1,8 @@
-protocol SymbolInfo {
+protocol Symbol {
     var id: Int { get set }
     var name: String { get set }
 }
-protocol FunctionLikeSymbol: SymbolInfo {
+protocol FunctionLikeSymbol: Symbol {
     var returnType: QsType { get set }
     func getParamCount() -> Int
     func getUnderlyingFunctionStmt() -> FunctionStmt
@@ -15,7 +15,7 @@ enum GlobalStatus {
     case uninit, initing, finishedInit
 }
 
-class VariableSymbolInfo: SymbolInfo {
+class VariableSymbol: Symbol {
     init(id: Int, type: QsType? = nil, name: String) {
         self.id = id
         self.type = type
@@ -26,7 +26,7 @@ class VariableSymbolInfo: SymbolInfo {
     var type: QsType?
     var name: String
 }
-class GlobalVariableSymbolInfo: VariableSymbolInfo {
+class GlobalVariableSymbol: VariableSymbol {
     init(id: Int, type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, globalStatus: GlobalStatus) {
         self.globalDefiningAssignExpr = globalDefiningAssignExpr
         self.globalStatus = globalStatus
@@ -36,7 +36,7 @@ class GlobalVariableSymbolInfo: VariableSymbolInfo {
     var globalDefiningAssignExpr: AssignExpr
     var globalStatus: GlobalStatus
 }
-class FunctionNameSymbolInfo: SymbolInfo {
+class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
     init(id: Int, name: String, belongingFunctions: [Int]) {
         self.id = id
@@ -49,7 +49,7 @@ class FunctionNameSymbolInfo: SymbolInfo {
     var name: String
     var belongingFunctions: [Int]
 }
-class FunctionSymbolInfo: FunctionLikeSymbol {
+class FunctionSymbol: FunctionLikeSymbol {
     init(id: Int, name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = id
         self.name = name
@@ -70,7 +70,7 @@ class FunctionSymbolInfo: FunctionLikeSymbol {
         return functionStmt
     }
 }
-class MethodSymbolInfo: FunctionLikeSymbol {
+class MethodSymbol: FunctionLikeSymbol {
     init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType) {
         self.id = id
         self.name = name
@@ -108,7 +108,7 @@ class ClassChain {
     var classStmt: ClassStmt
     var parentOf: [Int]
 }
-class ClassSymbolInfo: SymbolInfo {
+class ClassSymbol: Symbol {
     init(id: Int, name: String, classId: Int, classChain: ClassChain?) {
         self.id = id
         self.name = name
@@ -121,7 +121,7 @@ class ClassSymbolInfo: SymbolInfo {
     var classId: Int
     var classChain: ClassChain?
 }
-class ClassNameSymbolInfo: SymbolInfo {
+class ClassNameSymbol: Symbol {
     init(id: Int, name: String) {
         self.id = id
         self.name = name

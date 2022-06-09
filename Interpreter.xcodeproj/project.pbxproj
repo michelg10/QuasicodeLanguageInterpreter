@@ -23,7 +23,7 @@
 		D09DE7CC282B9080007AFAFA /* CatchErrorClosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */; };
 		D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* ClassField.swift */; };
 		D0AA390928215DB200CF94ED /* Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390828215DB200CF94ED /* Resolver.swift */; };
-		D0AA390B282166ED00CF94ED /* SymbolInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390A282166ED00CF94ED /* SymbolInfo.swift */; };
+		D0AA390B282166ED00CF94ED /* Symbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390A282166ED00CF94ED /* Symbol.swift */; };
 		D0AA391028217F6400CF94ED /* Templater.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390F28217F6400CF94ED /* Templater.swift */; };
 		D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA39112823BB1900CF94ED /* AstTypeEquality.swift */; };
 		D0AA39142823C88500CF94ED /* AstTypeHasher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA39132823C88500CF94ED /* AstTypeHasher.swift */; };
@@ -70,7 +70,7 @@
 		D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchErrorClosure.swift; sourceTree = "<group>"; };
 		D0AA38D6281E80F300CF94ED /* ClassField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassField.swift; sourceTree = "<group>"; };
 		D0AA390828215DB200CF94ED /* Resolver.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Resolver.swift; sourceTree = "<group>"; };
-		D0AA390A282166ED00CF94ED /* SymbolInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolInfo.swift; sourceTree = "<group>"; };
+		D0AA390A282166ED00CF94ED /* Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Symbol.swift; sourceTree = "<group>"; };
 		D0AA390F28217F6400CF94ED /* Templater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Templater.swift; sourceTree = "<group>"; };
 		D0AA39112823BB1900CF94ED /* AstTypeEquality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstTypeEquality.swift; sourceTree = "<group>"; };
 		D0AA39132823C88500CF94ED /* AstTypeHasher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstTypeHasher.swift; sourceTree = "<group>"; };
@@ -105,7 +105,7 @@
 			children = (
 				D0087E9F283551F300B28BF3 /* SymbolTable.swift */,
 				D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */,
-				D0AA390A282166ED00CF94ED /* SymbolInfo.swift */,
+				D0AA390A282166ED00CF94ED /* Symbol.swift */,
 			);
 			path = SymbolTable;
 			sourceTree = "<group>";
@@ -289,7 +289,7 @@
 				D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */,
 				D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */,
 				D07B70F8281CC9FF003A672F /* Parser.swift in Sources */,
-				D0AA390B282166ED00CF94ED /* SymbolInfo.swift in Sources */,
+				D0AA390B282166ED00CF94ED /* Symbol.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
 				D0DD7C2C2817E89F00FBD20C /* InterpreterProblem.swift in Sources */,
 				D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */,

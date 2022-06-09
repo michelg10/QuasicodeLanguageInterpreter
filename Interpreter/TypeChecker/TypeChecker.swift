@@ -3,7 +3,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var symbolTable: SymbolTables = .init()
     
     private func getClassChain(id: Int) -> ClassChain? {
-        return (symbolTable.getSymbol(id: id) as? ClassSymbolInfo)?.classChain
+        return (symbolTable.getSymbol(id: id) as? ClassSymbol)?.classChain
     }
     
     private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
@@ -181,8 +181,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         let symbolEntry = symbolTable.getSymbol(id: expr.symbolTableIndex!)
         switch symbolEntry {
-        case is GlobalVariableSymbolInfo:
-            let globalEntry = symbolEntry as! GlobalVariableSymbolInfo
+        case is GlobalVariableSymbol:
+            let globalEntry = symbolEntry as! GlobalVariableSymbol
             switch globalEntry.globalStatus {
             case .finishedInit:
                 expr.type = globalEntry.type!
@@ -195,15 +195,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 typeGlobal(id: expr.symbolTableIndex!)
                 expr.type = globalEntry.type!
             }
-        case is VariableSymbolInfo:
-            if (symbolEntry as! VariableSymbolInfo).type == nil {
+        case is VariableSymbol:
+            if (symbolEntry as! VariableSymbol).type == nil {
                 expr.type = QsAnyType(assignable: true)
             } else {
-                expr.type = (symbolEntry as! VariableSymbolInfo).type!
+                expr.type = (symbolEntry as! VariableSymbol).type!
                 expr.type!.assignable = true
             }
-        case is FunctionNameSymbolInfo:
-            expr.type = QsFunction(nameId: (symbolEntry as! FunctionNameSymbolInfo).id)
+        case is FunctionNameSymbol:
+            expr.type = QsFunction(nameId: (symbolEntry as! FunctionNameSymbol).id)
         default:
             assertionFailure("Symbol entry for variable expression must be of type Variable or Function!")
         }
@@ -237,7 +237,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         if expr.callee.type! is QsFunction {
             // Resolve function calls
-            guard let functionNameSymbolEntry = symbolTable.getSymbol(id: (expr.callee.type! as! QsFunction).nameId) as? FunctionNameSymbolInfo else {
+            guard let functionNameSymbolEntry = symbolTable.getSymbol(id: (expr.callee.type! as! QsFunction).nameId) as? FunctionNameSymbol else {
                 assertionFailure("Symbol at index is not a function name symbol")
                 expr.type = QsAnyType(assignable: false)
                 return
@@ -299,15 +299,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
-            if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbolInfo {
+            if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbol {
                 expr.uniqueFunctionCall = bestMatches[0]
                 expr.type = typedResolvedFunctionSymbol.returnType
-            } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbolInfo {
+            } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
                 var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
                 expr.type = typedResolvedFunctionSymbol.returnType
                 polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
                 for overrides in typedResolvedFunctionSymbol.overridedBy {
-                    guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbolInfo else {
+                    guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbol else {
                         continue
                     }
                     polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
@@ -418,7 +418,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func typeVariable(variable: VariableExpr, type: QsType) {
         // adds the type of a variable into the symbol table and also updates the type in the variableExpr
-        guard let symbol = symbolTable.getSymbol(id: variable.symbolTableIndex!) as? VariableSymbolInfo else {
+        guard let symbol = symbolTable.getSymbol(id: variable.symbolTableIndex!) as? VariableSymbol else {
             return
         }
         symbol.type = type
@@ -429,7 +429,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         guard let variableExpr = expr as? VariableExpr else {
             return nil
         }
-        if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbolInfo {
+        if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbol {
             return variableExpr.symbolTableIndex!
         }
         return nil
@@ -596,14 +596,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Class statement has no symbol table index!")
                 continue
             }
-            guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo else {
+            guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {
                 assertionFailure("Symbol table symbol is not a class symbol")
                 continue
             }
             let currentClassChain = ClassChain(upperClass: -1, depth: -1, classStmt: classStmt, parentOf: [])
             classSymbolInfo.classChain = currentClassChain
             
-            classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo)?.classId) ?? 0)
+            classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol)?.classId) ?? 0)
         }
         
         let classClusterer = UnionFind(size: classIdCount+1+1)
@@ -614,7 +614,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if classStmt.symbolTableIndex == nil {
                 continue
             }
-            guard let classSymbol = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbolInfo else {
+            guard let classSymbol = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
@@ -631,7 +631,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assertionFailure("Inherited class not found")
                 continue
             }
-            guard let inheritedClassSymbol = inheritedClassSymbol as? ClassSymbolInfo else {
+            guard let inheritedClassSymbol = inheritedClassSymbol as? ClassSymbol else {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
@@ -678,7 +678,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             // continue down the class hierarchy
             
             // record functions into the methods
-            guard let classSymbol = symbolTable.getSymbol(id: classId) as? ClassSymbolInfo else {
+            guard let classSymbol = symbolTable.getSymbol(id: classId) as? ClassSymbol else {
                 assertionFailure("Expected class symbol")
                 return [:]
             }
@@ -715,7 +715,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return
                 }
                 currentClassSignatureToSymbolIdDict[signature] = method.function.symbolTableIndex!
-                guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbolInfo else {
+                guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbol else {
                     assertionFailure("Expected method symbol info!")
                     return
                 }
@@ -724,7 +724,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     newMethodChain[.init(functionStmt: method.function)] = method.function.symbolTableIndex!
                 } else {
                     // check consistency with the function currently in the chain
-                    guard let existingMethodSymbolInfo = (symbolTable.getSymbol(id: existingMethod!) as? MethodSymbolInfo) else {
+                    guard let existingMethodSymbolInfo = (symbolTable.getSymbol(id: existingMethod!) as? MethodSymbol) else {
                         return
                     }
                     // check static consistency
@@ -759,7 +759,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 for (childOverrideSignature, overridingIds) in childClassOverrides {
                     if let methodSymbolId = currentClassSignatureToSymbolIdDict[childOverrideSignature] {
                         // the method that the child is overriding resides in this class. log it.
-                        if let methodInfo = (symbolTable.getSymbol(id: methodSymbolId) as? MethodSymbolInfo) {
+                        if let methodInfo = (symbolTable.getSymbol(id: methodSymbolId) as? MethodSymbol) {
                             methodInfo.overridedBy = overridingIds
                         }
                     }
@@ -810,7 +810,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func typeGlobal(id: Int) {
-        let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbolInfo
+        let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbol
         globalVariableSymbol.globalStatus = .initing
         typeCheck(globalVariableSymbol.globalDefiningSetExpr)
     }
@@ -826,7 +826,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             guard let variableExpr = setExpr.to as? VariableExpr else {
                 continue
             }
-            if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbolInfo {
+            if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbol {
                 typeGlobal(id: variableExpr.symbolTableIndex!)
             }
         }

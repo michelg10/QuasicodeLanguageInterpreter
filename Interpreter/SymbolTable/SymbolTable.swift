@@ -2,19 +2,19 @@ class SymbolTables {
     private class SymbolTable {
         let parent: SymbolTable?
         var childTables: [SymbolTable] = []
-        private var table: [String : SymbolInfo] = [:]
+        private var table: [String : Symbol] = [:]
         init(parent: SymbolTable?) {
             self.parent = parent
         }
         
-        public func queryTable(name: String) -> SymbolInfo? {
+        public func queryTable(name: String) -> Symbol? {
             return table[name]
         }
-        public func addToTable(symbol: SymbolInfo) {
+        public func addToTable(symbol: Symbol) {
             table[symbol.name] = symbol
         }
     }
-    private var allSymbols: [SymbolInfo] = []
+    private var allSymbols: [Symbol] = []
     private let rootTable: SymbolTable
     private var current: SymbolTable
     init() {
@@ -45,15 +45,15 @@ class SymbolTables {
         current = current.parent!
     }
     
-    public func queryAtScopeOnly(_ name: String) -> SymbolInfo? {
+    public func queryAtScopeOnly(_ name: String) -> Symbol? {
         return current.queryTable(name: name)
     }
     
-    public func queryAtGlobalOnly(_ name: String) -> SymbolInfo? {
+    public func queryAtGlobalOnly(_ name: String) -> Symbol? {
         return rootTable.queryTable(name: name)
     }
     
-    public func query(_ name: String) -> SymbolInfo? {
+    public func query(_ name: String) -> Symbol? {
         var queryingTable: SymbolTable? = current
         while (queryingTable != nil) {
             if let result = queryingTable!.queryTable(name: name) {
@@ -68,7 +68,7 @@ class SymbolTables {
         return query(name)?.id ?? nil
     }
     
-    public func addToSymbolTable(symbol: SymbolInfo) -> Int {
+    public func addToSymbolTable(symbol: Symbol) -> Int {
         var newSymbol = symbol
         newSymbol.id = allSymbols.count
         allSymbols.append(symbol)
@@ -76,11 +76,11 @@ class SymbolTables {
         return newSymbol.id
     }
     
-    public func getSymbol(id: Int) -> SymbolInfo {
+    public func getSymbol(id: Int) -> Symbol {
         return allSymbols[id]
     }
     
-    public func getAllSymbols() -> [SymbolInfo] {
+    public func getAllSymbols() -> [Symbol] {
         return allSymbols
     }
     
