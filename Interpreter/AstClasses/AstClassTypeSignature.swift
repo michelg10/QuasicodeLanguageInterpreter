@@ -1,4 +1,4 @@
-func classSignature(className: String, templateAstTypes: [AstType]?) -> String {
+func generateClassSignature(className: String, templateAstTypes: [AstType]?) -> String {
     var templatesName = ""
     let astPrinter = AstPrinter()
     for templateAstType in templateAstTypes ?? [] {

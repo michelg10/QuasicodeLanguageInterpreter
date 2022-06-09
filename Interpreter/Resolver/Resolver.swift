@@ -21,35 +21,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var symbolTable: SymbolTables = .init()
     private var isInGlobalScope = false
     
-    private func createVariableAtScope(variableName: String, globalDefiningAssignExpr: AssignExpr? = nil) -> Int {
-        if isInGlobalScope {
-            return symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(id: 0, type: nil, name: variableName, globalDefiningAssignExpr: globalDefiningAssignExpr!, globalStatus: .uninit))
-        } else {
-            return symbolTable.addToSymbolTable(symbol: VariableSymbol(id: 0, type: nil, name: variableName))
-        }
-    }
-    
-    private func defineOrGetVariable(name: Token, allowShadowing: Bool, globalDefiningAssignExpr: AssignExpr? = nil) throws -> (Int, Bool) {
-        // returns a tuple with its symbol table index and whether or not it is a new variable
-        if let variableIndex = symbolTable.getSymbolIndex(name: name.lexeme) {
-            if !(symbolTable.getSymbol(id: variableIndex) is VariableSymbol) {
-                throw error(message: "Invalid redeclaration of '\(name.lexeme)'", token: name)
-            }
-        }
-        
-        if allowShadowing {
-            // only return if there's a variable in the current scope
-            if let variableInfo = symbolTable.queryAtScopeOnly(name.lexeme) {
-                return (variableInfo.id, false)
-            }
-        } else {
-            if let variableInfo = symbolTable.query(name.lexeme) {
-                return (variableInfo.id, false)
-            }
-        }
-        return (createVariableAtScope(variableName: name.lexeme, globalDefiningAssignExpr: globalDefiningAssignExpr), true)
-    }
-    
     internal func visitGroupingExpr(expr: GroupingExpr) throws {
         try resolve(expr.expression)
     }
@@ -73,7 +44,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
         }
         do {
-            (expr.symbolTableIndex, _) = try defineOrGetVariable(name: expr.keyword, allowShadowing: false)
+            expr.symbolTableIndex = symbolTable.query("this")!.id
         } catch {
             assertionFailure("'this' is undefined")
         }
@@ -85,26 +56,15 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    private func defineIdentifierAsVariableOrGet(expr: VariableExpr, globalDefiningAssignExpr: AssignExpr? = nil) -> Bool {
-        // returns whether or not something has been newly defined
-        
-        // check if its a function or a class
-        if let symbol = symbolTable.query(expr.name.lexeme) {
-            if symbol is FunctionNameSymbol || symbol is ClassSymbol {
-                expr.symbolTableIndex = symbol.id
-                return false
-            }
-        }
-        var returnValue: Bool = false
-        catchErrorClosure {
-            (expr.symbolTableIndex, returnValue) = try defineOrGetVariable(name: expr.name, allowShadowing: false, globalDefiningAssignExpr: globalDefiningAssignExpr)
-        }
-        return returnValue
-    }
-    
     internal func visitVariableExpr(expr: VariableExpr) {
-        let newlyDefined = defineIdentifierAsVariableOrGet(expr: expr)
-        if newlyDefined {
+        if let existingSymbol = symbolTable.query(expr.name.lexeme) {
+            if let symbol = existingSymbol as? VariableSymbol {
+                if symbol.variableStatus == .uninit {
+                    error(message: "Use of variable within its own declaration", token: expr.name)
+                }
+            }
+            expr.symbolTableIndex = existingSymbol.id
+        } else {
             error(message: "Use of unknown identifier \(expr.name.lexeme)", start: expr.startLocation, end: expr.endLocation)
         }
     }
@@ -165,36 +125,62 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         if expr.isFirstAssignment == nil {
             if let existingSymbol = symbolTable.query(expr.to.name.lexeme) {
                 if !(existingSymbol is VariableSymbol) {
-                    // error!
+                    // error! cannot assign
                     if existingSymbol is FunctionNameSymbol {
                         error(message: "Cannot assign to value: '\(expr.to.name.lexeme) is a function", token: expr.to.name)
-                    } else if existingSymbol is ClassSymbol {
+                    } else if existingSymbol is ClassNameSymbol {
                         error(message: "Cannot assign to value: '\(expr.to.name.lexeme) is a class", token: expr.to.name)
+                    } else {
+                        assertionFailure("Unexpected symbol type!")
+                        error(message: "Cannot assign to value", token: expr.to.name)
                     }
+                    
+                    try resolve(expr.value)
+                    return
                 }
                 expr.isFirstAssignment = false
             } else {
                 expr.isFirstAssignment = true
             }
         }
-        /*
-        // assignment to a variable. Define it
-        let assignedVariable = expr.to
-        
-        if expr.isFirstAssignment == nil {
-            // this is for globals which have their isFirstAssignment set eagerly
-            expr.isFirstAssignment = defineIdentifierAsVariableOrGet(expr: assignedVariable)
+        if expr.isFirstAssignment! {
+            // define the variable but set it as unusable
             
-            if !expr.isFirstAssignment! && expr.annotation != nil {
-                problems.append(.init(message: "Cannot retype variable after first assignment", token: expr.annotationColon!))
+            // probably put this into a function later
+            expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: expr.to.name.lexeme, variableStatus: .uninit))
+            let associatedSymbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
+            defer {
+                associatedSymbol.variableStatus = .finishedInit
+            }
+            try resolve(expr.value)
+        } else {
+            if expr.annotation != nil {
+                error(message: "Cannot retype variable after first assignment", token: expr.annotationColon!)
+                try resolve(expr.to)
+                try resolve(expr.value)
             }
         }
-        try resolve(expr.value)
-         */
     }
     
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws {
         assertionFailure("Implicit cast expression present in Resolver")
+    }
+    
+    func defineVariableWithInitializer(name: Token, initializer: Expr?) -> Int? {
+        // use this with class fields, function parameters, etc.
+        if symbolTable.queryAtScopeOnly(name.lexeme) != nil {
+            error(message: "Invalid redeclaration of \(name.lexeme)", token: name)
+            return nil
+        }
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: name.lexeme, variableStatus: .uninit))
+        if initializer != nil {
+            catchErrorClosure {
+                try resolve(initializer!)
+            }
+        }
+        let symbol = symbolTable.getSymbol(id: symbolTableIndex) as! VariableSymbol
+        symbol.variableStatus = .finishedInit
+        return symbolTableIndex
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
@@ -210,11 +196,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         
         let currentClassName = stmt.name.lexeme
         stmt.scopeIndex = symbolTable.createAndEnterScope()
-        do {
-            (stmt.thisSymbolTableIndex, _) = try defineOrGetVariable(name: .init(tokenType: .THIS, lexeme: "this", start: .dub(), end: .dub()), allowShadowing: true)
-        } catch {
-            assertionFailure("Failure while defining 'this'")
-        }
+        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: "this", variableStatus: .finishedInit))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
         if stmt.superclass != nil {
@@ -241,24 +223,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         for i in 0..<stmt.fields.count {
-            catchErrorClosure {
-                (stmt.fields[i].symbolTableIndex, _) = try defineOrGetVariable(name: stmt.fields[i].name, allowShadowing: true)
-            }
-            if stmt.fields[i].initializer != nil {
-                catchErrorClosure {
-                    try resolve(stmt.fields[i].initializer!)
-                }
-            }
+            stmt.fields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.fields[i].name, initializer: stmt.fields[i].initializer)
         }
         for i in 0..<stmt.staticFields.count {
-            catchErrorClosure {
-                (stmt.staticFields[i].symbolTableIndex, _) = try defineOrGetVariable(name: stmt.staticFields[i].name, allowShadowing: true)
-            }
-            if stmt.staticFields[i].initializer != nil {
-                catchErrorClosure {
-                    try resolve(stmt.staticFields[i].initializer!)
-                }
-            }
+            stmt.staticFields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.fields[i].name, initializer: stmt.fields[i].initializer)
         }
         
         for method in stmt.staticMethods {
@@ -291,9 +259,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         isInGlobalScope = false
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         for i in 0..<stmt.params.count {
-            stmt.params[i].symbolTableIndex = catchErrorClosure {
-                try defineOrGetVariable(name: stmt.params[i].name, allowShadowing: true)
-            }?.0
+            stmt.params[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.params[i].name, initializer: stmt.params[i].initializer)
         }
         for stmt in stmt.body {
             resolve(stmt)
@@ -473,7 +439,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func defineClass(stmt: ClassStmt, classId: Int) throws -> Int {
-        let classSignature = classSignature(className: stmt.name.lexeme, templateAstTypes: stmt.expandedTemplateParameters)
+        let classSignature = generateClassSignature(className: stmt.name.lexeme, templateAstTypes: stmt.expandedTemplateParameters)
         if symbolTable.queryAtScopeOnly(classSignature) != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
@@ -512,16 +478,17 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func eagerDefineGlobalVariables(statements: [Stmt]) {
+        // two passes. one finding all the global defining set expressions and another traversi
         for statement in statements {
             guard let expressionStmt = statement as? ExpressionStmt else {
                 continue
             }
-            guard let setExpr = expressionStmt.expression as? SetExpr else {
+            guard let assignExpr = expressionStmt.expression as? AssignExpr else {
                 continue
             }
-            guard let variableExpr = setExpr.to as? VariableExpr else {
-                continue
-            }
+            
+            // TODO: Replace this
+            
             let isNew = defineIdentifierAsVariableOrGet(expr: variableExpr, globalDefiningSetExpr: setExpr)
             setExpr.isFirstAssignment = isNew
         }

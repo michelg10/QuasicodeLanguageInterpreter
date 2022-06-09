@@ -1,3 +1,4 @@
+// TODO: Symbol table indexes may be null
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
@@ -97,7 +98,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
-        let classSignature = classSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
+        let classSignature = generateClassSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
         guard let symbolTableId = symbolTable.queryAtGlobalOnly(classSignature)?.id else {
             return QsAnyType(assignable: false)
         }
@@ -627,7 +628,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 classChain.depth = 1
                 continue
             }
-            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(classSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
+            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(generateClassSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
                 assertionFailure("Inherited class not found")
                 continue
             }

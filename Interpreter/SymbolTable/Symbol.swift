@@ -11,30 +11,30 @@ protocol FunctionLikeSymbol: Symbol {
 enum SymbolType {
     case Variable, Function, Class
 }
-enum GlobalStatus {
+enum VariableStatus {
     case uninit, initing, finishedInit
 }
 
 class VariableSymbol: Symbol {
-    init(id: Int, type: QsType? = nil, name: String) {
+    init(id: Int, type: QsType? = nil, name: String, variableStatus: VariableStatus) {
         self.id = id
         self.type = type
         self.name = name
+        self.variableStatus = variableStatus
     }
     
     var id: Int
     var type: QsType?
     var name: String
+    var variableStatus: VariableStatus
 }
 class GlobalVariableSymbol: VariableSymbol {
-    init(id: Int, type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, globalStatus: GlobalStatus) {
+    init(id: Int, type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
         self.globalDefiningAssignExpr = globalDefiningAssignExpr
-        self.globalStatus = globalStatus
-        super.init(id: id, type: type, name: name)
+        super.init(id: id, type: type, name: name, variableStatus: variableStatus)
     }
     
     var globalDefiningAssignExpr: AssignExpr
-    var globalStatus: GlobalStatus
 }
 class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
