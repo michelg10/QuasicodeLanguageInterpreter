@@ -178,7 +178,11 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : (expr.isFirstAssignment! ? "yes" : "no"))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Set", exprs: expr.to, expr.value)
+    }
+    
+    func visitAssignExprString(expr: AssignExpr) -> String {
+        return parenthesize(name: "Assign{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : (expr.isFirstAssignment! ? "yes" : "no"))}", exprs: expr.to, expr.value)
     }
     
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {

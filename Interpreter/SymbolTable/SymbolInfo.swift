@@ -27,13 +27,13 @@ class VariableSymbolInfo: SymbolInfo {
     var name: String
 }
 class GlobalVariableSymbolInfo: VariableSymbolInfo {
-    init(id: Int, type: QsType? = nil, name: String, globalDefiningSetExpr: SetExpr, globalStatus: GlobalStatus) {
-        self.globalDefiningSetExpr = globalDefiningSetExpr
+    init(id: Int, type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, globalStatus: GlobalStatus) {
+        self.globalDefiningAssignExpr = globalDefiningAssignExpr
         self.globalStatus = globalStatus
         super.init(id: id, type: type, name: name)
     }
     
-    var globalDefiningSetExpr: SetExpr
+    var globalDefiningAssignExpr: AssignExpr
     var globalStatus: GlobalStatus
 }
 class FunctionNameSymbolInfo: SymbolInfo {

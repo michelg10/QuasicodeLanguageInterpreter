@@ -427,6 +427,18 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         result.value = (catchErrorClosure {
             try expandClasses(expr.value)
         } ?? expr.value)
+        
+        return result
+    }
+    
+    func visitAssignExprExpr(expr: AssignExpr) throws -> Expr {
+        let result = AssignExpr.init(expr)
+        result.to = (catchErrorClosure {
+            try expandClasses(expr.to)
+        } as? VariableExpr ?? expr.to)
+        result.value = (catchErrorClosure {
+            try expandClasses(expr.value)
+        } ?? expr.value)
         if expr.annotation != nil {
             result.annotation = catchErrorClosure {
                 try expandClasses(expr.annotation!)

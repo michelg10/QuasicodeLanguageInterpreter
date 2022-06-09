@@ -45,11 +45,11 @@ class SymbolTables {
         current = current.parent!
     }
     
-    public func queryAtScope(_ name: String) -> SymbolInfo? {
+    public func queryAtScopeOnly(_ name: String) -> SymbolInfo? {
         return current.queryTable(name: name)
     }
     
-    public func queryGlobal(_ name: String) -> SymbolInfo? {
+    public func queryAtGlobalOnly(_ name: String) -> SymbolInfo? {
         return rootTable.queryTable(name: name)
     }
     

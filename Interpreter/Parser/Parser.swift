@@ -409,7 +409,13 @@ class Parser {
             let equals = previous()
             let value = try expression()
             
-            return SetExpr(to: expr, annotationColon: annotationColon, annotation: annotation, value: value, isFirstAssignment: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: previous()))
+            if let expr = expr as? VariableExpr {
+                return AssignExpr(to: expr, annotationColon: annotationColon, annotation: annotation, value: value, isFirstAssignment: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: previous()))
+            }
+            if annotationColon != nil {
+                error(message: "Cannot annotate type for field", token: annotationColon!)
+            }
+            return SetExpr(to: expr, value: value, type: nil, startLocation: expr.startLocation, endLocation: .init(end: previous()))
         } else {
             if annotation != nil {
                 throw error(message: "Expect '=' after type annotation", token: peek())

@@ -27,6 +27,7 @@ protocol ExprVisitor {
     func visitBinaryExpr(expr: BinaryExpr) 
     func visitLogicalExpr(expr: LogicalExpr) 
     func visitSetExpr(expr: SetExpr) 
+    func visitAssignExpr(expr: AssignExpr) 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
 }
 
@@ -48,6 +49,7 @@ protocol ExprThrowVisitor {
     func visitBinaryExpr(expr: BinaryExpr) throws 
     func visitLogicalExpr(expr: LogicalExpr) throws 
     func visitSetExpr(expr: SetExpr) throws 
+    func visitAssignExpr(expr: AssignExpr) throws 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
 }
 
@@ -69,6 +71,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType
     func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
     func visitSetExprQsType(expr: SetExpr) throws -> QsType
+    func visitAssignExprQsType(expr: AssignExpr) throws -> QsType
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
 }
 
@@ -90,6 +93,7 @@ protocol ExprExprThrowVisitor {
     func visitBinaryExprExpr(expr: BinaryExpr) throws -> Expr
     func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
     func visitSetExprExpr(expr: SetExpr) throws -> Expr
+    func visitAssignExprExpr(expr: AssignExpr) throws -> Expr
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
 }
 
@@ -111,6 +115,7 @@ protocol ExprStringVisitor {
     func visitBinaryExprString(expr: BinaryExpr) -> String
     func visitLogicalExprString(expr: LogicalExpr) -> String
     func visitSetExprString(expr: SetExpr) -> String
+    func visitAssignExprString(expr: AssignExpr) -> String
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
@@ -749,30 +754,21 @@ class LogicalExpr: Expr {
 
 class SetExpr: Expr {
     var to: Expr
-    var annotationColon: Token?
-    var annotation: AstType?
     var value: Expr
-    var isFirstAssignment: Bool?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(to: Expr, annotationColon: Token?, annotation: AstType?, value: Expr, isFirstAssignment: Bool?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(to: Expr, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.to = to
-        self.annotationColon = annotationColon
-        self.annotation = annotation
         self.value = value
-        self.isFirstAssignment = isFirstAssignment
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
     init(_ objectToCopy: SetExpr) {
         self.to = objectToCopy.to
-        self.annotationColon = objectToCopy.annotationColon
-        self.annotation = objectToCopy.annotation
         self.value = objectToCopy.value
-        self.isFirstAssignment = objectToCopy.isFirstAssignment
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
@@ -792,6 +788,54 @@ class SetExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSetExprString(expr: self)
+    }
+}
+
+class AssignExpr: Expr {
+    var to: VariableExpr
+    var annotationColon: Token?
+    var annotation: AstType?
+    var value: Expr
+    var isFirstAssignment: Bool?
+    var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
+    
+    init(to: VariableExpr, annotationColon: Token?, annotation: AstType?, value: Expr, isFirstAssignment: Bool?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.to = to
+        self.annotationColon = annotationColon
+        self.annotation = annotation
+        self.value = value
+        self.isFirstAssignment = isFirstAssignment
+        self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
+    }
+    init(_ objectToCopy: AssignExpr) {
+        self.to = objectToCopy.to
+        self.annotationColon = objectToCopy.annotationColon
+        self.annotation = objectToCopy.annotation
+        self.value = objectToCopy.value
+        self.isFirstAssignment = objectToCopy.isFirstAssignment
+        self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitAssignExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitAssignExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitAssignExprQsType(expr: self)
+    }
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitAssignExprExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitAssignExprString(expr: self)
     }
 }
 

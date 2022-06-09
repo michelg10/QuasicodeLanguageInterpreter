@@ -98,7 +98,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
         let classSignature = classSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
-        guard let symbolTableId = symbolTable.queryGlobal(classSignature)?.id else {
+        guard let symbolTableId = symbolTable.queryAtGlobalOnly(classSignature)?.id else {
             return QsAnyType(assignable: false)
         }
         return QsClass(name: asttype.name.lexeme, id: symbolTableId, assignable: false)
@@ -181,6 +181,20 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         let symbolEntry = symbolTable.getSymbol(id: expr.symbolTableIndex!)
         switch symbolEntry {
+        case is GlobalVariableSymbolInfo:
+            let globalEntry = symbolEntry as! GlobalVariableSymbolInfo
+            switch globalEntry.globalStatus {
+            case .finishedInit:
+                expr.type = globalEntry.type!
+                expr.type!.assignable = true
+            case .initing:
+                // throw an error: circular
+                error(message: "Circular reference", start: expr.startLocation, end: expr.endLocation)
+                expr.type = QsAnyType(assignable: true)
+            case .uninit:
+                typeGlobal(id: expr.symbolTableIndex!)
+                expr.type = globalEntry.type!
+            }
         case is VariableSymbolInfo:
             if (symbolEntry as! VariableSymbolInfo).type == nil {
                 expr.type = QsAnyType(assignable: true)
@@ -411,9 +425,24 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         variable.type = type
     }
     
+    private func extractGlobalIdFromExpr(expr: Expr) -> Int? {
+        guard let variableExpr = expr as? VariableExpr else {
+            return nil
+        }
+        if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbolInfo {
+            return variableExpr.symbolTableIndex!
+        }
+        return nil
+    }
+    
     internal func visitSetExpr(expr: SetExpr) {
-        typeCheck(expr.to)
         typeCheck(expr.value)
+        if let globalId = extractGlobalIdFromExpr(expr: expr.to) {
+            // mark the global as
+            
+        }
+        typeCheck(expr.to)
+        
         if !expr.to.type!.assignable {
             error(message: "Cannot assign to immutable value", start: expr.to.startLocation, end: expr.to.endLocation)
             expr.type = QsAnyType(assignable: false)
@@ -598,7 +627,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 classChain.depth = 1
                 continue
             }
-            guard let inheritedClassSymbol = symbolTable.queryGlobal(classSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
+            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(classSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
                 assertionFailure("Inherited class not found")
                 continue
             }
@@ -780,6 +809,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+    private func typeGlobal(id: Int) {
+        let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbolInfo
+        globalVariableSymbol.globalStatus = .initing
+        typeCheck(globalVariableSymbol.globalDefiningSetExpr)
+    }
+    
     private func typeGlobals(statements: [Stmt]) {
         for statement in statements {
             guard let expressionStmt = statement as? ExpressionStmt else {
@@ -791,7 +826,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             guard let variableExpr = setExpr.to as? VariableExpr else {
                 continue
             }
-            // TODO: resolve globals while handling circular references (global a=b, global b=a)
+            if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbolInfo {
+                typeGlobal(id: variableExpr.symbolTableIndex!)
+            }
         }
     }
     
@@ -800,6 +837,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         typeFunctions()
         buildClassHierarchy(statements: statements)
+        typeGlobals(statements: statements)
         
         for statement in statements {
             typeCheck(statement)
