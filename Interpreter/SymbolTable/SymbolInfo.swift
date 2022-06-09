@@ -49,7 +49,7 @@ class FunctionNameSymbolInfo: SymbolInfo {
     var name: String
     var belongingFunctions: [Int]
 }
-class FunctionSymbolInfo: SymbolInfo, FunctionLikeSymbol {
+class FunctionSymbolInfo: FunctionLikeSymbol {
     init(id: Int, name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = id
         self.name = name
@@ -70,7 +70,7 @@ class FunctionSymbolInfo: SymbolInfo, FunctionLikeSymbol {
         return functionStmt
     }
 }
-class MethodSymbolInfo: SymbolInfo, FunctionLikeSymbol {
+class MethodSymbolInfo: FunctionLikeSymbol {
     init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType) {
         self.id = id
         self.name = name

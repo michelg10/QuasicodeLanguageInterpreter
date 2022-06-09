@@ -1,10 +1,17 @@
 class SymbolTables {
-    class SymbolTable {
-        var parent: SymbolTable?
+    private class SymbolTable {
+        let parent: SymbolTable?
         var childTables: [SymbolTable] = []
-        var table: [String : SymbolInfo] = [:]
+        private var table: [String : SymbolInfo] = [:]
         init(parent: SymbolTable?) {
             self.parent = parent
+        }
+        
+        public func queryTable(name: String) -> SymbolInfo? {
+            return table[name]
+        }
+        public func addToTable(symbol: SymbolInfo) {
+            table[symbol.name] = symbol
         }
     }
     private var allSymbols: [SymbolInfo] = []
@@ -38,22 +45,18 @@ class SymbolTables {
         current = current.parent!
     }
     
-    private func queryTable(table: SymbolTable, name: String) -> SymbolInfo? {
-        return table.table[name]
-    }
-    
     public func queryAtScope(_ name: String) -> SymbolInfo? {
-        return current.table[name]
+        return current.queryTable(name: name)
     }
     
     public func queryGlobal(_ name: String) -> SymbolInfo? {
-        return queryTable(table: rootTable, name: name)
+        return rootTable.queryTable(name: name)
     }
     
     public func query(_ name: String) -> SymbolInfo? {
         var queryingTable: SymbolTable? = current
         while (queryingTable != nil) {
-            if let result = queryTable(table: queryingTable!, name: name) {
+            if let result = queryingTable!.queryTable(name: name) {
                 return result
             }
             queryingTable = queryingTable?.parent
@@ -69,7 +72,7 @@ class SymbolTables {
         var newSymbol = symbol
         newSymbol.id = allSymbols.count
         allSymbols.append(symbol)
-        current.table[newSymbol.name] = newSymbol
+        current.addToTable(symbol: newSymbol)
         return newSymbol.id
     }
     
