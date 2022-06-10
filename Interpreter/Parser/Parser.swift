@@ -100,7 +100,7 @@ class Parser {
         
         if match(types: .EXTENDS) {
             let extendsKeyword = previous()
-            let extendedClass = try typeSignature(matchArray: false)
+            let extendedClass = try typeSignature(matchArray: false, optional: false)
             if extendedClass == nil {
                 throw error(message: "Expect class name", token: extendsKeyword)
             }
@@ -165,7 +165,7 @@ class Parser {
                 var typeAnnotation: AstType? = nil
                 var initializer: Expr? = nil
                 if match(types: .COLON) {
-                    typeAnnotation = try typeSignature(matchArray: true)
+                    typeAnnotation = try typeSignature(matchArray: true, optional: false)
                 }
                 if match(types: .EQUAL) {
                     initializer = try expression()
@@ -207,7 +207,7 @@ class Parser {
                 var parameterType: AstType? = nil
                 var initializer: Expr? = nil
                 if match(types: .COLON) {
-                    parameterType = try typeSignature(matchArray: true)
+                    parameterType = try typeSignature(matchArray: true, optional: false)
                 }
                 if match(types: .EQUAL) {
                     initializer = try expression()
@@ -218,7 +218,7 @@ class Parser {
         try consume(type: .RIGHT_PAREN, message: "Expect ')' after parameters")
         
         if match(types: .COLON) {
-            functionType = try typeSignature(matchArray: true)
+            functionType = try typeSignature(matchArray: true, optional: false)
         }
         try consume(type: .EOL, message: "Expect end-of-line after function signature")
         
@@ -402,7 +402,7 @@ class Parser {
         var annotationColon: Token? = nil
         if match(types: .COLON) {
             annotationColon = previous()
-            annotation = try typeSignature(matchArray: true)
+            annotation = try typeSignature(matchArray: true, optional: false)
         }
         
         if match(types: .EQUAL) {
@@ -462,14 +462,24 @@ class Parser {
     }
     
     private func comparison() throws -> Expr {
-        var expr = try term()
+        var expr = try isType()
         
         while match(types: .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL) {
             let opr = previous()
-            let right = try term()
+            let right = try isType()
             expr = BinaryExpr(left: expr, opr: opr, right: right, type: nil, startLocation: expr.startLocation, endLocation: .init(end: previous()))
         }
         
+        return expr
+    }
+    
+    private func isType() throws -> Expr {
+        var expr = try term()
+        if match(types: .IS) {
+            let keyword = previous()
+            let type = try typeSignature(matchArray: true, optional: false)
+            expr = IsTypeExpr(left: expr, keyword: keyword, right: type!, type: nil, startLocation: expr.startLocation, endLocation: type!.endLocation)
+        }
         return expr
     }
     
@@ -505,7 +515,7 @@ class Parser {
         let newKeyword = previous()
         // consume the base type
         let baseType = peek()
-        var allocationType = try typeSignature(matchArray: false)
+        var allocationType = try typeSignature(matchArray: false, optional: false)
         if allocationType == nil {
             throw error(message: "Expect type after 'new'", token: newKeyword)
         }
@@ -538,7 +548,7 @@ class Parser {
                 throw error(message: "Expect ')' after '('", token: previous())
             }
             // determine if its a type cast
-            let typeCastTo = try typeSignature(matchArray: true)
+            let typeCastTo = try typeSignature(matchArray: true, optional: true)
             if typeCastTo != nil {
                 try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
                 let right = try unary()
@@ -622,7 +632,7 @@ class Parser {
         if match(types: .IDENTIFIER) {
             if tokenToAstType(previous()) is AstClassType {
                 current = statePrior
-                let classSignature = try typeSignature(matchArray: false)
+                let classSignature = try typeSignature(matchArray: false, optional: false)
                 try consume(type: .DOT, message: "Expected member name or constructor call after type name")
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
                 return StaticClassExpr(classType: classSignature as! AstClassType, property: property, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
@@ -659,8 +669,11 @@ class Parser {
         return ArrayLiteralExpr(values: values, type: nil, startLocation: .init(start: leftBracket), endLocation: .init(end: previous()))
     }
     
-    private func typeSignature(matchArray: Bool) throws -> AstType? {
+    private func typeSignature(matchArray: Bool, optional: Bool) throws -> AstType? {
         guard var astType = tokenToAstType(peek()) else {
+            if (!optional) {
+                throw error(message: "Expect type", token: peek())
+            }
             return nil
         }
         advance()
@@ -671,7 +684,7 @@ class Parser {
             var templateArguments: [AstType] = []
             repeat {
                 let nextToken = peek()
-                guard let typeArgument = try typeSignature(matchArray: true) else {
+                guard let typeArgument = try typeSignature(matchArray: true, optional: true) else {
                     throw error(message: "Expect type", token: nextToken)
                 }
                 templateArguments.append(typeArgument)

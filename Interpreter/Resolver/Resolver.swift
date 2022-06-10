@@ -183,6 +183,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    func visitIsTypeExpr(expr: IsTypeExpr) throws {
+        try resolve(expr.left)
+    }
+    
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws {
         assertionFailure("Implicit cast expression present in Resolver")
     }

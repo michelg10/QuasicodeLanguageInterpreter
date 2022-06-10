@@ -19,7 +19,7 @@ enum TokenType {
     case LOOP, FROM, TO, WHILE, UNTIL, IF, THEN, ELSE, BREAK, CONTINUE
     
     // Operations
-    case MOD, DIV, AND, OR, NOT
+    case MOD, DIV, AND, OR, NOT, IS
     
     // Statements
     case OUTPUT, INPUT

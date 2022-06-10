@@ -485,6 +485,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
     }
     
+    func visitIsTypeExpr(expr: IsTypeExpr) {
+        // TODO
+    }
+    
     func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         assertionFailure("Implicit cast expression should not be visited!")
     }

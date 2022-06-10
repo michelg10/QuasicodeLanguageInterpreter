@@ -28,6 +28,7 @@ protocol ExprVisitor {
     func visitLogicalExpr(expr: LogicalExpr) 
     func visitSetExpr(expr: SetExpr) 
     func visitAssignExpr(expr: AssignExpr) 
+    func visitIsTypeExpr(expr: IsTypeExpr) 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
 }
 
@@ -50,6 +51,7 @@ protocol ExprThrowVisitor {
     func visitLogicalExpr(expr: LogicalExpr) throws 
     func visitSetExpr(expr: SetExpr) throws 
     func visitAssignExpr(expr: AssignExpr) throws 
+    func visitIsTypeExpr(expr: IsTypeExpr) throws 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
 }
 
@@ -72,6 +74,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
     func visitSetExprQsType(expr: SetExpr) throws -> QsType
     func visitAssignExprQsType(expr: AssignExpr) throws -> QsType
+    func visitIsTypeExprQsType(expr: IsTypeExpr) throws -> QsType
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
 }
 
@@ -94,6 +97,7 @@ protocol ExprExprThrowVisitor {
     func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
     func visitSetExprExpr(expr: SetExpr) throws -> Expr
     func visitAssignExprExpr(expr: AssignExpr) throws -> Expr
+    func visitIsTypeExprExpr(expr: IsTypeExpr) throws -> Expr
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
 }
 
@@ -116,6 +120,7 @@ protocol ExprStringVisitor {
     func visitLogicalExprString(expr: LogicalExpr) -> String
     func visitSetExprString(expr: SetExpr) -> String
     func visitAssignExprString(expr: AssignExpr) -> String
+    func visitIsTypeExprString(expr: IsTypeExpr) -> String
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
@@ -836,6 +841,48 @@ class AssignExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitAssignExprString(expr: self)
+    }
+}
+
+class IsTypeExpr: Expr {
+    var left: Expr
+    var keyword: Token
+    var right: AstType
+    var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
+    
+    init(left: Expr, keyword: Token, right: AstType, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.left = left
+        self.keyword = keyword
+        self.right = right
+        self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
+    }
+    init(_ objectToCopy: IsTypeExpr) {
+        self.left = objectToCopy.left
+        self.keyword = objectToCopy.keyword
+        self.right = objectToCopy.right
+        self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitIsTypeExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitIsTypeExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitIsTypeExprQsType(expr: self)
+    }
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitIsTypeExprExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitIsTypeExprString(expr: self)
     }
 }
 

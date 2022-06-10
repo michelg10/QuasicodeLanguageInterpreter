@@ -189,6 +189,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return parenthesize(name: "Assign{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : stringifyBoolean(expr.isFirstAssignment!))}", exprs: expr.to, expr.value)
     }
     
+    func visitIsTypeExprString(expr: IsTypeExpr) -> String {
+        return parenthesize(name: "IsType{type: \(printAst(expr.right))", exprs: expr.left)
+    }
+    
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
         return parenthesize(name: "ImplicitCast{to: \(printType(expr.type))}", exprs: expr.expression)
     }

@@ -67,11 +67,13 @@ class Scanner {
         "and"      : .AND,
         "or"       : .OR,
         "not"      : .NOT,
+        "is"       : .IS,
         "MOD"      : .MOD,
         "DIV"      : .DIV,
         "AND"      : .AND,
         "OR"       : .OR,
         "NOT"      : .NOT,
+        "IS"       : .IS,
         
         "OUTPUT"   : .OUTPUT,
         "INPUT"    : .INPUT,

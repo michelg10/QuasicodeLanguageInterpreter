@@ -448,6 +448,18 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return result
     }
     
+    func visitIsTypeExprExpr(expr: IsTypeExpr) throws -> Expr {
+        let result = IsTypeExpr.init(expr)
+        result.left = (catchErrorClosure({
+            try expandClasses(result.left)
+        }) ?? expr.left)
+        result.right = (catchErrorClosure({
+            expr.right
+        }) ?? expr.right)
+        
+        return result
+    }
+    
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr {
         assertionFailure("Unexpected implicit cast expr in Templater")
         return expr
