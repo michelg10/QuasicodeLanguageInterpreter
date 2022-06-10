@@ -244,8 +244,10 @@ class Scanner {
         
         let nextCharacter = peek()
         if nextCharacter == "f" {
+            advance()
             isDouble = true
         } else if nextCharacter == "l" {
+            advance()
             isDouble = false
         }
         

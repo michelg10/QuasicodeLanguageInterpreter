@@ -333,7 +333,7 @@ class Parser {
         }
         
         try consume(type: .EOL, message: "Expect end-of-line after return statement")
-        return ReturnStmt(keyword: keyword, value: value)
+        return ReturnStmt(keyword: keyword, value: value, isTerminator: false)
     }
     
     private func commaSeparatedExpressions() throws -> [Expr] {
@@ -654,7 +654,7 @@ class Parser {
         repeat {
             values.append(try expression())
         } while match(types: .COMMA)
-        try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
+        try consume(type: .RIGHT_BRACE, message: "Expect '}' after '{'")
         
         return ArrayLiteralExpr(values: values, type: nil, startLocation: .init(start: leftBracket), endLocation: .init(end: previous()))
     }

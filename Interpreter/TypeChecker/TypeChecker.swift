@@ -1,4 +1,3 @@
-// TODO: Symbol table indexes may be null
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
@@ -126,9 +125,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
         return QsAnyType(assignable: false)
     }
-    
-    // TODO: add an "object" type
-    
+        
     internal func visitGroupingExpr(expr: GroupingExpr) {
         typeCheck(expr.expression)
         expr.type = expr.expression.type
@@ -439,6 +436,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSetExpr(expr: SetExpr) {
+        // TODO: be careful about the symbol table
         /*
         typeCheck(expr.value)
         if let globalId = extractGlobalIdFromExpr(expr: expr.to) {

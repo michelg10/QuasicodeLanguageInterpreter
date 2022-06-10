@@ -52,6 +52,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         return result
     }
     
+    private func stringifyBoolean(_ val: Bool) -> String {
+        return (val ? "yes" : "no")
+    }
+    
     internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
         return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
@@ -182,7 +186,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func visitAssignExprString(expr: AssignExpr) -> String {
-        return parenthesize(name: "Assign{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : (expr.isFirstAssignment! ? "yes" : "no"))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Assign{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : stringifyBoolean(expr.isFirstAssignment!))}", exprs: expr.to, expr.value)
     }
     
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
@@ -289,7 +293,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         if stmt.value == nil {
             return parenthesize(name: "Return")
         }
-        return parenthesize(name: "Return", exprs: stmt.value!)
+        return parenthesize(name: "Return{isTerminator: \(stringifyBoolean(stmt.isTerminator))}", exprs: stmt.value!)
     }
     
     internal func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {

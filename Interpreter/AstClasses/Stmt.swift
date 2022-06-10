@@ -274,14 +274,17 @@ class InputStmt: Stmt {
 class ReturnStmt: Stmt {
     var keyword: Token
     var value: Expr?
+    var isTerminator: Bool
     
-    init(keyword: Token, value: Expr?) {
+    init(keyword: Token, value: Expr?, isTerminator: Bool) {
         self.keyword = keyword
         self.value = value
+        self.isTerminator = isTerminator
     }
     init(_ objectToCopy: ReturnStmt) {
         self.keyword = objectToCopy.keyword
         self.value = objectToCopy.value
+        self.isTerminator = objectToCopy.isTerminator
     }
 
     func accept(visitor: StmtVisitor) {

@@ -371,7 +371,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     internal func visitReturnStmt(stmt: ReturnStmt) {
         if currentFunction == .none {
-            error(message: "Can't return from top-level code.", token: stmt.keyword)
+            if stmt.value != nil {
+                error(message: "Can't return a value from top-level code.", token: stmt.keyword)
+            }
+            stmt.isTerminator = true
         }
         
         if stmt.value != nil {
