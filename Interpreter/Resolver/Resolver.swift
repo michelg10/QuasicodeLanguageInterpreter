@@ -174,9 +174,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             } else {
                 if expr.annotation != nil {
                     error(message: "Cannot retype variable after first assignment", token: expr.annotationColon!)
-                    try resolve(expr.to)
-                    try resolve(expr.value)
                 }
+                try resolve(expr.to)
+                try resolve(expr.value)
             }
         } else if expr.isFirstAssignment == false {
             try resolve(expr.value)
