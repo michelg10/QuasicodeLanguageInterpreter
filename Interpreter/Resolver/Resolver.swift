@@ -59,8 +59,23 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     internal func visitVariableExpr(expr: VariableExpr) {
         if let existingSymbol = symbolTable.query(expr.name.lexeme) {
             if let symbol = existingSymbol as? VariableSymbol {
-                if symbol.variableStatus == .uninit {
+                // uninit -> is a global, init it
+                // initing -> use of variable within its own declaration
+                // globalIniting -> global circular reference
+                // finishedInit -> no problem
+                switch symbol.variableStatus {
+                case .uninit:
+                    // is a global, init it
+                    initGlobal(index: symbol.id)
+                case .initing:
+                    // use of variable within its own declaration
                     error(message: "Use of variable within its own declaration", token: expr.name)
+                case .globalIniting:
+                    // global circular reference
+                    error(message: "Circular reference", start: expr.startLocation, end: expr.endLocation)
+                case .finishedInit:
+                    // no problem
+                    break
                 }
             }
             expr.symbolTableIndex = existingSymbol.id
@@ -122,6 +137,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     internal func visitAssignExpr(expr: AssignExpr) throws {
         // first figure out if it is a variable declaration (is first assignment)
+        
+        // isFirstAssignment being nil means that it needs to be computed.
+        // true means that its already been computed and that the value must've already been resolved
+        // false means that its already been computed, but the value might've not been resolved.
         if expr.isFirstAssignment == nil {
             if let existingSymbol = symbolTable.query(expr.to.name.lexeme) {
                 if !(existingSymbol is VariableSymbol) {
@@ -142,23 +161,25 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             } else {
                 expr.isFirstAssignment = true
             }
-        }
-        if expr.isFirstAssignment! {
-            // define the variable but set it as unusable
             
-            // probably put this into a function later
-            expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: expr.to.name.lexeme, variableStatus: .uninit))
-            let associatedSymbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
-            defer {
-                associatedSymbol.variableStatus = .finishedInit
-            }
-            try resolve(expr.value)
-        } else {
-            if expr.annotation != nil {
-                error(message: "Cannot retype variable after first assignment", token: expr.annotationColon!)
-                try resolve(expr.to)
+            if expr.isFirstAssignment! {
+                // define the variable but set it as unusable
+                
+                let associatedSymbol = VariableSymbol(id: -1, name: expr.to.name.lexeme, variableStatus: .initing)
+                expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: associatedSymbol)
+                defer {
+                    associatedSymbol.variableStatus = .finishedInit
+                }
                 try resolve(expr.value)
+            } else {
+                if expr.annotation != nil {
+                    error(message: "Cannot retype variable after first assignment", token: expr.annotationColon!)
+                    try resolve(expr.to)
+                    try resolve(expr.value)
+                }
             }
+        } else if expr.isFirstAssignment == false {
+            try resolve(expr.value)
         }
     }
     
@@ -172,13 +193,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             error(message: "Invalid redeclaration of \(name.lexeme)", token: name)
             return nil
         }
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: name.lexeme, variableStatus: .uninit))
+        let symbol = VariableSymbol(id: -1, name: name.lexeme, variableStatus: .initing)
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         if initializer != nil {
             catchErrorClosure {
                 try resolve(initializer!)
             }
         }
-        let symbol = symbolTable.getSymbol(id: symbolTableIndex) as! VariableSymbol
         symbol.variableStatus = .finishedInit
         return symbolTableIndex
     }
@@ -477,8 +498,18 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    private func initGlobal(index: Int) {
+        let symbol = symbolTable.getSymbol(id: index) as! GlobalVariableSymbol
+        symbol.variableStatus = .globalIniting
+        catchErrorClosure {
+            try resolve(symbol.globalDefiningAssignExpr.value)
+        }
+        symbol.variableStatus = .finishedInit
+    }
+    
     private func eagerDefineGlobalVariables(statements: [Stmt]) {
-        // two passes. one finding all the global defining set expressions and another traversi
+        // two passes. one finding all the global defining set expressions and another traversal
+        var globalVariableIndexes: [Int] = []
         for statement in statements {
             guard let expressionStmt = statement as? ExpressionStmt else {
                 continue
@@ -487,10 +518,22 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             
-            // TODO: Replace this
-            
-            let isNew = defineIdentifierAsVariableOrGet(expr: variableExpr, globalDefiningSetExpr: setExpr)
-            setExpr.isFirstAssignment = isNew
+            if let existingSymbol = symbolTable.query(assignExpr.to.name.lexeme) {
+                assignExpr.isFirstAssignment = false
+                if !(existingSymbol is VariableSymbol) {
+                    error(message: "Invalid redeclaration of \(existingSymbol.name)", token: assignExpr.to.name)
+                    continue
+                }
+                assignExpr.to.symbolTableIndex = existingSymbol.id
+            } else {
+                assignExpr.isFirstAssignment = true
+                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(id: -1, name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit))
+                globalVariableIndexes.append(assignExpr.to.symbolTableIndex!)
+            }
+        }
+        
+        for globalVariableIndex in globalVariableIndexes {
+            initGlobal(index: globalVariableIndex)
         }
     }
     

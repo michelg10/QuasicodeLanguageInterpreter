@@ -41,6 +41,8 @@ let resolver = Resolver()
 let resolveErrors = resolver.resolveAST(statements: &ast, symbolTable: &symbolTable)
 print("Resolved AST")
 print(astPrinter.printAst(ast))
+print("Symbol table")
+symbolTable.printTable()
 print("\nErrors")
 print(resolveErrors)
 

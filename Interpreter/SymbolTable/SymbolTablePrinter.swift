@@ -29,10 +29,10 @@ func printSymbol(symbol: Symbol) -> [String] {
     return [String(symbol.id), String(symbol.name), symbolType, result]
 }
 func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
-    return "\(printVariableInfo(symbol)), status: \(symbol.globalStatus)"
+    return printVariableInfo(symbol)
 }
 func printVariableInfo(_ symbol: VariableSymbol) -> String {
-    return "type: \(printType(symbol.type))"
+    return "type: \(printType(symbol.type)), status: \(symbol.variableStatus)"
 }
 func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
     return "belongingFunctions: \(symbol.belongingFunctions)"

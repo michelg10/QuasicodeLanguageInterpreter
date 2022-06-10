@@ -184,7 +184,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         switch symbolEntry {
         case is GlobalVariableSymbol:
             let globalEntry = symbolEntry as! GlobalVariableSymbol
-            switch globalEntry.globalStatus {
+            switch globalEntry.variableStatus {
             case .finishedInit:
                 expr.type = globalEntry.type!
                 expr.type!.assignable = true
@@ -195,6 +195,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             case .uninit:
                 typeGlobal(id: expr.symbolTableIndex!)
                 expr.type = globalEntry.type!
+            case .globalIniting:
+                break
             }
         case is VariableSymbol:
             if (symbolEntry as! VariableSymbol).type == nil {
@@ -437,6 +439,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSetExpr(expr: SetExpr) {
+        /*
         typeCheck(expr.value)
         if let globalId = extractGlobalIdFromExpr(expr: expr.to) {
             // mark the global as
@@ -477,6 +480,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expr.to.type!
         expr.type!.assignable = false
         return
+         */
+    }
+    
+    func visitAssignExpr(expr: AssignExpr) {
+        
     }
     
     func visitImplicitCastExpr(expr: ImplicitCastExpr) {
@@ -812,8 +820,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func typeGlobal(id: Int) {
         let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbol
-        globalVariableSymbol.globalStatus = .initing
-        typeCheck(globalVariableSymbol.globalDefiningSetExpr)
+        globalVariableSymbol.variableStatus = .initing
+        typeCheck(globalVariableSymbol.globalDefiningAssignExpr)
     }
     
     private func typeGlobals(statements: [Stmt]) {

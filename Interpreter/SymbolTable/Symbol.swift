@@ -12,7 +12,7 @@ enum SymbolType {
     case Variable, Function, Class
 }
 enum VariableStatus {
-    case uninit, initing, finishedInit
+    case uninit, initing, globalIniting, finishedInit
 }
 
 class VariableSymbol: Symbol {
