@@ -138,6 +138,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             if !templatedClasses.contains(classToGenerateSignature) {
                 templatedClasses.insert(classToGenerateSignature)
                 if (DEBUG) {
+                    let astPrinter = AstPrinter()
                     let templateParametersDesc = classToGenerateSignature.templateParameters.reduce("") { partialResult, next in
                         var result = partialResult
                         if result != "" {

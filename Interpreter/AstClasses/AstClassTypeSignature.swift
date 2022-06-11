@@ -1,11 +1,10 @@
 func generateClassSignature(className: String, templateAstTypes: [AstType]?) -> String {
     var templatesName = ""
-    let astPrinter = AstPrinter()
     for templateAstType in templateAstTypes ?? [] {
         if templatesName != "" {
             templatesName += ", "
         }
-        templatesName += astPrinter.printAst(templateAstType)
+        templatesName += astTypeToStringSingleton.stringify(templateAstType)
     }
     return "\(className)<\(templatesName)>"
 }

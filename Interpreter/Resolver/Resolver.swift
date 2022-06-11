@@ -303,8 +303,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if paramsName != "" {
                 paramsName = paramsName+", "
             }
-            let astPrinter = AstPrinter()
-            paramsName+=astPrinter.printAst(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
+            paramsName+=astTypeToStringSingleton.stringify(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
         }
         let functionSignature = "\(stmt.name.lexeme)(\(paramsName))"
         if symbolTable.queryAtScopeOnly(functionSignature) != nil {

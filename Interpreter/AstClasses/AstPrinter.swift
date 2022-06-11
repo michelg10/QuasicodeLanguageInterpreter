@@ -1,9 +1,9 @@
-class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
+class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     private func parenthesize(name: String, exprs: [Expr]) -> String {
         var result = "("+name
         for expr in exprs {
             result += " "
-            result += expr.accept(visitor: self)
+            result += printAst(expr)
         }
         result = result + ")"
         return result
@@ -16,7 +16,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     private func indentBlockStmts(blockStmts: [Stmt]) -> String {
         var result = ""
         for blockStmt in blockStmts {
-            let newRow = blockStmt.accept(visitor: self)
+            let newRow = printAst(blockStmt)
             let newRowLines = newRow.split(separator: "\n")
             for newRowLine in newRowLines {
                 result+="    "+newRowLine+"\n"
@@ -44,7 +44,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
         
         for expr in exprs {
             result += " "
-            result += expr.accept(visitor: self)
+            result += printAst(expr)
         }
         result += " "+encapsulateBlock(stmts: blockStmt.statements, scopeIndex: blockStmt.scopeIndex)
         result+=")"
@@ -54,43 +54,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     
     private func stringifyBoolean(_ val: Bool) -> String {
         return (val ? "yes" : "no")
-    }
-    
-    internal func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
-        return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
-    }
-    
-    internal func visitAstArrayTypeString(asttype: AstArrayType) -> String {
-        return "<Array\(asttype.contains.accept(visitor: self))>"
-    }
-    
-    internal func visitAstClassTypeString(asttype: AstClassType) -> String {
-        var templateArgumentsString = ""
-        if asttype.templateArguments != nil {
-            for templateArguments in asttype.templateArguments! {
-                if templateArgumentsString != "" {
-                    templateArgumentsString += ", "
-                }
-                templateArgumentsString+=templateArguments.accept(visitor: self)
-            }
-        }
-        return "<Class \(asttype.name.lexeme)\(asttype.templateArguments == nil ? "" : "<\(templateArgumentsString)>")>"
-    }
-    
-    internal func visitAstIntTypeString(asttype: AstIntType) -> String {
-        return "<Int>"
-    }
-    
-    internal func visitAstDoubleTypeString(asttype: AstDoubleType) -> String {
-        return "<Double>"
-    }
-    
-    internal func visitAstBooleanTypeString(asttype: AstBooleanType) -> String {
-        return "<Boolean>"
-    }
-    
-    internal func visitAstAnyTypeString(asttype: AstAnyType) -> String {
-        return "<Any>"
     }
     
     internal func visitGroupingExprString(expr: GroupingExpr) -> String {
@@ -162,15 +125,15 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitCastExprString(expr: CastExpr) -> String {
-        return parenthesize(name: "cast{to: \(expr.toType.accept(visitor: self))}", exprs: expr.value)
+        return parenthesize(name: "cast{to: \(printAst(expr.toType))}", exprs: expr.value)
     }
     
     internal func visitArrayAllocationExprString(expr: ArrayAllocationExpr) -> String {
-        return parenthesize(name: "allocate{ofType: \(expr.contains.accept(visitor: self))}", exprs: expr.capacity)
+        return parenthesize(name: "allocate{ofType: \(printAst(expr.contains))}", exprs: expr.capacity)
     }
     
     internal func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String {
-        return parenthesize(name: "allocate{ofType: \(expr.classType.accept(visitor: self))}")
+        return parenthesize(name: "allocate{ofType: \(printAst(expr.classType))}")
     }
     
     internal func visitBinaryExprString(expr: BinaryExpr) -> String {
@@ -198,7 +161,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     private func classField(field: ClassField) -> String {
-        return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){\(astTypeToString(astType: field.astType))} = \(field.initializer == nil ? "NoInit" : field.initializer!.accept(visitor: self))"
+        return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){\(astTypeToString(astType: field.astType))} = \(field.initializer == nil ? "NoInit" : printAst(field.initializer!))"
     }
     
     internal func visitClassStmtString(stmt: ClassStmt) -> String {
@@ -209,7 +172,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             return partialResult+", "+next.lexeme
         })
         let expandedTemplateParametersDescription = stmt.expandedTemplateParameters == nil ? "none" : stmt.expandedTemplateParameters!.reduce("", { partialResult, next in
-            let nextDesc = next.accept(visitor: self)
+            let nextDesc = printAst(next)
             if partialResult == "" {
                 return nextDesc
             }
@@ -230,15 +193,15 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     internal func visitMethodStmtString(stmt: MethodStmt) -> String {
-        return "(Method \(stmt.isStatic ? "static" : "nostatic") \(stmt.visibilityModifier == .PUBLIC ? "public" : "private") \(stmt.function.accept(visitor: self)))"
+        return "(Method \(stmt.isStatic ? "static" : "nostatic") \(stmt.visibilityModifier == .PUBLIC ? "public" : "private") \(printAst(stmt.function)))"
     }
     
     private func astTypeToString(astType: AstType?) -> String {
-        return (astType == nil ? "NoMandatedType" : astType!.accept(visitor: self))
+        return (astType == nil ? "NoMandatedType" : printAst(astType!))
     }
     
     private func parenthesizeFunctionParam(functionParam: FunctionParam) -> String {
-        let initializer = functionParam.initializer == nil ? "" : " = \(functionParam.initializer!.accept(visitor: self))"
+        let initializer = functionParam.initializer == nil ? "" : " = \(printAst(functionParam.initializer!))"
         return "(\(functionParam.name.lexeme){index: \(stringifyOptionalInt(functionParam.symbolTableIndex)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
     }
     
@@ -266,7 +229,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
             result = "If "
         }
         
-        result += stmt.condition.accept(visitor: self)
+        result += printAst(stmt.condition)
         
         result += " \(encapsulateBlock(blockStmt: stmt.thenBranch))"
         
@@ -321,7 +284,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor, AstTypeStringVisitor {
     }
     
     func printAst(_ astType: AstType) -> String {
-        astType.accept(visitor: self)
+        astTypeToStringSingleton.stringify(astType)
     }
     
     func printAst(_ expr: Expr) -> String {
