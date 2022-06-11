@@ -88,13 +88,13 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
             return "nil"
         }
         if expr.type is QsInt {
-            return String(expr.value as! Int)
+            return String(expr.value as! Int)+(printWithTypes ? "{QsType: int}" : "")
         }
         if expr.type is QsDouble {
-            return String(expr.value as! Double)
+            return String(expr.value as! Double)+(printWithTypes ? "{QsType: double}" : "")
         }
         if expr.type is QsBoolean {
-            return (expr.value as! Bool) ? "true" : "false"
+            return ((expr.value as! Bool) ? "true" : "false")+(printWithTypes ? "{QsType: boolean}" : "")
         }
         if expr.type is QsClass {
             return "[Class \((expr.type as! QsClass).name)]"

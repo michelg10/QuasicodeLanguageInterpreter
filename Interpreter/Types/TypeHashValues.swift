@@ -6,4 +6,5 @@ struct TypeHashValues {
     static let CLASS = 4
     static let ARRAY = 5
     static let FUNCTION = 6
+    static let ERROR = 7
 }

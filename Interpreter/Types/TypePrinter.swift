@@ -18,6 +18,8 @@ func printType(_ value: QsType?) -> String {
         return "[\(printType((value as! QsArray).contains))]"
     case is QsFunction:
         return "Function(\((value as! QsFunction).nameId))"
+    case is QsErrorType:
+        return "<Error>"
     default:
         return "<Unknown \"\(type(of: value))\">"
     }

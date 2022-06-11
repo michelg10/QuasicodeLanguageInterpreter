@@ -78,6 +78,14 @@ class QsClass: QsType {
     let id: Int
 }
 
+class QsErrorType: QsType {
+    internal init(assignable: Bool) {
+        self.assignable = assignable
+    }
+    
+    var assignable: Bool
+}
+
 struct MethodSignature: Hashable {
     let name: String
     let parameters: [QsType]

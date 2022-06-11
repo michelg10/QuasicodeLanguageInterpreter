@@ -18,6 +18,9 @@ func hashTypeIntoHasher(_ value: QsType, _ hasher: inout Hasher) {
     case is QsFunction:
         hasher.combine(TypeHashValues.FUNCTION)
         hasher.combine((value as! QsFunction).nameId)
+    case is QsErrorType:
+        hasher.combine(TypeHashValues.ERROR)
+        hasher.combine(Int.random(in: Int.min...Int.max))
     default:
         assertionFailure("Attempting to hash unknown type \"\(type(of: value))\"")
     }

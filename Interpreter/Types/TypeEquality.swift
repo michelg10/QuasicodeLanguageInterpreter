@@ -1,4 +1,8 @@
 func typesIsEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
+    if lhs is QsErrorType || rhs is QsErrorType {
+        return false
+    }
+    
     if lhs is QsNativeType {
         if rhs is QsNativeType {
             return type(of: lhs) == type(of: rhs)
