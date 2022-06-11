@@ -15,7 +15,7 @@ func printType(_ value: QsType?) -> String {
     case is QsClass:
         return "\((value as! QsClass).name)"
     case is QsArray:
-        return "[\(printType(value))]"
+        return "[\(printType((value as! QsArray).contains))]"
     case is QsFunction:
         return "Function(\((value as! QsFunction).nameId))"
     default:

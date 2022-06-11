@@ -153,7 +153,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         }
         
-        expr.type = inferredType
+        expr.type = QsArray(contains: inferredType, assignable: false)
     }
     
     func visitStaticClassExpr(expr: StaticClassExpr) {

@@ -1,6 +1,18 @@
 class AstPrinter: ExprStringVisitor, StmtStringVisitor {
-    private func parenthesize(name: String, exprs: [Expr]) -> String {
+    var printWithTypes = false
+    
+    private func parenthesize(name: String, additionalProperties: [(String, String)] = [], exprs: [Expr]) -> String {
         var result = "("+name
+        if !additionalProperties.isEmpty {
+            var additionalPropertyString = ""
+            for additionalProperty in additionalProperties {
+                if additionalPropertyString != "" {
+                    additionalPropertyString+=", "
+                }
+                additionalPropertyString+="\(additionalProperty.0): \(additionalProperty.1)"
+            }
+            result += "{\(additionalPropertyString)}"
+        }
         for expr in exprs {
             result += " "
             result += printAst(expr)
@@ -9,8 +21,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return result
     }
     
-    private func parenthesize(name: String, exprs: Expr...) -> String {
-        return parenthesize(name: name, exprs: exprs)
+    private func parenthesize(name: String, additionalProperties: [(String, String)] = [], exprs: Expr...) -> String {
+        return parenthesize(name: name, additionalProperties: additionalProperties, exprs: exprs)
     }
     
     private func indentBlockStmts(blockStmts: [Stmt]) -> String {
@@ -56,8 +68,19 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return (val ? "yes" : "no")
     }
     
+    private func generateTypePropertyForExpr(_ expr: Expr) -> (String, String) {
+        return ("QsType", printType(expr.type))
+    }
+    
+    private func generateAdditionalTypePropertyArray(_ expr: Expr) -> [(String, String)] {
+        if printWithTypes {
+            return [generateTypePropertyForExpr(expr)]
+        }
+        return []
+    }
+    
     internal func visitGroupingExprString(expr: GroupingExpr) -> String {
-        return parenthesize(name: "group", exprs: expr.expression)
+        return parenthesize(name: "Group", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.expression)
     }
     
     internal func visitLiteralExprString(expr: LiteralExpr) -> String {
@@ -80,27 +103,32 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     }
     
     internal func visitThisExprString(expr: ThisExpr) -> String {
-        return parenthesize(name: "this")
+        return parenthesize(name: "this", additionalProperties: generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String {
-        return parenthesize(name: "ArrayLiteral", exprs: expr.values)
+        return parenthesize(name: "ArrayLiteral", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.values)
     }
     
     internal func visitStaticClassExprString(expr: StaticClassExpr) -> String {
-        return parenthesize(name: "StaticClass{\(printAst(expr.classType)) \(expr.property.lexeme)}")
+        return parenthesize(name: "StaticClass", additionalProperties: [
+            ("class", printAst(expr.classType)),
+            ("property", expr.property.lexeme)
+        ]+generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitSuperExprString(expr: SuperExpr) -> String {
-        return parenthesize(name: "super.\(expr.property.lexeme)")
+        return parenthesize(name: "super.\(expr.property.lexeme)", additionalProperties: generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitVariableExprString(expr: VariableExpr) -> String {
-        return parenthesize(name: expr.name.lexeme+"{index: \(stringifyOptionalInt(expr.symbolTableIndex))}")
+        return parenthesize(name: expr.name.lexeme, additionalProperties: [
+            ("index", stringifyOptionalInt(expr.symbolTableIndex))
+        ]+generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitSubscriptExprString(expr: SubscriptExpr) -> String {
-        return parenthesize(name: "subscript", exprs: expr.expression, expr.index)
+        return parenthesize(name: "Subscript", exprs: expr.expression, expr.index)
     }
     
     internal func visitCallExprString(expr: CallExpr) -> String {
@@ -113,51 +141,68 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         }
         var exprs = [expr.callee]
         exprs.append(contentsOf: expr.arguments)
-        return parenthesize(name: "call{callsFunction: \(callsFunction)}", exprs: exprs)
+        return parenthesize(name: "Call", additionalProperties: [
+            ("callsFunction", callsFunction)
+        ]+generateAdditionalTypePropertyArray(expr), exprs: exprs)
     }
     
     internal func visitGetExprString(expr: GetExpr) -> String {
-        return parenthesize(name: "get \(expr.name.lexeme)", exprs: expr.object)
+        return parenthesize(name: "Get", additionalProperties: [
+            ("property", expr.name.lexeme)
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.object)
     }
     
     internal func visitUnaryExprString(expr: UnaryExpr) -> String {
-        return parenthesize(name: expr.opr.lexeme, exprs: expr.right)
+        return parenthesize(name: expr.opr.lexeme, additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.right)
     }
     
     internal func visitCastExprString(expr: CastExpr) -> String {
-        return parenthesize(name: "cast{to: \(printAst(expr.toType))}", exprs: expr.value)
+        return parenthesize(name: "cast", additionalProperties: [
+            ("to", printAst(expr.toType))
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.value)
     }
     
     internal func visitArrayAllocationExprString(expr: ArrayAllocationExpr) -> String {
-        return parenthesize(name: "allocate{ofType: \(printAst(expr.contains))}", exprs: expr.capacity)
+        return parenthesize(name: "ArrayAllocate", additionalProperties: [
+            ("ofType", printAst(expr.contains))
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.capacity)
     }
     
     internal func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String {
-        return parenthesize(name: "allocate{ofType: \(printAst(expr.classType))}")
+        return parenthesize(name: "ClassAllocate", additionalProperties: [
+            ("ofType", printAst(expr.classType))
+        ]+generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitBinaryExprString(expr: BinaryExpr) -> String {
-        return parenthesize(name: expr.opr.lexeme, exprs: expr.left, expr.right)
+        return parenthesize(name: expr.opr.lexeme, additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.left, expr.right)
     }
     
     internal func visitLogicalExprString(expr: LogicalExpr) -> String {
-        return parenthesize(name: expr.opr.lexeme, exprs: expr.left, expr.right)
+        return parenthesize(name: expr.opr.lexeme, additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.left, expr.right)
     }
     
     internal func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set", exprs: expr.to, expr.value)
+        return parenthesize(name: "Set", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.to, expr.value)
     }
     
     func visitAssignExprString(expr: AssignExpr) -> String {
-        return parenthesize(name: "Assign{type: \(astTypeToString(astType: expr.annotation)), isFirstAssignment: \(expr.isFirstAssignment == nil ? "nil" : stringifyBoolean(expr.isFirstAssignment!))}", exprs: expr.to, expr.value)
+        return parenthesize(name: "Assign", additionalProperties: [
+            ("type", astTypeToString(astType: expr.annotation)),
+            ("isFirstAssignment", expr.isFirstAssignment == nil ? "nil" : stringifyBoolean(expr.isFirstAssignment!))
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.to, expr.value)
     }
     
     func visitIsTypeExprString(expr: IsTypeExpr) -> String {
-        return parenthesize(name: "IsType{type: \(printAst(expr.right))", exprs: expr.left)
+        return parenthesize(name: "IsType", additionalProperties: [
+            ("type", printAst(expr.right))
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.left)
     }
     
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
-        return parenthesize(name: "ImplicitCast{to: \(printType(expr.type))}", exprs: expr.expression)
+        return parenthesize(name: "ImplicitCast", additionalProperties: [
+            ("to", printType(expr.type))
+        ], exprs: expr.expression)
     }
     
     private func classField(field: ClassField) -> String {
@@ -295,7 +340,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         stmt.accept(visitor: self)
     }
     
-    func printAst(_ stmts: [Stmt]) -> String {
+    func printAst(_ stmts: [Stmt], printWithTypes: Bool) -> String {
+        self.printWithTypes = printWithTypes
         var result = ""
         for stmt in stmts {
             if result != "" {
