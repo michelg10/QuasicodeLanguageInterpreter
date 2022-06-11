@@ -186,14 +186,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type = globalEntry.type!
                 expr.type!.assignable = true
             case .initing:
-                // throw an error: circular
-                error(message: "Circular reference", start: expr.startLocation, end: expr.endLocation)
-                expr.type = QsAnyType(assignable: true)
+                assertionFailure("Initing variable status")
+                break
             case .uninit:
                 typeGlobal(id: expr.symbolTableIndex!)
                 expr.type = globalEntry.type!
             case .globalIniting:
-                break
+                // circular
+                expr.type = QsAnyType(assignable: true)
             }
         case is VariableSymbol:
             if (symbolEntry as! VariableSymbol).type == nil {
@@ -338,7 +338,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // do nothing
             } else {
                 error(message: "Type '\(printType(expr.right.type!))' cannot be used as a boolean", start: expr.right.startLocation, end: expr.right.endLocation)
-                expr.type = QsBoolean(assignable: false)
             }
         case .MINUS:
             if isNumericType(expr.right.type!) {
@@ -372,6 +371,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if isNumericType(expr.value.type!) && isNumericType(castTo) {
             return // allow int -> double and double -> int
         }
+        let commonType = findCommonType(expr.value.type!, castTo)
+        if typesIsEqual(commonType, expr.value.type!) {
+            // casting to a subclass
+            return
+        }
+        if typesIsEqual(commonType, castTo) {
+            // casting to a superclass
+            return
+        }
         error(message: "Type '\(printType(expr.value.type))' cannot be cast to '\(castTo))'", start: expr.toType.startLocation, end: expr.toType.endLocation)
     }
     
@@ -400,16 +408,45 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.right)
         switch expr.opr.tokenType {
         case .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL:
+            expr.type = QsBoolean(assignable: false)
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
-                expr.type = QsBoolean(assignable: false)
                 return
-            } else {
-                // string comparison
             }
+            // TODO: Strings
+        case .EQUAL_EQUAL, .BANG_EQUAL:
+            expr.type = QsBoolean(assignable: false)
+            if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                return
+            }
+            if typesIsEqual(expr.left.type!, QsBoolean(assignable: false)) && typesIsEqual(expr.right.type!, QsBoolean(assignable: false)) {
+                return
+            }
+            // TODO: Strings
+        case .MINUS, .SLASH, .STAR, .DIV:
+            expr.type = QsDouble(assignable: false)
+            if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                expr.type!.assignable = false
+                return
+            }
+        case .MOD:
+            expr.type = QsInt(assignable: false)
+            if typesIsEqual(expr.left.type!, QsInt(assignable: false)) && typesIsEqual(expr.right.type!, QsInt(assignable: false)) {
+                return
+            }
+        case .PLUS:
+            expr.type = QsAnyType(assignable: false)
+            if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                expr.type!.assignable = false
+                return
+            }
+            // TODO: Strings
         default:
-            
-            break
+            expr.type = QsAnyType(assignable: false)
         }
+        error(message: "Binary operator '\(expr.opr.lexeme)' cannot be applied to operands of type '\(printType(expr.left.type))' and '\(printType(expr.right.type))'", start: expr.startLocation, end: expr.endLocation)
+
     }
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
@@ -436,13 +473,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSetExpr(expr: SetExpr) {
-        // TODO: be careful about the symbol table
-        /*
         typeCheck(expr.value)
-        if let globalId = extractGlobalIdFromExpr(expr: expr.to) {
-            // mark the global as
-            
-        }
         typeCheck(expr.to)
         
         if !expr.to.type!.assignable {
@@ -450,6 +481,27 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.type = QsAnyType(assignable: false)
             return
         }
+        
+        // assignment can be to: fields within classes
+        let commonType = findCommonType(expr.to.type!, expr.value.type!)
+        if !typesIsEqual(commonType, expr.to.type!) {
+            error(message: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", start: expr.to.startLocation, end: expr.to.endLocation)
+        }
+        expr.type = expr.to.type!
+        expr.type!.assignable = false
+    }
+    
+    func visitAssignExpr(expr: AssignExpr) {
+        typeCheck(expr.value)
+        typeCheck(expr.to)
+        
+        if !expr.to.type!.assignable {
+            // this shouldn't be possible but... just in case constants are added in later on?
+            error(message: "Cannot assign to immutable value", start: expr.to.startLocation, end: expr.to.endLocation)
+            expr.type = QsAnyType(assignable: false)
+            return
+        }
+        
         if expr.isFirstAssignment == true {
             // this SHOULD mean that its also a variable expression
             if expr.annotation != nil {
@@ -470,19 +522,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         }
         
-        // assignment can be to: fields within classes or variables.
         let commonType = findCommonType(expr.to.type!, expr.value.type!)
         if !typesIsEqual(commonType, expr.to.type!) {
             error(message: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", start: expr.to.startLocation, end: expr.to.endLocation)
         }
         expr.type = expr.to.type!
         expr.type!.assignable = false
-        return
-         */
-    }
-    
-    func visitAssignExpr(expr: AssignExpr) {
-        
     }
     
     func visitIsTypeExpr(expr: IsTypeExpr) {
@@ -587,6 +632,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func typeCheck(_ expr: Expr) {
+        if expr.type != nil {
+            return
+        }
         expr.accept(visitor: self)
     }
     
@@ -822,24 +870,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func typeGlobal(id: Int) {
         let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbol
-        globalVariableSymbol.variableStatus = .initing
+        globalVariableSymbol.variableStatus = .globalIniting
         typeCheck(globalVariableSymbol.globalDefiningAssignExpr)
+        globalVariableSymbol.variableStatus = .finishedInit
     }
     
     private func typeGlobals(statements: [Stmt]) {
-        for statement in statements {
-            guard let expressionStmt = statement as? ExpressionStmt else {
+        var globals: [Int] = []
+        for symbol in symbolTable.getAllSymbols() {
+            guard let symbol = symbol as? GlobalVariableSymbol else {
                 continue
             }
-            guard let setExpr = expressionStmt.expression as? SetExpr else {
-                continue
-            }
-            guard let variableExpr = setExpr.to as? VariableExpr else {
-                continue
-            }
-            if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbol {
-                typeGlobal(id: variableExpr.symbolTableIndex!)
-            }
+            symbol.variableStatus = .uninit
+            globals.append(symbol.id)
+        }
+        for global in globals {
+            typeGlobal(id: global)
         }
     }
     
