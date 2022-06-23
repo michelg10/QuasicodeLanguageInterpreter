@@ -253,7 +253,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if propertySymbol is VariableSymbol {
             let propertySymbol = propertySymbol as! VariableSymbol
             expr.type = propertySymbol.type
-            expr.type!.assignable = true
+            // TODO: Uncomment this
+//            expr.type!.assignable = true
         } else if propertySymbol is FunctionNameSymbol {
             expr.type = QsFunction(nameId: propertyId, limitToVisibility: nil, limitToStatic: .limitToStatic)
         } else {
@@ -728,12 +729,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func buildClassHierarchy(statements: [Stmt]) {
+        // first find all of the class statements
         var classStmts: [ClassStmt] = []
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
                 classStmts.append(classStmt)
             }
         }
+        
+        // find the maximum class id to create a union-find disjoint set in order to find circular references
         var classIdCount = 0
         for classStmt in classStmts {
             if classStmt.symbolTableIndex == nil {
@@ -752,7 +756,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         let classClusterer = UnionFind(size: classIdCount+1+1)
         let anyTypeClusterId = classIdCount+1
         
-        // fill in the class chains
+        // create the class chains by initializing every class without a superclass with a depth of 1 and linking child classes classes with their superclasses
         for classStmt in classStmts {
             if classStmt.symbolTableIndex == nil {
                 continue
@@ -793,8 +797,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             classChain.upperClass = inheritedClassSymbol.id
         }
         
+        // fills the depth information in for the child classes
         func fillDepth(_ symbolTableId: Int, depth: Int) {
-            // fills the depth information in
             guard let classChain = getClassChain(id: symbolTableId) else {
                 return
             }
@@ -813,7 +817,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             return nil
         }
-        func processOverrideMethods(classId: Int) -> [MethodSignature : [Int]] {
+        func computeOverrideMethods(classId: Int) -> [MethodSignature : [Int]] {
             // within the class specified by classId:
             // record functions into the methods in chain (if they're new)
             // report errors if return types and static is inconsistent
@@ -851,12 +855,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             
             
             func handleMethod(_ method: MethodStmt) {
-                let signature = MethodSignature.init(functionStmt: method.function)
-                let existingMethod = findMethodInChain(signature: signature)
                 if method.function.symbolTableIndex == nil || method.function.nameSymbolTableIndex == nil {
                     // an error probably occured, dont process it
                     return
                 }
+                let signature = MethodSignature.init(functionStmt: method.function)
+                let existingMethod = findMethodInChain(signature: signature)
                 currentClassSignatureToSymbolIdDict[signature] = method.function.symbolTableIndex!
                 guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbol else {
                     assertionFailure("Expected method symbol info!")
@@ -898,7 +902,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             methodsChain.append(newMethodChain)
             
             for childClass in classChain.parentOf {
-                let childClassOverrides = processOverrideMethods(classId: childClass)
+                let childClassOverrides = computeOverrideMethods(classId: childClass)
                 for (childOverrideSignature, overridingIds) in childClassOverrides {
                     if let methodSymbolId = currentClassSignatureToSymbolIdDict[childOverrideSignature] {
                         // the method that the child is overriding resides in this class. log it.
@@ -917,6 +921,40 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             
             return overrides
         }
+        func computeInheritedProperties(classId: Int, cummulativeInheritedInstanceProperties: [String : Int], cummulativeInheritedClassProperties: [String : Int]) {
+            let classSymbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
+            guard let classChain = classSymbol.classChain else {
+                return
+            }
+            func mergePropertyMaps(cummulativeMap: [String:Int], currentClassMap: [String:Int], uniqueId: String) -> [String:Int] {
+                var result = currentClassMap
+                for cummulativeElement in cummulativeMap {
+                    if currentClassMap[cummulativeElement.key] == nil {
+                        result[cummulativeElement.key] = cummulativeElement.value
+                    } else {
+                        let existingElement = currentClassMap[cummulativeElement.key]
+                        let symbol = symbolTable.getSymbol(id: existingElement!)
+                        let symbolToMerge = symbolTable.getSymbol(id: cummulativeElement.value)
+                        if symbol is FunctionNameSymbol && symbolToMerge is FunctionNameSymbol {
+                            // a new function name symbol to encapsulate them all
+                            let symbol = symbol as! FunctionNameSymbol
+                            let symbolToMerge = symbolToMerge as! FunctionNameSymbol
+                            let newFunctionNameSymbol = FunctionNameSymbol(id: -1, isForMethods: true, name: "$\(uniqueId)Merge$", belongingFunctions: symbolToMerge.belongingFunctions+symbol.belongingFunctions)
+                            symbolTable.resetScope()
+                            symbolTable.gotoSubTable(classSymbol.classStmt.scopeIndex!)
+                            result[cummulativeElement.key] = symbolTable.addToSymbolTable(symbol: newFunctionNameSymbol)
+                        }
+                    }
+                }
+                return result
+            }
+            classSymbol.instancePropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedInstanceProperties, currentClassMap: classSymbol.instancePropertyMap, uniqueId: classSymbol.name+"Instance")
+            classSymbol.classPropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedClassProperties, currentClassMap: classSymbol.classPropertyMap, uniqueId: classSymbol.name+"Class")
+            for child in classChain.parentOf {
+                computeInheritedProperties(classId: child, cummulativeInheritedInstanceProperties: classSymbol.instancePropertyMap, cummulativeInheritedClassProperties: classSymbol.classPropertyMap)
+            }
+            
+        }
         for classStmt in classStmts {
             guard let classId = classStmt.symbolTableIndex else {
                 continue
@@ -926,7 +964,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             if classChain.depth == 1 {
                 fillDepth(classId, depth: 1)
-                processOverrideMethods(classId: classId)
+                computeOverrideMethods(classId: classId)
+                computeInheritedProperties(classId: classId, cummulativeInheritedInstanceProperties: [:], cummulativeInheritedClassProperties: [:])
+
             }
         }
     }
