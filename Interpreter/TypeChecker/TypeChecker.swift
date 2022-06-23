@@ -128,6 +128,78 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
         return QsAnyType(assignable: false)
     }
+    
+    private enum TypeAssertion {
+        case isAssignable
+        case isNumeric
+        case isArray
+        case isType(QsType)
+        case isSubTypeOf(QsType)
+        case isSuperTypeOf(QsType)
+    }
+    private func assertType(expr: Expr, errorMessage: String?, typeAssertions: TypeAssertion...) -> Bool {
+        if expr.type is QsErrorType {
+            return false
+        }
+        for typeAssertion in typeAssertions {
+            switch typeAssertion {
+            case .isAssignable:
+                if !expr.type!.assignable {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            case .isNumeric:
+                if !isNumericType(expr.type!) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            case .isArray:
+                if !(expr.type is QsArray) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            case .isType(let qsType):
+                if qsType is QsErrorType {
+                    return false
+                }
+                if !typesIsEqual(expr.type!, qsType) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            case .isSubTypeOf(let qsType):
+                if qsType is QsErrorType {
+                    return false
+                }
+                let commonType = findCommonType(expr.type!, qsType)
+                if !typesIsEqual(qsType, commonType) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            case .isSuperTypeOf(let qsType):
+                if qsType is QsErrorType {
+                    return false
+                }
+                let commonType = findCommonType(expr.type!, qsType)
+                if !typesIsEqual(expr.type!, qsType) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, start: expr.startLocation, end: expr.endLocation)
+                    }
+                    return false
+                }
+            }
+        }
+        return true
+    }
         
     internal func visitGroupingExpr(expr: GroupingExpr) {
         typeCheck(expr.expression)
@@ -221,23 +293,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     internal func visitSubscriptExpr(expr: SubscriptExpr) {
         // the index and the expression must both be indexable
         typeCheck(expr.index)
-        if expr.index.type is QsInt {
-            // do nothing
-        } else {
-            if !(expr.index.type is QsErrorType) {
-                // don't cascade errors
-                error(message: "Array subscript is not an integer", start: expr.index.startLocation, end: expr.index.endLocation) // this should highlight the entire expression
-            }
-        }
+        assertType(expr: expr.index, errorMessage: "Array subscript is not an integer", typeAssertions: .isType(QsInt(assignable: false)))
         typeCheck(expr.expression)
         // expression must be of type array
-        if let expressionArray = expr.expression.type as? QsArray {
+        if assertType(expr: expr.expression, errorMessage: "Subscripted expression is not an array", typeAssertions: .isArray) {
+            let expressionArray = expr.expression.type as! QsArray
             expr.type = expressionArray.contains
             expr.type!.assignable = true
             return
-        }
-        if !(expr.expression.type is QsErrorType) {
-            error(message: "Subscripted expression is not an array", start: expr.startLocation, end: expr.endLocation)
         }
         expr.type = QsErrorType(assignable: true) // fallback
         return
@@ -350,23 +413,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         switch expr.opr.tokenType {
         case .NOT:
             expr.type = QsBoolean(assignable: false)
-            if expr.right.type is QsBoolean {
-                // do nothing
-            } else {
-                // do not cascade errors
-                if !(expr.right.type is QsErrorType) {
-                    error(message: "Type '\(printType(expr.right.type!))' cannot be used as a boolean", start: expr.right.startLocation, end: expr.right.endLocation)
-                }
-            }
+            assertType(expr: expr.right, errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'boolean'", typeAssertions: .isType(QsBoolean(assignable: false)))
         case .MINUS:
-            if isNumericType(expr.right.type!) {
+            if assertType(expr: expr.right, errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'int' or 'double'", typeAssertions: .isNumeric) {
                 expr.type = expr.right.type
                 expr.type!.assignable = false
                 return
             } else {
-                if !(expr.right.type is QsErrorType) {
-                    error(message: "Type '\(printType(expr.right.type!))' cannot be used as 'int' or 'double'", start: expr.right.startLocation, end: expr.right.endLocation)
-                }
                 expr.type = QsErrorType(assignable: false)
             }
         default:
@@ -411,11 +464,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         var expressionType = typeCheck(expr.contains)
         for capacity in expr.capacity {
             typeCheck(capacity)
-            if !(capacity.type! is QsInt) {
-                if !(capacity.type! is QsErrorType) {
-                    error(message: "Expect type 'int' for array capacity", start: expr.startLocation, end: expr.endLocation)
-                }
-            }
+            assertType(expr: capacity, errorMessage: "Expect type 'int' for array capacity", typeAssertions: .isType(QsInt(assignable: false)))
             expressionType = QsArray(contains: expressionType, assignable: false)
         }
         expr.type = expressionType
@@ -477,6 +526,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
         // TODO
+        typeCheck(expr.left)
+        typeCheck(expr.right)
+        expr.type = QsBoolean(assignable: false)
+        if !(assertType(expr: expr.left, errorMessage: nil, typeAssertions: .isType(QsBoolean(assignable: false))) && assertType(expr: expr.right, errorMessage: nil, typeAssertions: .isType(QsBoolean(assignable: false)))) {
+            error(message: "Binary operator '\(expr.opr.lexeme)' can only be applied to operands of type 'boolean' and 'boolean'", start: expr.startLocation, end: expr.endLocation)
+        }
     }
     
     private func typeVariable(variable: VariableExpr, type: QsType) {
@@ -502,21 +557,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         typeCheck(expr.to)
         
-        if !expr.to.type!.assignable {
-            if !(expr.to.type! is QsErrorType) {
-                error(message: "Cannot assign to immutable value", start: expr.to.startLocation, end: expr.to.endLocation)
-            }
+        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
             expr.type = QsErrorType(assignable: false)
             return
         }
         
         // assignment can be to: fields within classes
-        let commonType = findCommonType(expr.to.type!, expr.value.type!)
-        if !typesIsEqual(commonType, expr.to.type!) {
-            if !(expr.to.type is QsErrorType) && !(expr.value.type is QsErrorType) {
-                error(message: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", start: expr.to.startLocation, end: expr.to.endLocation)
-            }
-        }
+        assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!))
         expr.type = expr.to.type!
         expr.type!.assignable = false
     }
@@ -525,25 +572,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         typeCheck(expr.to)
         
-        if !expr.to.type!.assignable {
+        if assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
             // this shouldn't be possible but... just in case constants are added in later on?
-            if !(expr.to.type is QsErrorType) {
-                error(message: "Cannot assign to immutable value", start: expr.to.startLocation, end: expr.to.endLocation)
-            }
             expr.type = QsErrorType(assignable: false)
             return
         }
         
-        if expr.isFirstAssignment == true {
+        if expr.isFirstAssignment! {
             if expr.annotation != nil {
                 let variableType = typeCheck(expr.annotation!)
                 typeVariable(variable: expr.to as! VariableExpr, type: variableType)
-                let commonType = findCommonType(variableType, expr.to.type!)
-                if !typesIsEqual(commonType, variableType) {
-                    if !(variableType is QsErrorType) && !(expr.to.type is QsErrorType) {
-                        error(message: "Type '\(printType(expr.to.type))' cannot be cast to '\(printType(variableType))'", start: expr.to.startLocation, end: expr.to.endLocation)
-                    }
-                }
+                assertType(expr: expr.to, errorMessage: "Type '\(printType(expr.to.type))' cannot be cast to '\(printType(variableType))'", typeAssertions: .isSubTypeOf(variableType))
                 expr.type = variableType
                 expr.type!.assignable = false
                 return
@@ -553,16 +592,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type!.assignable = false
                 return
             }
+        } else {
+            assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!))
+            expr.type = expr.to.type!
+            expr.type!.assignable = false
         }
-        
-        let commonType = findCommonType(expr.to.type!, expr.value.type!)
-        if !typesIsEqual(commonType, expr.to.type!) {
-            if !(commonType is QsErrorType) && !(expr.to.type is QsErrorType) {
-                error(message: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", start: expr.to.startLocation, end: expr.to.endLocation)
-            }
-        }
-        expr.type = expr.to.type!
-        expr.type!.assignable = false
     }
     
     func visitIsTypeExpr(expr: IsTypeExpr) {
@@ -591,11 +625,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitIfStmt(stmt: IfStmt) {
         typeCheck(stmt.condition)
-        if !(stmt.condition.type is QsBoolean) {
-            if !(stmt.condition.type is QsErrorType) {
-                error(message: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", start: stmt.condition.startLocation, end: stmt.condition.endLocation)
-            }
-        }
+        assertType(expr: stmt.condition, errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean(assignable: false)))
         typeCheck(stmt.thenBranch)
         for elseIfBranch in stmt.elseIfBranches {
             typeCheck(elseIfBranch)
@@ -616,16 +646,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         for expression in stmt.expressions {
             typeCheck(expression)
-            if !expression.type!.assignable {
-                if !(expression.type is QsErrorType) {
-                    error(message: "Cannot assign to immutable value", start: expression.startLocation, end: expression.endLocation)
-                }
-            }
-            if !(expression.type is QsInt || expression.type is QsAnyType || expression.type is QsDouble) { // TODO: include string
-                if !(expression.type is QsErrorType) {
-                    error(message: "Cannot input to type '\(printType(expression.type!))'", start: expression.startLocation, end: expression.endLocation)
-                }
-            }
+            assertType(expr: expression, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
+            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt(assignable: false)), .isType(QsAnyType(assignable: false)), .isType(QsDouble(assignable: false))) // TODO: include string
         }
     }
     
@@ -637,26 +659,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(stmt.lRange)
         typeCheck(stmt.rRange)
         typeCheck(stmt.variable)
-        if !(stmt.lRange.type is QsInt) {
-            if !(stmt.lRange.type is QsErrorType) {
-                error(message: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", start: stmt.lRange.startLocation, end: stmt.lRange.endLocation)
-            }
-        }
-        if !(stmt.rRange.type is QsInt) {
-            if !(stmt.rRange.type is QsErrorType) {
-                error(message: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", start: stmt.rRange.startLocation, end: stmt.rRange.endLocation)
-            }
-        }
+        assertType(expr: stmt.lRange, errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt(assignable: false)))
+        assertType(expr: stmt.rRange, errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt(assignable: false)))
         typeCheck(stmt.body)
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) {
         typeCheck(stmt.expression)
-        if !(stmt.expression.type is QsBoolean) {
-            if !(stmt.expression.type is QsErrorType) {
-                error(message: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", start: stmt.expression.startLocation, end: stmt.expression.endLocation)
-            }
-        }
+        assertType(expr: stmt.expression, errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean(assignable: false)))
         typeCheck(stmt.body)
     }
     
