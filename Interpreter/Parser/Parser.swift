@@ -596,7 +596,7 @@ class Parser {
                 expr = try finishCall(callee: expr)
             } else if match(types: .DOT) {
                 let name = try consume(type: .IDENTIFIER, message: "Expect property name after '.'.")
-                expr = GetExpr(object: expr, property: name, propertyIndex: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: name))
+                expr = GetExpr(object: expr, property: name, propertyId: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: name))
             } else if match(types: .LEFT_BRACKET) {
                 let index = try expression()
                 expr = SubscriptExpr(expression: expr, index: index, type: nil, startLocation: expr.startLocation, endLocation: index.endLocation)
@@ -639,7 +639,7 @@ class Parser {
                 let classSignature = try typeSignature(matchArray: false, optional: false)
                 try consume(type: .DOT, message: "Expected member name or constructor call after type name")
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-                return StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, property: property, propertyIndex: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
+                return StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, property: property, propertyId: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
             }
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
@@ -650,7 +650,7 @@ class Parser {
             let keyword = previous()
             try consume(type: .DOT, message: "Expected '.' after 'super'.")
             let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-            return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, propertyIndex: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
+            return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, propertyId: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
         }
         if match(types: .LEFT_PAREN) {
             let leftParen = previous()

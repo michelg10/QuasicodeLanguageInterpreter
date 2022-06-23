@@ -56,7 +56,13 @@ class QsBoolean: QsNativeType {
 }
 
 class QsFunction: QsType {
+    enum StaticLimit {
+        case limitToStatic
+        case limitToInstance
+    }
     let nameId: Int
+    var limitToVisibility: VisibilityModifier?
+    var limitToStatic: StaticLimit?
     var assignable: Bool {
         get {
             return false
@@ -68,6 +74,12 @@ class QsFunction: QsType {
     
     init(nameId: Int) {
         self.nameId = nameId
+    }
+    
+    init(nameId: Int, limitToVisibility: VisibilityModifier?, limitToStatic: StaticLimit?) {
+        self.nameId = nameId
+        self.limitToVisibility = limitToVisibility
+        self.limitToStatic = limitToStatic
     }
 }
 
