@@ -12,7 +12,7 @@ enum SymbolType {
     case Variable, Function, Class
 }
 enum VariableStatus {
-    case uninit, initing, globalIniting, finishedInit
+    case uninit, initing, globalIniting, fieldIniting, finishedInit
 }
 
 class VariableSymbol: Symbol {
@@ -38,14 +38,16 @@ class GlobalVariableSymbol: VariableSymbol {
 }
 class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
-    init(id: Int, name: String, belongingFunctions: [Int]) {
+    init(id: Int, isForMethods: Bool, name: String, belongingFunctions: [Int]) {
         self.id = id
+        self.isForMethods = isForMethods
         self.name = name
         self.belongingFunctions = belongingFunctions
     }
     
     // multiple overloaded functions are under the same signature
     var id: Int
+    var isForMethods: Bool
     var name: String
     var belongingFunctions: [Int]
 }
@@ -71,13 +73,14 @@ class FunctionSymbol: FunctionLikeSymbol {
     }
 }
 class MethodSymbol: FunctionLikeSymbol {
-    init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType) {
+    init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool) {
         self.id = id
         self.name = name
         self.withinClass = withinClass
         self.overridedBy = overridedBy
         self.methodStmt = methodStmt
         self.returnType = returnType
+        self.finishedInit = finishedInit
     }
     
     var id: Int
@@ -86,6 +89,7 @@ class MethodSymbol: FunctionLikeSymbol {
     var overridedBy: [Int]
     var methodStmt: MethodStmt
     var returnType: QsType
+    var finishedInit: Bool
     
     func getParamCount() -> Int {
         return methodStmt.function.params.count

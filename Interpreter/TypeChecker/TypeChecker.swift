@@ -1,3 +1,5 @@
+// TODO: Symbol table indexes may be nil in the event of an error!
+
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
@@ -267,6 +269,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type!.assignable = true
             case .initing:
                 assertionFailure("Initing variable status unexpected")
+                expr.type = QsErrorType(assignable: true)
+            case .fieldIniting:
+                assertionFailure("FieldIniting variable status unexpected")
                 expr.type = QsErrorType(assignable: true)
             case .uninit:
                 typeGlobal(id: expr.symbolTableIndex!)
@@ -710,7 +715,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         var classIdCount = 0
         for classStmt in classStmts {
             if classStmt.symbolTableIndex == nil {
-                assertionFailure("Class statement has no symbol table index!")
                 continue
             }
             guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {

@@ -35,13 +35,13 @@ func printVariableInfo(_ symbol: VariableSymbol) -> String {
     return "type: \(printType(symbol.type)), status: \(symbol.variableStatus)"
 }
 func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
-    return "belongingFunctions: \(symbol.belongingFunctions)"
+    return "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
 }
 func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
-    return ""
+    return "returnType: \(printType(symbol.returnType))"
 }
 func printMethodInfo(_ symbol: MethodSymbol) -> String {
-    return "withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy)"
+    return "returnType: \(printType(symbol.returnType)),withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit)"
 }
 func printClassInfo(_ symbol: ClassSymbol) -> String {
     return "classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.classChain?.depth)), parentOf: \(stringifyOptionalIntArray(symbol.classChain?.parentOf)), upperClass: \(stringifyOptionalInt(symbol.classChain?.upperClass))"

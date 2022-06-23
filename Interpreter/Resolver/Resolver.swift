@@ -43,11 +43,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         if currentClassStatus == nil {
             throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
         }
-        do {
-            expr.symbolTableIndex = symbolTable.query("this")!.id
-        } catch {
-            assertionFailure("'this' is undefined")
-        }
+        expr.symbolTableIndex = symbolTable.query("this")?.id
+        assert(expr.symbolTableIndex != nil, "'this' is undefined")
     }
     
     internal func visitSuperExpr(expr: SuperExpr) throws {
@@ -70,12 +67,21 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 case .initing:
                     // use of variable within its own declaration
                     error(message: "Use of variable within its own declaration", token: expr.name)
+                case .fieldIniting:
+                    error(message: "Use of variable within class before class is available", start: expr.startLocation, end: expr.endLocation)
                 case .globalIniting:
                     // global circular reference
                     error(message: "Circular reference", start: expr.startLocation, end: expr.endLocation)
                 case .finishedInit:
                     // no problem
                     break
+                }
+            } else if let symbol = existingSymbol as? FunctionNameSymbol {
+                if symbol.isForMethods {
+                    let method = symbolTable.getSymbol(id: symbol.belongingFunctions[0]) as! MethodSymbol
+                    if !method.finishedInit {
+                        error(message: "Use of method within class before class is available", start: expr.startLocation, end: expr.endLocation)
+                    }
                 }
             }
             expr.symbolTableIndex = existingSymbol.id
@@ -209,6 +215,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
+        guard stmt.symbolTableIndex != nil else {
+            return
+        }
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = false
         // add template names, method names
@@ -247,13 +256,68 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
         }
         
-        for i in 0..<stmt.fields.count {
-            stmt.fields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.fields[i].name, initializer: stmt.fields[i].initializer)
+        // what happens now: instance variables can reference each other. i don't want that to happen
+        func defineField(field: ClassField) {
+            if symbolTable.queryAtScopeOnly(field.name.lexeme) != nil {
+                error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
+                return
+            }
+            let symbol = VariableSymbol(id: -1, name: field.name.lexeme, variableStatus: .fieldIniting)
+            field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
-        for i in 0..<stmt.staticFields.count {
-            stmt.staticFields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.staticFields[i].name, initializer: stmt.staticFields[i].initializer)
+        for field in stmt.fields {
+            defineField(field: field)
+        }
+        for field in stmt.staticFields {
+            defineField(field: field)
         }
         
+        for field in stmt.fields {
+            if field.initializer != nil {
+                catchErrorClosure {
+                    try resolve(field.initializer!)
+                }
+            }
+        }
+        for field in stmt.staticFields {
+            if field.initializer != nil {
+                catchErrorClosure {
+                    try resolve(field.initializer!)
+                }
+            }
+        }
+        
+        // set all the methods to available and all the fields to finishedInit
+        for field in stmt.fields {
+            if field.symbolTableIndex == nil {
+                continue
+            }
+            let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
+            symbol.variableStatus = .finishedInit
+        }
+        for field in stmt.staticFields {
+            if field.symbolTableIndex == nil {
+                continue
+            }
+            let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
+            symbol.variableStatus = .finishedInit
+        }
+        for method in stmt.methods {
+            if method.function.symbolTableIndex == nil {
+                continue
+            }
+            let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
+            symbol.finishedInit = true
+        }
+        for method in stmt.methods {
+            if method.function.symbolTableIndex == nil {
+                continue
+            }
+            let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
+            symbol.finishedInit = true
+        }
+        
+        // resolve the methods now
         for method in stmt.staticMethods {
             resolve(method)
         }
@@ -313,7 +377,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         if withinClass == nil {
             symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false)))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false), finishedInit: false))
         }
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
@@ -323,7 +387,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
             functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
         } else {
-            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, isForMethods: withinClass != nil, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
         }
         
         return symbolTableIndex
