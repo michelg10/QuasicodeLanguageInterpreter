@@ -195,7 +195,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     func visitIsTypeExprString(expr: IsTypeExpr) -> String {
         return parenthesize(name: "IsType", additionalProperties: [
-            ("type", printAst(expr.right))
+            ("type", printAst(expr.right)),
+            ("typeAsQsType", printType(expr.rightType))
         ]+generateAdditionalTypePropertyArray(expr), exprs: expr.left)
     }
     

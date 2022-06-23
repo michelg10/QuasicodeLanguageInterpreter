@@ -478,7 +478,7 @@ class Parser {
         if match(types: .IS) {
             let keyword = previous()
             let type = try typeSignature(matchArray: true, optional: false)
-            expr = IsTypeExpr(left: expr, keyword: keyword, right: type!, type: nil, startLocation: expr.startLocation, endLocation: type!.endLocation)
+            expr = IsTypeExpr(left: expr, keyword: keyword, right: type!, rightType: nil, type: nil, startLocation: expr.startLocation, endLocation: type!.endLocation)
         }
         return expr
     }

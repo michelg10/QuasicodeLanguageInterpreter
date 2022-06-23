@@ -525,7 +525,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
-        // TODO
         typeCheck(expr.left)
         typeCheck(expr.right)
         expr.type = QsBoolean(assignable: false)
@@ -600,7 +599,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitIsTypeExpr(expr: IsTypeExpr) {
-        // TODO
+        typeCheck(expr.left)
+        expr.rightType = typeCheck(expr.right)
+        expr.type = QsBoolean(assignable: false)
     }
     
     func visitImplicitCastExpr(expr: ImplicitCastExpr) {

@@ -848,14 +848,16 @@ class IsTypeExpr: Expr {
     var left: Expr
     var keyword: Token
     var right: AstType
+    var rightType: QsType?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(left: Expr, keyword: Token, right: AstType, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(left: Expr, keyword: Token, right: AstType, rightType: QsType?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
         self.keyword = keyword
         self.right = right
+        self.rightType = rightType
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -864,6 +866,7 @@ class IsTypeExpr: Expr {
         self.left = objectToCopy.left
         self.keyword = objectToCopy.keyword
         self.right = objectToCopy.right
+        self.rightType = objectToCopy.rightType
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
