@@ -530,6 +530,20 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         }
     }
     
+    private func eraseClasses(_ statements: inout [Stmt]) {
+        statements.removeAll { stmt in
+            guard let stmt = stmt as? ClassStmt else {
+                return false
+            }
+            if stmt.templateParameters != nil {
+                if stmt.expandedTemplateParameters == nil {
+                    return true
+                }
+            }
+            return false
+        }
+    }
+    
     func expandClasses(statements: [Stmt], classStmts: [ClassStmt]) -> ([Stmt], [InterpreterProblem]) {
         self.statements = statements
         problems = []
@@ -538,6 +552,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         
         expandClasses(statements)
         
+        eraseClasses(&self.statements)
         return (self.statements, problems)
     }
     

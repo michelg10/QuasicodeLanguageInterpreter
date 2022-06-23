@@ -36,7 +36,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitStaticClassExpr(expr: StaticClassExpr) throws {
-        // nothing
+        
     }
     
     internal func visitThisExpr(expr: ThisExpr) throws {
@@ -220,14 +220,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = false
-        // add template names, method names
-        var classScope: [String : Int] = [:]
-        if stmt.templateParameters != nil {
-            for templateParameters in stmt.templateParameters! {
-                classScope[templateParameters.lexeme] = -1
-            }
-        }
-        
         let currentClassName = stmt.name.lexeme
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: "this", variableStatus: .finishedInit))

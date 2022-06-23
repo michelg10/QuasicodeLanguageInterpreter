@@ -212,7 +212,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     }
     
     private func classField(field: ClassField) -> String {
-        return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){index: \(stringifyOptionalInt(field.symbolTableIndex)), \(astTypeToString(astType: field.astType)), QsType: \(printType(field.type))} = \(field.initializer == nil ? "NoInit" : printAst(field.initializer!))"
+        return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){index: \(stringifyOptionalInt(field.symbolTableIndex)), type: \(astTypeToString(astType: field.astType)), QsType: \(printType(field.type))} = \(field.initializer == nil ? "NoInit" : printAst(field.initializer!))"
     }
     
     internal func visitClassStmtString(stmt: ClassStmt) -> String {
