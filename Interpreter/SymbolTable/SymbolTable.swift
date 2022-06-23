@@ -1,10 +1,12 @@
 class SymbolTables {
     private class SymbolTable {
+        let id: Int
         let parent: SymbolTable?
         var childTables: [SymbolTable] = []
         private var table: [String : Symbol] = [:]
-        init(parent: SymbolTable?) {
+        init(parent: SymbolTable?, id: Int) {
             self.parent = parent
+            self.id = id
         }
         
         public func queryTable(name: String) -> Symbol? {
@@ -15,30 +17,32 @@ class SymbolTables {
         }
     }
     private var allSymbols: [Symbol] = []
-    private let rootTable: SymbolTable
+    private var tables: [SymbolTable] = []
     private var current: SymbolTable
     init() {
-        rootTable = .init(parent: nil)
-        current = rootTable
+        current = .init(parent: nil, id: 0)
+        tables.append(current)
     }
     
     public func resetScope() {
-        current = rootTable
+        current = tables[0]
     }
     
     public func createTableAtScope() -> Int {
-        current.childTables.append(.init(parent: current))
-        return current.childTables.count-1
+        let newTable = SymbolTable.init(parent: current, id: tables.count)
+        current.childTables.append(newTable)
+        tables.append(newTable)
+        return newTable.id
     }
     
     public func createAndEnterScope() -> Int {
         let index = createTableAtScope()
-        gotoSubTable(index)
+        gotoTable(index)
         return index
     }
     
-    public func gotoSubTable(_ index: Int) {
-        current = current.childTables[index]
+    public func gotoTable(_ index: Int) {
+        current = tables[index]
     }
     
     public func exitScope() {
@@ -50,7 +54,7 @@ class SymbolTables {
     }
     
     public func queryAtGlobalOnly(_ name: String) -> Symbol? {
-        return rootTable.queryTable(name: name)
+        return tables[0].queryTable(name: name)
     }
     
     public func query(_ name: String) -> Symbol? {
@@ -66,6 +70,10 @@ class SymbolTables {
     
     public func getSymbolIndex(name: String) -> Int? {
         return query(name)?.id ?? nil
+    }
+    
+    public func getClassChain(id: Int) -> ClassChain? {
+        return (getSymbol(id: id) as? ClassSymbol)?.classChain
     }
     
     public func addToSymbolTable(symbol: Symbol) -> Int {

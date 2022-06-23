@@ -208,7 +208,7 @@ class Parser {
         if !check(type: .RIGHT_PAREN) {
             repeat {
                 let parameterName = try consume(type: .IDENTIFIER, message: "Expect parameter name")
-                var parameterType: AstType? = nil
+                var parameterType: AstType? = AstAnyType(startLocation: .init(end: previous()), endLocation: .init(end: previous()))
                 var initializer: Expr? = nil
                 if match(types: .COLON) {
                     parameterType = try typeSignature(matchArray: true, optional: false)

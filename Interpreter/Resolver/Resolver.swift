@@ -223,7 +223,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = false
         let currentClassName = stmt.name.lexeme
-        stmt.scopeIndex = symbolTable.createAndEnterScope()
+        
+        symbolTable.gotoTable(stmt.scopeIndex!)
         stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: "this", variableStatus: .finishedInit))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
@@ -237,33 +238,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbol else {
             assertionFailure("Symbol at class statement is not a class symbol")
             return
-        }
-        
-        for method in stmt.staticMethods {
-            catchErrorClosure {
-                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
-            }
-        }
-        for method in stmt.methods {
-            catchErrorClosure {
-                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
-            }
-        }
-        
-        // what happens now: instance variables can reference each other. i don't want that to happen
-        func defineField(field: ClassField) {
-            if symbolTable.queryAtScopeOnly(field.name.lexeme) != nil {
-                error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
-                return
-            }
-            let symbol = VariableSymbol(id: -1, name: field.name.lexeme, variableStatus: .fieldIniting)
-            field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
-        }
-        for field in stmt.fields {
-            defineField(field: field)
-        }
-        for field in stmt.staticFields {
-            defineField(field: field)
         }
         
         for field in stmt.fields {
@@ -287,7 +261,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
-            classSymbol.instancePropertyMap[field.name.lexeme] = field.symbolTableIndex
             symbol.variableStatus = .finishedInit
         }
         for field in stmt.staticFields {
@@ -295,14 +268,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
-            classSymbol.classPropertyMap[field.name.lexeme] = field.symbolTableIndex
             symbol.variableStatus = .finishedInit
         }
         for method in stmt.methods {
             if method.function.symbolTableIndex == nil {
                 continue
             }
-            classSymbol.instancePropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
             // TODO: Remember that static and nonstatic functions can be underneath the exact same name symbol table index
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
@@ -311,7 +282,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if method.function.symbolTableIndex == nil {
                 continue
             }
-            classSymbol.classPropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
         }
@@ -540,16 +510,48 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt, instancePropertyMap: [:], classPropertyMap: [:]))
+        let classSymbol = ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt, instancePropertyMap: [:], classPropertyMap: [:])
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: classSymbol)
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
-            guard existingNameSymbolInfo is ClassNameSymbol else {
-                throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
+            if !(existingNameSymbolInfo is ClassNameSymbol) {
+                error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
-            // do nothing about it
         } else {
             symbolTable.addToSymbolTable(symbol: ClassNameSymbol(id: -1, name: stmt.name.lexeme))
         }
+        
+        stmt.scopeIndex = symbolTable.createAndEnterScope()
+        for method in stmt.methods {
+            catchErrorClosure {
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
+            }
+            classSymbol.instancePropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
+        }
+        for method in stmt.staticMethods {
+            catchErrorClosure {
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
+            }
+            classSymbol.classPropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
+        }
+        
+        func defineField(field: ClassField) {
+            if symbolTable.queryAtScopeOnly(field.name.lexeme) != nil {
+                error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
+                return
+            }
+            let symbol = VariableSymbol(id: -1, name: field.name.lexeme, variableStatus: .fieldIniting)
+            field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
+        }
+        for field in stmt.fields {
+            defineField(field: field)
+            classSymbol.instancePropertyMap[field.name.lexeme] = field.symbolTableIndex
+        }
+        for field in stmt.staticFields {
+            defineField(field: field)
+            classSymbol.classPropertyMap[field.name.lexeme] = field.symbolTableIndex
+        }
+        symbolTable.exitScope()
         
         return symbolTableIndex
     }
@@ -612,6 +614,249 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    private func buildClassHierarchy(statements: [Stmt]) {
+        // first find all of the class statements
+        var classStmts: [ClassStmt] = []
+        for statement in statements {
+            if let classStmt = statement as? ClassStmt {
+                classStmts.append(classStmt)
+            }
+        }
+        
+        // find the maximum class id to create a union-find disjoint set in order to find circular references
+        var classIdCount = 0
+        for classStmt in classStmts {
+            if classStmt.symbolTableIndex == nil {
+                continue
+            }
+            guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {
+                assertionFailure("Symbol table symbol is not a class symbol")
+                continue
+            }
+            let currentClassChain = ClassChain(upperClass: -1, depth: -1, classStmt: classStmt, parentOf: [])
+            classSymbolInfo.classChain = currentClassChain
+            
+            classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol)?.classId) ?? 0)
+        }
+        
+        let classClusterer = UnionFind(size: classIdCount+1+1)
+        let anyTypeClusterId = classIdCount+1
+        
+        // create the class chains by initializing every class without a superclass with a depth of 1 and linking child classes classes with their superclasses
+        for classStmt in classStmts {
+            if classStmt.symbolTableIndex == nil {
+                continue
+            }
+            guard let classSymbol = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {
+                assertionFailure("Expected class symbol info in symbol table")
+                continue
+            }
+            guard let classChain = classSymbol.classChain else {
+                assertionFailure("Class chain missing!")
+                continue
+            }
+            if classStmt.superclass == nil {
+                classClusterer.unite(anyTypeClusterId, classSymbol.classId)
+                classChain.depth = 1
+                continue
+            }
+            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(generateClassSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
+                assertionFailure("Inherited class not found")
+                continue
+            }
+            guard let inheritedClassSymbol = inheritedClassSymbol as? ClassSymbol else {
+                assertionFailure("Expected class symbol info in symbol table")
+                continue
+            }
+            guard let inheritedClassChainObject = inheritedClassSymbol.classChain else {
+                assertionFailure("Class chain for inherited class missing!")
+                continue
+            }
+            
+            // check if the two classes are already related.
+            if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
+                error(message: "'\(classStmt.name.lexeme)' inherits from itself", token: classStmt.name)
+                continue
+            }
+            inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
+            classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
+            classChain.upperClass = inheritedClassSymbol.id
+        }
+        
+        // fills the depth information in for the child classes
+        func fillDepth(_ symbolTableId: Int, depth: Int) {
+            guard let classChain = symbolTable.getClassChain(id: symbolTableId) else {
+                return
+            }
+            classChain.depth = depth
+            for children in classChain.parentOf {
+                fillDepth(children, depth: depth+1)
+            }
+        }
+        var methodsChain: [[MethodAstTypeSignature : Int]] = []
+        func findMethodInChain(signature: MethodAstTypeSignature) -> Int? {
+            for i in 0..<methodsChain.count {
+                let methodChain = methodsChain[methodsChain.count-i-1]
+                if let resultingId = methodChain[signature] {
+                    return resultingId
+                }
+            }
+            return nil
+        }
+        func computeOverrideMethods(classId: Int) -> [MethodAstTypeSignature : [Int]] {
+            // within the class specified by classId:
+            // record functions into the methods in chain (if they're new)
+            // report errors if return types and static is inconsistent
+            // log all the functions that override methods from the top of the hierarchy into the return value
+            // continue down the class hierarchy
+            
+            // record functions into the methods
+            guard let classSymbol = symbolTable.getSymbol(id: classId) as? ClassSymbol else {
+                assertionFailure("Expected class symbol")
+                return [:]
+            }
+            guard let classChain = classSymbol.classChain else {
+                assertionFailure("Expected class chain")
+                return [:]
+            }
+            let classStmt = classChain.classStmt
+            var newMethodChain: [MethodAstTypeSignature : Int] = [:]
+            var overrides: [MethodAstTypeSignature : [Int]] = [:]
+            var currentClassSignatureToSymbolIdDict: [MethodAstTypeSignature : Int] = [:]
+            
+            func addOverride(methodSignature: MethodAstTypeSignature, functionId: Int) {
+                if overrides[methodSignature] == nil {
+                    overrides[methodSignature] = [functionId]
+                    return
+                }
+                overrides[methodSignature]!.append(functionId)
+            }
+            func addOverride(methodSignature: MethodAstTypeSignature, functionIds: [Int]) {
+                if overrides[methodSignature] == nil {
+                    overrides[methodSignature] = functionIds
+                    return
+                }
+                overrides[methodSignature]!.append(contentsOf: functionIds)
+            }
+            
+            
+            func handleMethod(_ method: MethodStmt) {
+                if method.function.symbolTableIndex == nil || method.function.nameSymbolTableIndex == nil {
+                    // an error probably occured, dont process it
+                    return
+                }
+                let signature = MethodAstTypeSignature.init(functionStmt: method.function)
+                let existingMethod = findMethodInChain(signature: signature)
+                currentClassSignatureToSymbolIdDict[signature] = method.function.symbolTableIndex!
+                guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbol else {
+                    assertionFailure("Expected method symbol info!")
+                    return
+                }
+                if existingMethod == nil {
+                    // record function into the chain
+                    newMethodChain[.init(functionStmt: method.function)] = method.function.symbolTableIndex!
+                } else {
+                    // check consistency with the function currently in the chain
+                    guard let existingMethodSymbolInfo = (symbolTable.getSymbol(id: existingMethod!) as? MethodSymbol) else {
+                        return
+                    }
+                    // check static consistency
+                    if method.isStatic != existingMethodSymbolInfo.methodStmt.isStatic {
+                        error(message: "Static does not match for overriding method", token: (method.isStatic ? method.staticKeyword! : method.function.name))
+                    }
+                    // check return type consistency
+                    if !typesIsEqual(existingMethodSymbolInfo.returnType, currentMethodSymbol.returnType) {
+                        let annotation = method.function.annotation
+                        if annotation == nil {
+                            error(message: "Return type does not match for overriding method", token: method.function.keyword)
+                        } else {
+                            error(message: "Return type does not match for overriding method", start: annotation!.startLocation, end: annotation!.endLocation)
+                        }
+                    }
+                    
+                    // log this override
+                    addOverride(methodSignature: signature, functionId: method.function.symbolTableIndex!)
+                }
+            }
+            for method in classStmt.methods {
+                handleMethod(method)
+            }
+            for method in classStmt.staticMethods {
+                handleMethod(method)
+            }
+            
+            methodsChain.append(newMethodChain)
+            
+            for childClass in classChain.parentOf {
+                let childClassOverrides = computeOverrideMethods(classId: childClass)
+                for (childOverrideSignature, overridingIds) in childClassOverrides {
+                    if let methodSymbolId = currentClassSignatureToSymbolIdDict[childOverrideSignature] {
+                        // the method that the child is overriding resides in this class. log it.
+                        if let methodInfo = (symbolTable.getSymbol(id: methodSymbolId) as? MethodSymbol) {
+                            methodInfo.overridedBy = overridingIds
+                        }
+                    }
+                    if newMethodChain[childOverrideSignature] == nil {
+                        // the method did not originate from this class. propogate it back through the class hierarchy
+                        addOverride(methodSignature: childOverrideSignature, functionIds: overridingIds)
+                    }
+                }
+            }
+            
+            methodsChain.popLast()
+            
+            return overrides
+        }
+        func computeInheritedProperties(classId: Int, cummulativeInheritedInstanceProperties: [String : Int], cummulativeInheritedClassProperties: [String : Int]) {
+            let classSymbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
+            guard let classChain = classSymbol.classChain else {
+                return
+            }
+            func mergePropertyMaps(cummulativeMap: [String:Int], currentClassMap: [String:Int], uniqueId: String) -> [String:Int] {
+                var result = currentClassMap
+                for cummulativeElement in cummulativeMap {
+                    if currentClassMap[cummulativeElement.key] == nil {
+                        result[cummulativeElement.key] = cummulativeElement.value
+                    } else {
+                        let existingElement = currentClassMap[cummulativeElement.key]
+                        let symbol = symbolTable.getSymbol(id: existingElement!)
+                        let symbolToMerge = symbolTable.getSymbol(id: cummulativeElement.value)
+                        if symbol is FunctionNameSymbol && symbolToMerge is FunctionNameSymbol {
+                            // a new function name symbol to encapsulate them all
+                            let symbol = symbol as! FunctionNameSymbol
+                            let symbolToMerge = symbolToMerge as! FunctionNameSymbol
+                            let newFunctionNameSymbol = FunctionNameSymbol(id: -1, isForMethods: true, name: "$\(uniqueId)Merge$", belongingFunctions: symbolToMerge.belongingFunctions+symbol.belongingFunctions)
+                            symbolTable.resetScope()
+                            symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+                            result[cummulativeElement.key] = symbolTable.addToSymbolTable(symbol: newFunctionNameSymbol)
+                            symbolTable.exitScope()
+                        }
+                    }
+                }
+                return result
+            }
+            classSymbol.instancePropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedInstanceProperties, currentClassMap: classSymbol.instancePropertyMap, uniqueId: classSymbol.name+"Instance")
+            classSymbol.classPropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedClassProperties, currentClassMap: classSymbol.classPropertyMap, uniqueId: classSymbol.name+"Class")
+            for child in classChain.parentOf {
+                computeInheritedProperties(classId: child, cummulativeInheritedInstanceProperties: classSymbol.instancePropertyMap, cummulativeInheritedClassProperties: classSymbol.classPropertyMap)
+            }
+            
+        }
+        for classStmt in classStmts {
+            guard let classId = classStmt.symbolTableIndex else {
+                continue
+            }
+            guard let classChain = symbolTable.getClassChain(id: classId) else {
+                continue
+            }
+            if classChain.depth == 1 {
+                fillDepth(classId, depth: 1)
+                computeOverrideMethods(classId: classId)
+                computeInheritedProperties(classId: classId, cummulativeInheritedInstanceProperties: [:], cummulativeInheritedClassProperties: [:])
+            }
+        }
+    }
+    
     func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTable
         
@@ -623,6 +868,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         
         eagerDefineClassesAndFunctions(statements: statements)
         eagerDefineGlobalVariables(statements: statements)
+        buildClassHierarchy(statements: statements)
         resolve(statements)
         
         symbolTable = self.symbolTable
