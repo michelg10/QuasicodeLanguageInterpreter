@@ -109,17 +109,19 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(id: Int, name: String, classId: Int, classChain: ClassChain?) {
+    init(id: Int, name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt) {
         self.id = id
         self.name = name
         self.classId = classId
         self.classChain = classChain
+        self.classStmt = classStmt
     }
     
     var id: Int
     var name: String
     var classId: Int
     var classChain: ClassChain?
+    var classStmt: ClassStmt
 }
 class ClassNameSymbol: Symbol {
     init(id: Int, name: String) {

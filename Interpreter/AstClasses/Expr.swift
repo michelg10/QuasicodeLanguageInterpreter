@@ -235,13 +235,15 @@ class ArrayLiteralExpr: Expr {
 class StaticClassExpr: Expr {
     var classType: AstClassType
     var property: Token
+    var propertyIndex: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(classType: AstClassType, property: Token, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(classType: AstClassType, property: Token, propertyIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
         self.property = property
+        self.propertyIndex = propertyIndex
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -249,6 +251,7 @@ class StaticClassExpr: Expr {
     init(_ objectToCopy: StaticClassExpr) {
         self.classType = objectToCopy.classType
         self.property = objectToCopy.property
+        self.propertyIndex = objectToCopy.propertyIndex
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
@@ -314,14 +317,16 @@ class SuperExpr: Expr {
     var keyword: Token
     var property: Token
     var symbolTableIndex: Int?
+    var propertyIndex: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(keyword: Token, property: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(keyword: Token, property: Token, symbolTableIndex: Int?, propertyIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.property = property
         self.symbolTableIndex = symbolTableIndex
+        self.propertyIndex = propertyIndex
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -330,6 +335,7 @@ class SuperExpr: Expr {
         self.keyword = objectToCopy.keyword
         self.property = objectToCopy.property
         self.symbolTableIndex = objectToCopy.symbolTableIndex
+        self.propertyIndex = objectToCopy.propertyIndex
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
@@ -480,21 +486,24 @@ class CallExpr: Expr {
 
 class GetExpr: Expr {
     var object: Expr
-    var name: Token
+    var property: Token
+    var propertyIndex: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(object: Expr, name: Token, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(object: Expr, property: Token, propertyIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.object = object
-        self.name = name
+        self.property = property
+        self.propertyIndex = propertyIndex
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
     init(_ objectToCopy: GetExpr) {
         self.object = objectToCopy.object
-        self.name = objectToCopy.name
+        self.property = objectToCopy.property
+        self.propertyIndex = objectToCopy.propertyIndex
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation

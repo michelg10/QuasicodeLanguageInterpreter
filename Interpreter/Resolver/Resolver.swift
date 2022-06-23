@@ -251,7 +251,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             stmt.fields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.fields[i].name, initializer: stmt.fields[i].initializer)
         }
         for i in 0..<stmt.staticFields.count {
-            stmt.staticFields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.fields[i].name, initializer: stmt.fields[i].initializer)
+            stmt.staticFields[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.staticFields[i].name, initializer: stmt.staticFields[i].initializer)
         }
         
         for method in stmt.staticMethods {
@@ -471,7 +471,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil))
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt))
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
             guard existingNameSymbolInfo is ClassNameSymbol else {

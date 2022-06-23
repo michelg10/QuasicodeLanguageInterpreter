@@ -113,12 +113,16 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     internal func visitStaticClassExprString(expr: StaticClassExpr) -> String {
         return parenthesize(name: "StaticClass", additionalProperties: [
             ("class", printAst(expr.classType)),
-            ("property", expr.property.lexeme)
+            ("property", expr.property.lexeme),
+            ("propertyIndex", stringifyOptionalInt(expr.propertyIndex))
         ]+generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitSuperExprString(expr: SuperExpr) -> String {
-        return parenthesize(name: "super.\(expr.property.lexeme)", additionalProperties: generateAdditionalTypePropertyArray(expr))
+        return parenthesize(name: "super", additionalProperties: [
+            ("property", expr.property.lexeme),
+            ("propertyIndex", stringifyOptionalInt(expr.propertyIndex))
+        ]+generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitVariableExprString(expr: VariableExpr) -> String {
@@ -148,7 +152,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     internal func visitGetExprString(expr: GetExpr) -> String {
         return parenthesize(name: "Get", additionalProperties: [
-            ("property", expr.name.lexeme)
+            ("property", expr.property.lexeme),
+            ("propertyIndex", stringifyOptionalInt(expr.propertyIndex))
         ]+generateAdditionalTypePropertyArray(expr), exprs: expr.object)
     }
     
