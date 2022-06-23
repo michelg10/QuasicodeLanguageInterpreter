@@ -36,7 +36,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitStaticClassExpr(expr: StaticClassExpr) throws {
-        
+        let symbol = symbolTable.query(generateClassSignature(className: expr.classType.name.lexeme, templateAstTypes: expr.classType.templateArguments))
+        assert(symbol is ClassSymbol, "Expected class symbol")
+        expr.classId = symbol!.id
     }
     
     internal func visitThisExpr(expr: ThisExpr) throws {
@@ -285,6 +287,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
+            classSymbol.instancePropertyMap[field.name.lexeme] = field.symbolTableIndex
             symbol.variableStatus = .finishedInit
         }
         for field in stmt.staticFields {
@@ -292,19 +295,23 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
+            classSymbol.classPropertyMap[field.name.lexeme] = field.symbolTableIndex
             symbol.variableStatus = .finishedInit
         }
         for method in stmt.methods {
             if method.function.symbolTableIndex == nil {
                 continue
             }
+            classSymbol.instancePropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
+            // TODO: Remember that static and nonstatic functions can be underneath the exact same name symbol table index
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
         }
-        for method in stmt.methods {
+        for method in stmt.staticMethods {
             if method.function.symbolTableIndex == nil {
                 continue
             }
+            classSymbol.classPropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
         }
@@ -449,7 +456,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
         let previousLoopState = isInLoop
         catchErrorClosure {
-            try resolve(stmt.variable)
+            let existingSymbol = symbolTable.query(stmt.variable.name.lexeme)
+            if existingSymbol is VariableSymbol {
+                try resolve(stmt.variable)
+            } else {
+                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit))
+                stmt.variable.type = QsInt(assignable: true)
+            }
         }
         catchErrorClosure {
             try resolve(stmt.lRange)
@@ -527,7 +540,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt))
+        let symbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt, instancePropertyMap: [:], classPropertyMap: [:]))
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
             guard existingNameSymbolInfo is ClassNameSymbol else {

@@ -7,6 +7,10 @@ class QsArray: QsType {
         self.assignable = assignable
         self.contains = contains
     }
+    init(contains: QsType) {
+        self.assignable = false
+        self.contains = contains
+    }
     
     var assignable: Bool
     let contains: QsType
@@ -22,6 +26,9 @@ class QsInt: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
+    init() {
+        self.assignable = false
+    }
     
     var assignable: Bool
 }
@@ -30,6 +37,9 @@ class QsDouble: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
+    init() {
+        self.assignable = false
+    }
     
     var assignable: Bool
 }
@@ -37,6 +47,9 @@ class QsDouble: QsNativeType {
 class QsBoolean: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
+    }
+    init() {
+        self.assignable = false
     }
     
     var assignable: Bool
@@ -62,6 +75,9 @@ class QsAnyType: QsType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
+    init() {
+        self.assignable = false
+    }
     
     var assignable: Bool
 }
@@ -72,6 +88,11 @@ class QsClass: QsType {
         self.name = name
         self.id = id
     }
+    init(name: String, id: Int) {
+        self.assignable = false
+        self.name = name
+        self.id = id
+    }
     
     var assignable: Bool
     let name: String
@@ -79,8 +100,11 @@ class QsClass: QsType {
 }
 
 class QsErrorType: QsType {
-    internal init(assignable: Bool) {
+    init(assignable: Bool) {
         self.assignable = assignable
+    }
+    init() {
+        self.assignable = false
     }
     
     var assignable: Bool

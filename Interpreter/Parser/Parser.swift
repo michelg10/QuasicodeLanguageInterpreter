@@ -287,7 +287,7 @@ class Parser {
         let iteratingVariableIdentifier = try consume(type: .IDENTIFIER, message: "Expect looping variable")
         // check if its a class type
         if tokenToAstType(previous()) is AstClassType {
-            throw error(message: "Expect looping variable", token: previous())
+            error(message: "Expect looping variable", token: previous())
         }
         let iteratingVariable = VariableExpr(name: iteratingVariableIdentifier, symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         try consume(type: .FROM, message: "Expect 'from' after looping variable")
@@ -639,7 +639,7 @@ class Parser {
                 let classSignature = try typeSignature(matchArray: false, optional: false)
                 try consume(type: .DOT, message: "Expected member name or constructor call after type name")
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-                return StaticClassExpr(classType: classSignature as! AstClassType, property: property, propertyIndex: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
+                return StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, property: property, propertyIndex: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
             }
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }

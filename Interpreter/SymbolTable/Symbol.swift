@@ -113,12 +113,14 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(id: Int, name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt) {
+    init(id: Int, name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt, instancePropertyMap: [String : Int], classPropertyMap: [String : Int]) {
         self.id = id
         self.name = name
         self.classId = classId
         self.classChain = classChain
         self.classStmt = classStmt
+        self.instancePropertyMap = instancePropertyMap
+        self.classPropertyMap = classPropertyMap
     }
     
     var id: Int
@@ -126,6 +128,8 @@ class ClassSymbol: Symbol {
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt
+    var instancePropertyMap: [String : Int]
+    var classPropertyMap: [String : Int]
 }
 class ClassNameSymbol: Symbol {
     init(id: Int, name: String) {

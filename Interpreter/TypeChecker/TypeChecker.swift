@@ -10,33 +10,33 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
         if a is QsErrorType || b is QsErrorType {
-            return QsErrorType(assignable: false)
+            return QsErrorType()
         }
         if typesIsEqual(a, b) {
             return a
         }
         if a is QsAnyType || b is QsAnyType {
-            return QsAnyType(assignable: false)
+            return QsAnyType()
         }
         if a is QsNativeType || b is QsNativeType {
             if !(a is QsNativeType && b is QsNativeType) {
                 // if one of them is a native type but one of them aren't
-                return QsAnyType(assignable: false)
+                return QsAnyType()
             }
             
             // both of them are of QsNativeType and are different
             // case 1: one of them is boolean. thus the other one must be int or double
             if a is QsBoolean || b is QsBoolean {
-                return QsAnyType(assignable: false)
+                return QsAnyType()
             }
             
             // if none of them are QsBoolean, then one must be QsInt and another must be QsDouble. the common type there is QsDouble, so return that
-            return QsDouble(assignable: false)
+            return QsDouble()
         }
         if a is QsArray || b is QsArray {
             if !(a is QsArray && b is QsArray) {
                 // one of them is a QsArray but another isn't
-                return QsAnyType(assignable: false)
+                return QsAnyType()
             }
             
             // both are QsArrays
@@ -63,10 +63,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // they're unequal, so jump up the chain
                 // let the depth of aClass is deeper than bClass
                 guard var aChain = getClassChain(id: aClassId) else {
-                    return QsErrorType(assignable: false)
+                    return QsErrorType()
                 }
                 guard var bChain = getClassChain(id: bClassId) else {
-                    return QsErrorType(assignable: false)
+                    return QsErrorType()
                 }
                 if aChain.depth<bChain.depth {
                     swap(&aChain, &bChain)
@@ -82,23 +82,23 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // keep on jumping up for both until they are the same
                 while (aClassId != bClassId) {
                     if aChain.upperClass == -1 {
-                        return QsAnyType(assignable: false)
+                        return QsAnyType()
                     }
                     
                     (aClassId, aChain) = try jumpUpChain(classChain: aChain)
                     (bClassId, bChain) = try jumpUpChain(classChain: bChain)
                 }
                 
-                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId, assignable: false)
+                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId)
             }
         } catch {
-            return QsErrorType(assignable: false)
+            return QsErrorType()
         }
-        return QsAnyType(assignable: false)
+        return QsAnyType()
     }
     
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
-        return QsArray(contains: typeCheck(asttype.contains), assignable: false)
+        return QsArray(contains: typeCheck(asttype.contains))
     }
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
@@ -664,9 +664,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
         typeCheck(stmt.lRange)
         typeCheck(stmt.rRange)
-        typeCheck(stmt.variable)
-        assertType(expr: stmt.lRange, errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt(assignable: false)))
-        assertType(expr: stmt.rRange, errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt(assignable: false)))
+        if stmt.variable.type == nil {
+            typeCheck(stmt.variable)
+            assertType(expr: stmt.variable, errorMessage: "Type '\(printType(stmt.variable.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
+        }
+        assertType(expr: stmt.lRange, errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
+        assertType(expr: stmt.rRange, errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
         typeCheck(stmt.body)
     }
     

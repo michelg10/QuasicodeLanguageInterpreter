@@ -234,14 +234,16 @@ class ArrayLiteralExpr: Expr {
 
 class StaticClassExpr: Expr {
     var classType: AstClassType
+    var classId: Int?
     var property: Token
     var propertyIndex: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(classType: AstClassType, property: Token, propertyIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(classType: AstClassType, classId: Int?, property: Token, propertyIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
+        self.classId = classId
         self.property = property
         self.propertyIndex = propertyIndex
         self.type = type
@@ -250,6 +252,7 @@ class StaticClassExpr: Expr {
     }
     init(_ objectToCopy: StaticClassExpr) {
         self.classType = objectToCopy.classType
+        self.classId = objectToCopy.classId
         self.property = objectToCopy.property
         self.propertyIndex = objectToCopy.propertyIndex
         self.type = objectToCopy.type
