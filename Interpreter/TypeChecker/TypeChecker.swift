@@ -40,7 +40,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             // both are QsArrays
-            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains), assignable: false)
+            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains))
         }
         
         struct JumpError: Error { }
@@ -56,7 +56,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if a is QsClass || b is QsClass {
                 if !(a is QsClass && b is QsClass) {
                     // one of them is a QsClass but another isn't
-                    return QsAnyType(assignable: false)
+                    return QsAnyType()
                 }
                 var aClassId = (a as! QsClass).id
                 var bClassId = (b as! QsClass).id
@@ -104,31 +104,31 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
         let classSignature = generateClassSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
         guard let symbolTableId = symbolTable.queryAtGlobalOnly(classSignature)?.id else {
-            return QsErrorType(assignable: false)
+            return QsErrorType()
         }
-        return QsClass(name: asttype.name.lexeme, id: symbolTableId, assignable: false)
+        return QsClass(name: asttype.name.lexeme, id: symbolTableId)
     }
     
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
         // shouldn't happen
         assertionFailure("AstTemplateType shouldn't exist in visited")
-        return QsErrorType(assignable: false)
+        return QsErrorType()
     }
     
     func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
-        return QsInt(assignable: false)
+        return QsInt()
     }
     
     func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
-        return QsDouble(assignable: false)
+        return QsDouble()
     }
     
     func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
-        return QsDouble(assignable: false)
+        return QsDouble()
     }
     
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
-        return QsAnyType(assignable: false)
+        return QsAnyType()
     }
     
     private enum TypeAssertion {
@@ -298,7 +298,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     internal func visitSubscriptExpr(expr: SubscriptExpr) {
         // the index and the expression must both be indexable
         typeCheck(expr.index)
-        assertType(expr: expr.index, errorMessage: "Array subscript is not an integer", typeAssertions: .isType(QsInt(assignable: false)))
+        assertType(expr: expr.index, errorMessage: "Array subscript is not an integer", typeAssertions: .isType(QsInt()))
         typeCheck(expr.expression)
         // expression must be of type array
         if assertType(expr: expr.expression, errorMessage: "Subscripted expression is not an array", typeAssertions: .isArray) {
@@ -469,7 +469,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         var expressionType = typeCheck(expr.contains)
         for capacity in expr.capacity {
             typeCheck(capacity)
-            assertType(expr: capacity, errorMessage: "Expect type 'int' for array capacity", typeAssertions: .isType(QsInt(assignable: false)))
+            assertType(expr: capacity, errorMessage: "Expect type 'int' for array capacity", typeAssertions: .isType(QsInt()))
             expressionType = QsArray(contains: expressionType, assignable: false)
         }
         expr.type = expressionType
@@ -496,7 +496,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
                 return
             }
-            if typesIsEqual(expr.left.type!, QsBoolean(assignable: false)) && typesIsEqual(expr.right.type!, QsBoolean(assignable: false)) {
+            if typesIsEqual(expr.left.type!, QsBoolean()) && typesIsEqual(expr.right.type!, QsBoolean()) {
                 return
             }
             // TODO: Strings
@@ -533,7 +533,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.left)
         typeCheck(expr.right)
         expr.type = QsBoolean(assignable: false)
-        if !(assertType(expr: expr.left, errorMessage: nil, typeAssertions: .isType(QsBoolean(assignable: false))) && assertType(expr: expr.right, errorMessage: nil, typeAssertions: .isType(QsBoolean(assignable: false)))) {
+        if !(assertType(expr: expr.left, errorMessage: nil, typeAssertions: .isType(QsBoolean())) && assertType(expr: expr.right, errorMessage: nil, typeAssertions: .isType(QsBoolean()))) {
             error(message: "Binary operator '\(expr.opr.lexeme)' can only be applied to operands of type 'boolean' and 'boolean'", start: expr.startLocation, end: expr.endLocation)
         }
     }
@@ -631,7 +631,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitIfStmt(stmt: IfStmt) {
         typeCheck(stmt.condition)
-        assertType(expr: stmt.condition, errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean(assignable: false)))
+        assertType(expr: stmt.condition, errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean()))
         typeCheck(stmt.thenBranch)
         for elseIfBranch in stmt.elseIfBranches {
             typeCheck(elseIfBranch)
@@ -653,7 +653,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for expression in stmt.expressions {
             typeCheck(expression)
             assertType(expr: expression, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
-            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt(assignable: false)), .isType(QsAnyType(assignable: false)), .isType(QsDouble(assignable: false))) // TODO: include string
+            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt()), .isType(QsAnyType()), .isType(QsDouble())) // TODO: include string
         }
     }
     
@@ -675,7 +675,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitWhileStmt(stmt: WhileStmt) {
         typeCheck(stmt.expression)
-        assertType(expr: stmt.expression, errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean(assignable: false)))
+        assertType(expr: stmt.expression, errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean()))
         typeCheck(stmt.body)
     }
     
