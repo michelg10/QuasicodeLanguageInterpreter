@@ -329,6 +329,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitCallExpr(expr: CallExpr) {
         // TODO
+        /*
         typeCheck(expr.callee)
         for argument in expr.arguments {
             typeCheck(argument)
@@ -423,6 +424,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         expr.type = QsErrorType(assignable: false)
         return
+         */
     }
     
     internal func visitGetExpr(expr: GetExpr) {

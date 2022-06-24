@@ -356,7 +356,9 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     
     func visitCallExprExpr(expr: CallExpr) throws -> Expr {
         let result = CallExpr.init(expr)
-        result.callee = try expandClasses(expr.callee)
+        if expr.object != nil {
+            expr.object = try expandClasses(expr.object!)
+        }
         result.arguments = expandClasses(expr.arguments)
         return result
     }

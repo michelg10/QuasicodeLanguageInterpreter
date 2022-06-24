@@ -144,9 +144,13 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         if expr.polymorphicCallClassIdToIdDict != nil {
             callsFunction = "Polymorph<\(expr.polymorphicCallClassIdToIdDict!.description)>"
         }
-        var exprs = [expr.callee]
+        var exprs: [Expr] = []
+        if expr.object != nil {
+            exprs.append(expr.object!)
+        }
         exprs.append(contentsOf: expr.arguments)
         return parenthesize(name: "Call", additionalProperties: [
+            ("property", expr.property.lexeme),
             ("callsFunction", callsFunction)
         ]+generateAdditionalTypePropertyArray(expr), exprs: exprs)
     }

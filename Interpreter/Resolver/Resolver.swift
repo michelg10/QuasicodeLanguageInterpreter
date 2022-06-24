@@ -98,7 +98,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) throws {
-        try resolve(expr.callee)
+        if expr.object != nil {
+            try resolve(expr.object!)
+        }
         for argument in expr.arguments {
             try resolve(argument)
         }

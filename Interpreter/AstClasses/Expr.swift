@@ -440,7 +440,8 @@ class SubscriptExpr: Expr {
 }
 
 class CallExpr: Expr {
-    var callee: Expr
+    var object: Expr?
+    var property: Token
     var paren: Token
     var arguments: [Expr]
     var uniqueFunctionCall: Int?
@@ -449,8 +450,9 @@ class CallExpr: Expr {
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(callee: Expr, paren: Token, arguments: [Expr], uniqueFunctionCall: Int?, polymorphicCallClassIdToIdDict: [Int : Int]?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
-        self.callee = callee
+    init(object: Expr?, property: Token, paren: Token, arguments: [Expr], uniqueFunctionCall: Int?, polymorphicCallClassIdToIdDict: [Int : Int]?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.object = object
+        self.property = property
         self.paren = paren
         self.arguments = arguments
         self.uniqueFunctionCall = uniqueFunctionCall
@@ -460,7 +462,8 @@ class CallExpr: Expr {
         self.endLocation = endLocation
     }
     init(_ objectToCopy: CallExpr) {
-        self.callee = objectToCopy.callee
+        self.object = objectToCopy.object
+        self.property = objectToCopy.property
         self.paren = objectToCopy.paren
         self.arguments = objectToCopy.arguments
         self.uniqueFunctionCall = objectToCopy.uniqueFunctionCall

@@ -585,7 +585,9 @@ class Parser {
         var argumentsList: [Expr] = try arguments()
         
         let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
-        return CallExpr(callee: callee, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
+        let object: Expr? = (callee is VariableExpr ? nil : (callee as! GetExpr).object)
+        let property: Token = (callee is VariableExpr ? (callee as! VariableExpr).name : (callee as! GetExpr).property)
+        return CallExpr(object: object, property: property, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
     }
     
     private func secondary() throws -> Expr {
@@ -593,7 +595,9 @@ class Parser {
         
         while true {
             if match(types: .LEFT_PAREN) {
-                expr = try finishCall(callee: expr)
+                if expr is GetExpr || expr is VariableExpr {
+                    expr = try finishCall(callee: expr)
+                }
             } else if match(types: .DOT) {
                 let name = try consume(type: .IDENTIFIER, message: "Expect property name after '.'.")
                 expr = GetExpr(object: expr, property: name, propertyId: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: name))
