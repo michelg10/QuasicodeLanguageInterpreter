@@ -361,14 +361,15 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false), finishedInit: false))
         }
         stmt.symbolTableIndex = symbolTableIndex
-        if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
+        let functionNameSymbolName = "$FuncName$"+stmt.name.lexeme
+        if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(functionNameSymbolName) {
             guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbol else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
             stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
             functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
         } else {
-            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, isForMethods: withinClass != nil, name: stmt.name.lexeme, belongingFunctions: [symbolTableIndex]))
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, isForMethods: withinClass != nil, name: functionNameSymbolName, belongingFunctions: [symbolTableIndex]))
         }
         
         return symbolTableIndex
@@ -522,7 +523,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let classSymbol = ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt, instancePropertyMap: [:], classPropertyMap: [:])
+        let classSymbol = ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt)
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: classSymbol)
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
@@ -538,13 +539,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             catchErrorClosure {
                 try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
             }
-            classSymbol.instancePropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
         }
         for method in stmt.staticMethods {
             catchErrorClosure {
                 try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
             }
-            classSymbol.classPropertyMap[method.function.name.lexeme] = method.function.nameSymbolTableIndex
         }
         
         func defineField(field: ClassField) {
@@ -557,11 +556,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         for field in stmt.fields {
             defineField(field: field)
-            classSymbol.instancePropertyMap[field.name.lexeme] = field.symbolTableIndex
         }
         for field in stmt.staticFields {
             defineField(field: field)
-            classSymbol.classPropertyMap[field.name.lexeme] = field.symbolTableIndex
         }
         symbolTable.exitScope()
         
@@ -819,41 +816,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             
             return overrides
         }
-        func computeInheritedProperties(classId: Int, cummulativeInheritedInstanceProperties: [String : Int], cummulativeInheritedClassProperties: [String : Int]) {
-            let classSymbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
-            guard let classChain = classSymbol.classChain else {
-                return
-            }
-            func mergePropertyMaps(cummulativeMap: [String:Int], currentClassMap: [String:Int], uniqueId: String) -> [String:Int] {
-                var result = currentClassMap
-                for cummulativeElement in cummulativeMap {
-                    if currentClassMap[cummulativeElement.key] == nil {
-                        result[cummulativeElement.key] = cummulativeElement.value
-                    } else {
-                        let existingElement = currentClassMap[cummulativeElement.key]
-                        let symbol = symbolTable.getSymbol(id: existingElement!)
-                        let symbolToMerge = symbolTable.getSymbol(id: cummulativeElement.value)
-                        if symbol is FunctionNameSymbol && symbolToMerge is FunctionNameSymbol {
-                            // a new function name symbol to encapsulate them all
-                            let symbol = symbol as! FunctionNameSymbol
-                            let symbolToMerge = symbolToMerge as! FunctionNameSymbol
-                            let newFunctionNameSymbol = FunctionNameSymbol(id: -1, isForMethods: true, name: "$\(uniqueId)Merge$\(symbol.name)", belongingFunctions: symbolToMerge.belongingFunctions+symbol.belongingFunctions)
-                            symbolTable.resetScope()
-                            symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
-                            result[cummulativeElement.key] = symbolTable.addToSymbolTable(symbol: newFunctionNameSymbol)
-                            symbolTable.exitScope()
-                        }
-                    }
-                }
-                return result
-            }
-            classSymbol.instancePropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedInstanceProperties, currentClassMap: classSymbol.instancePropertyMap, uniqueId: "Instance")
-            classSymbol.classPropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedClassProperties, currentClassMap: classSymbol.classPropertyMap, uniqueId: "Class")
-            for child in classChain.parentOf {
-                computeInheritedProperties(classId: child, cummulativeInheritedInstanceProperties: classSymbol.instancePropertyMap, cummulativeInheritedClassProperties: classSymbol.classPropertyMap)
-            }
-            
-        }
         for classStmt in classStmts {
             guard let classId = classStmt.symbolTableIndex else {
                 continue
@@ -864,7 +826,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if classChain.depth == 1 {
                 fillDepth(classId, depth: 1)
                 computeOverrideMethods(classId: classId)
-                computeInheritedProperties(classId: classId, cummulativeInheritedInstanceProperties: [:], cummulativeInheritedClassProperties: [:])
             }
         }
     }

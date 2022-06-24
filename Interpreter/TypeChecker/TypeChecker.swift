@@ -235,28 +235,28 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitStaticClassExpr(expr: StaticClassExpr) {
-        if expr.classId == nil {
-            expr.type = QsErrorType(assignable: true)
-        }
-        let classSymbol = symbolTable.getSymbol(id: expr.classId!) as! ClassSymbol
-        guard let propertyId = classSymbol.classPropertyMap[expr.property.lexeme] else {
-            error(message: "Type '\(classSymbol.name)' has no property '\(expr.property.lexeme)'", token: expr.property)
-            expr.type = QsErrorType(assignable: true)
-            return
-        }
-        expr.propertyId = propertyId
-        let propertySymbol = symbolTable.getSymbol(id: propertyId)
-        if propertySymbol is VariableSymbol {
-            let propertySymbol = propertySymbol as! VariableSymbol
-            expr.type = propertySymbol.type
-            // TODO: Uncomment this
-//            expr.type!.assignable = true
-        } else if propertySymbol is FunctionNameSymbol {
-            expr.type = QsFunction(nameId: propertyId, limitToVisibility: nil, limitToStatic: .limitToStatic)
-        } else {
-            assertionFailure("propertySymbol is neither a variable or a function name")
-            expr.type = QsErrorType(assignable: true)
-        }
+//        if expr.classId == nil {
+//            expr.type = QsErrorType(assignable: true)
+//        }
+//        let classSymbol = symbolTable.getSymbol(id: expr.classId!) as! ClassSymbol
+//        guard let propertyId = classSymbol.classPropertyMap[expr.property.lexeme] else {
+//            error(message: "Type '\(classSymbol.name)' has no property '\(expr.property.lexeme)'", token: expr.property)
+//            expr.type = QsErrorType(assignable: true)
+//            return
+//        }
+//        expr.propertyId = propertyId
+//        let propertySymbol = symbolTable.getSymbol(id: propertyId)
+//        if propertySymbol is VariableSymbol {
+//            let propertySymbol = propertySymbol as! VariableSymbol
+//            expr.type = propertySymbol.type
+//            // TODO: Uncomment this
+////            expr.type!.assignable = true
+//        } else if propertySymbol is FunctionNameSymbol {
+//            expr.type = QsFunction(nameId: propertyId, limitToVisibility: nil, limitToStatic: .limitToStatic)
+//        } else {
+//            assertionFailure("propertySymbol is neither a variable or a function name")
+//            expr.type = QsErrorType(assignable: true)
+//        }
     }
     
     internal func visitThisExpr(expr: ThisExpr) {

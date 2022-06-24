@@ -585,9 +585,16 @@ class Parser {
         var argumentsList: [Expr] = try arguments()
         
         let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
-        let object: Expr? = (callee is VariableExpr ? nil : (callee as! GetExpr).object)
-        let property: Token = (callee is VariableExpr ? (callee as! VariableExpr).name : (callee as! GetExpr).property)
-        return CallExpr(object: object, property: property, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
+        var object: Expr? = nil
+        var property: Token? = nil
+        if callee is VariableExpr {
+            object = nil
+            property = (callee as! VariableExpr).name
+        } else if callee is GetExpr {
+            object = (callee as! GetExpr).object
+            property = (callee as! GetExpr).property
+        }
+        return CallExpr(object: object, property: property!, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
     }
     
     private func secondary() throws -> Expr {
@@ -641,9 +648,10 @@ class Parser {
             if tokenToAstType(previous()) is AstClassType {
                 current = statePrior
                 let classSignature = try typeSignature(matchArray: false, optional: false)
+                let staticClassExpr = StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: classSignature!.endLocation)
                 try consume(type: .DOT, message: "Expected member name or constructor call after type name")
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-                return StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, property: property, propertyId: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: property.endLocation)
+                return GetExpr(object: staticClassExpr, property: property, propertyId: nil, type: nil, startLocation: staticClassExpr.startLocation, endLocation: property.endLocation)
             }
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }

@@ -114,8 +114,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return parenthesize(name: "StaticClass", additionalProperties: [
             ("class", printAst(expr.classType)),
             ("classId", stringifyOptionalInt(expr.classId)),
-            ("property", expr.property.lexeme),
-            ("propertyIndex", stringifyOptionalInt(expr.propertyId))
         ]+generateAdditionalTypePropertyArray(expr))
     }
     
