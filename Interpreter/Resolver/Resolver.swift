@@ -1,6 +1,6 @@
 class Resolver: ExprThrowVisitor, StmtVisitor {
     private enum FunctionType {
-        case none, function, method, initializer
+        case none, function, staticMethod, nonstaticMethod, initializer
     }
     private enum ResolverError: Error {
         case error(String)
@@ -44,6 +44,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     internal func visitThisExpr(expr: ThisExpr) throws {
         if currentClassStatus == nil {
             throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
+        }
+        if currentFunction != .nonstaticMethod && currentFunction != .staticMethod {
+            throw error(message: "Can't use 'this' outside of a method", token: expr.keyword)
+        }
+        if currentFunction != .nonstaticMethod {
+            throw error(message: "Can't use 'this' in a static context", token: expr.keyword)
         }
         expr.symbolTableIndex = symbolTable.query("this")?.id
         assert(expr.symbolTableIndex != nil, "'this' is undefined")
@@ -175,7 +181,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if expr.isFirstAssignment! {
                 // define the variable but set it as unusable
                 
-                let associatedSymbol = VariableSymbol(id: -1, name: expr.to.name.lexeme, variableStatus: .initing)
+                let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing)
                 expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: associatedSymbol)
                 defer {
                     associatedSymbol.variableStatus = .finishedInit
@@ -207,7 +213,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             error(message: "Invalid redeclaration of \(name.lexeme)", token: name)
             return nil
         }
-        let symbol = VariableSymbol(id: -1, name: name.lexeme, variableStatus: .initing)
+        let symbol = VariableSymbol(name: name.lexeme, variableStatus: .initing)
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         if initializer != nil {
             catchErrorClosure {
@@ -237,7 +243,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 symbolTable.linkCurrentTableToParent(superclassSymbol.classStmt.scopeIndex!)
             }
         }
-        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: "this", variableStatus: .finishedInit))
+        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "this", variableStatus: .finishedInit))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
         if stmt.superclass != nil {
@@ -318,7 +324,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Initializer declaration cannot be marked 'static'", token: stmt.staticKeyword!)
             }
         } else {
-            currentFunction = .method
+            if stmt.isStatic {
+                currentFunction = .staticMethod
+            } else {
+                currentFunction = .nonstaticMethod
+            }
         }
         resolveFunction(stmt: stmt.function)
         currentFunction = previousFunctionStatus
@@ -356,9 +366,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var symbolTableIndex = -1
         if withinClass == nil {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(id: -1, name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(id: -1, name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false), finishedInit: false))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false), finishedInit: false))
         }
         stmt.symbolTableIndex = symbolTableIndex
         let functionNameSymbolName = "$FuncName$"+stmt.name.lexeme
@@ -369,7 +379,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
             functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
         } else {
-            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(id: -1, isForMethods: withinClass != nil, name: functionNameSymbolName, belongingFunctions: [symbolTableIndex]))
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(isForMethods: withinClass != nil, name: functionNameSymbolName, belongingFunctions: [symbolTableIndex]))
         }
         
         return symbolTableIndex
@@ -443,7 +453,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if existingSymbol is VariableSymbol {
                 try resolve(stmt.variable)
             } else {
-                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit))
+                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit))
                 stmt.variable.type = QsInt(assignable: true)
             }
         }
@@ -523,7 +533,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let classSymbol = ClassSymbol(id: -1, name: classSignature, classId: classId, classChain: nil, classStmt: stmt)
+        let classSymbol = ClassSymbol(name: classSignature, classId: classId, classChain: nil, classStmt: stmt)
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: classSymbol)
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
@@ -531,7 +541,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
         } else {
-            symbolTable.addToSymbolTable(symbol: ClassNameSymbol(id: -1, name: stmt.name.lexeme))
+            symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: stmt.name.lexeme))
         }
         
         stmt.scopeIndex = symbolTable.createAndEnterScope()
@@ -551,7 +561,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
                 return
             }
-            let symbol = VariableSymbol(id: -1, name: field.name.lexeme, variableStatus: .fieldIniting)
+            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting)
             field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
         for field in stmt.fields {
@@ -613,7 +623,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assignExpr.to.symbolTableIndex = existingSymbol.id
             } else {
                 assignExpr.isFirstAssignment = true
-                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(id: -1, name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit))
+                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit))
                 globalVariableIndexes.append(assignExpr.to.symbolTableIndex!)
             }
         }

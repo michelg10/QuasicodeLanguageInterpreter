@@ -1,5 +1,6 @@
 protocol Symbol {
     var id: Int { get set }
+    var belongsToTable: Int { get set }
     var name: String { get set }
 }
 protocol FunctionLikeSymbol: Symbol {
@@ -16,30 +17,33 @@ enum VariableStatus {
 }
 
 class VariableSymbol: Symbol {
-    init(id: Int, type: QsType? = nil, name: String, variableStatus: VariableStatus) {
-        self.id = id
+    init(type: QsType? = nil, name: String, variableStatus: VariableStatus) {
+        self.id = -1
+        self.belongsToTable = -1
         self.type = type
         self.name = name
         self.variableStatus = variableStatus
     }
     
     var id: Int
+    var belongsToTable: Int
     var type: QsType?
     var name: String
     var variableStatus: VariableStatus
 }
 class GlobalVariableSymbol: VariableSymbol {
-    init(id: Int, type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
+    init(type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
         self.globalDefiningAssignExpr = globalDefiningAssignExpr
-        super.init(id: id, type: type, name: name, variableStatus: variableStatus)
+        super.init(type: type, name: name, variableStatus: variableStatus)
     }
     
     var globalDefiningAssignExpr: AssignExpr
 }
 class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
-    init(id: Int, isForMethods: Bool, name: String, belongingFunctions: [Int]) {
-        self.id = id
+    init(isForMethods: Bool, name: String, belongingFunctions: [Int]) {
+        self.id = -1
+        self.belongsToTable = -1
         self.isForMethods = isForMethods
         self.name = name
         self.belongingFunctions = belongingFunctions
@@ -47,19 +51,22 @@ class FunctionNameSymbol: Symbol {
     
     // multiple overloaded functions are under the same signature
     var id: Int
+    var belongsToTable: Int
     var isForMethods: Bool
     var name: String
     var belongingFunctions: [Int]
 }
 class FunctionSymbol: FunctionLikeSymbol {
-    init(id: Int, name: String, functionStmt: FunctionStmt, returnType: QsType) {
-        self.id = id
+    init(name: String, functionStmt: FunctionStmt, returnType: QsType) {
+        self.id = -1
+        self.belongsToTable = -1
         self.name = name
         self.functionStmt = functionStmt
         self.returnType = returnType
     }
     
     var id: Int
+    var belongsToTable: Int
     var name: String
     var functionStmt: FunctionStmt
     var returnType: QsType
@@ -73,8 +80,9 @@ class FunctionSymbol: FunctionLikeSymbol {
     }
 }
 class MethodSymbol: FunctionLikeSymbol {
-    init(id: Int, name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool) {
-        self.id = id
+    init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool) {
+        self.id = -1
+        self.belongsToTable = -1
         self.name = name
         self.withinClass = withinClass
         self.overridedBy = overridedBy
@@ -84,6 +92,7 @@ class MethodSymbol: FunctionLikeSymbol {
     }
     
     var id: Int
+    var belongsToTable: Int
     var name: String
     var withinClass: Int
     var overridedBy: [Int]
@@ -113,8 +122,9 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(id: Int, name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt) {
-        self.id = id
+    init(name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt) {
+        self.id = -1
+        self.belongsToTable = -1
         self.name = name
         self.classId = classId
         self.classChain = classChain
@@ -122,17 +132,20 @@ class ClassSymbol: Symbol {
     }
     
     var id: Int
+    var belongsToTable: Int
     var name: String
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt
 }
 class ClassNameSymbol: Symbol {
-    init(id: Int, name: String) {
-        self.id = id
+    init(name: String) {
+        self.id = -1
+        self.belongsToTable = -1
         self.name = name
     }
     
     var id: Int
+    var belongsToTable: Int
     var name: String
 }

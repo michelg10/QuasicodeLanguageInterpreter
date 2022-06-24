@@ -82,6 +82,7 @@ class SymbolTables {
     public func addToSymbolTable(symbol: Symbol) -> Int {
         var newSymbol = symbol
         newSymbol.id = allSymbols.count
+        newSymbol.belongsToTable = current.id
         allSymbols.append(symbol)
         current.addToTable(symbol: newSymbol)
         return newSymbol.id
@@ -93,6 +94,32 @@ class SymbolTables {
     
     public func getAllSymbols() -> [Symbol] {
         return allSymbols
+    }
+    
+    public func getCurrentTableId() -> Int {
+        return current.id
+    }
+    
+    func getAllMethods(methodName: String) -> [Int] {
+        let currentSymbolTableState = getCurrentTableId()
+        var allMethods: [Int] = []
+        while true {
+            let functionNameSymbol = query("$FuncName$\(methodName)")
+            if functionNameSymbol == nil {
+                break
+            } else {
+                let functionNameSymbol = functionNameSymbol as! FunctionNameSymbol
+                if functionNameSymbol.isForMethods {
+                    allMethods.append(contentsOf: functionNameSymbol.belongingFunctions)
+                    gotoTable(functionNameSymbol.belongsToTable)
+                    exitScope()
+                } else {
+                    break
+                }
+            }
+        }
+        gotoTable(currentSymbolTableState)
+        return allMethods
     }
     
     public func linkCurrentTableToParent(_ parent: Int) {

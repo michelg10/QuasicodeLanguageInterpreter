@@ -235,28 +235,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitStaticClassExpr(expr: StaticClassExpr) {
-//        if expr.classId == nil {
-//            expr.type = QsErrorType(assignable: true)
-//        }
-//        let classSymbol = symbolTable.getSymbol(id: expr.classId!) as! ClassSymbol
-//        guard let propertyId = classSymbol.classPropertyMap[expr.property.lexeme] else {
-//            error(message: "Type '\(classSymbol.name)' has no property '\(expr.property.lexeme)'", token: expr.property)
-//            expr.type = QsErrorType(assignable: true)
-//            return
-//        }
-//        expr.propertyId = propertyId
-//        let propertySymbol = symbolTable.getSymbol(id: propertyId)
-//        if propertySymbol is VariableSymbol {
-//            let propertySymbol = propertySymbol as! VariableSymbol
-//            expr.type = propertySymbol.type
-//            // TODO: Uncomment this
-////            expr.type!.assignable = true
-//        } else if propertySymbol is FunctionNameSymbol {
-//            expr.type = QsFunction(nameId: propertyId, limitToVisibility: nil, limitToStatic: .limitToStatic)
-//        } else {
-//            assertionFailure("propertySymbol is neither a variable or a function name")
-//            expr.type = QsErrorType(assignable: true)
-//        }
+        // handle it at its source (CallExprs and GetExprs)
+        // should never be visited
     }
     
     internal func visitThisExpr(expr: ThisExpr) {
@@ -328,19 +308,68 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        // TODO
-        /*
-        typeCheck(expr.callee)
+        if expr.object != nil {
+            typeCheck(expr.object!)
+        }
         for argument in expr.arguments {
             typeCheck(argument)
         }
-        if expr.callee.type! is QsFunction {
-            // Resolve function calls
-            guard let functionNameSymbolEntry = symbolTable.getSymbol(id: (expr.callee.type! as! QsFunction).nameId) as? FunctionNameSymbol else {
-                assertionFailure("Symbol at index is not a function name symbol")
-                expr.type = QsErrorType(assignable: false)
-                return
+        
+        // Find all the functions that can be called
+        var potentialFunctions: [Int] = []
+        
+        let currentSymbolTablePosition = symbolTable.getCurrentTableId()
+        if expr.object == nil {
+            // look up an instance method, a class method, or a global function
+            // TODO: track the symbol table along with the type checking
+            let allMethods = symbolTable.getAllMethods(methodName: expr.property.lexeme)
+            if allMethods == [] {
+                // search for global functions
+                let globalFunctionNameSymbol = symbolTable.queryAtGlobalOnly("$FuncName$\(expr.property.lexeme)")
+                if globalFunctionNameSymbol != nil {
+                    let globalFunctionNameSymbol = globalFunctionNameSymbol as! FunctionNameSymbol
+                    potentialFunctions.append(contentsOf: globalFunctionNameSymbol.belongingFunctions)
+                }
+            } else {
+                potentialFunctions = allMethods
             }
+        } else if expr.object is ThisExpr || expr.object is GetExpr || expr.object is VariableExpr {
+            // look up an instance method on the object
+            if expr.object!.type is QsClass {
+                let objectClassType = expr.object!.type! as! QsClass
+                let classSymbol = symbolTable.getSymbol(id: objectClassType.id) as! ClassSymbol
+                symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+                potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
+                // filter through and get only the instance methods
+                potentialFunctions.removeAll { val in
+                    let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
+                    return functionSymbol.methodStmt.isStatic
+                }
+            }
+        } else if expr.object is StaticClassExpr {
+            // look up a class method on the object
+            let object = expr.object as! StaticClassExpr
+            if object.classId != nil {
+                let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
+                symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+                potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
+                // filter through and get only the class methods
+                potentialFunctions.removeAll { val in
+                    let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
+                    return !functionSymbol.methodStmt.isStatic
+                }
+            }
+        } else {
+            expr.type = QsErrorType(assignable: false)
+            assertionFailure("Call expression on unknown object")
+            return
+        }
+        symbolTable.gotoTable(currentSymbolTablePosition)
+        print(potentialFunctions)
+        
+        // find the best match based off of a "match level": the lower the level, the greater the function matches
+        /*
+        if expr.callee.type! is QsFunction {
             // Resolve based on a "match level": the lower the level, the greater it is
             var bestMatches: [Int] = []
             var bestMatchLevel = Int.max
