@@ -365,7 +365,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return
         }
         symbolTable.gotoTable(currentSymbolTablePosition)
-        print(potentialFunctions)
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
         var bestMatches: [Int] = []
@@ -439,16 +438,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.uniqueFunctionCall = bestMatches[0]
             expr.type = typedResolvedFunctionSymbol.returnType
         } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
-            var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
-            expr.type = typedResolvedFunctionSymbol.returnType
-            polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
-            for overrides in typedResolvedFunctionSymbol.overridedBy {
-                guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbol else {
-                    continue
+            if typedResolvedFunctionSymbol.methodStmt.isStatic {
+                // static calls cannot be polymorphic
+                expr.uniqueFunctionCall = bestMatches[0]
+                expr.type = typedResolvedFunctionSymbol.returnType
+            } else {
+                var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
+                expr.type = typedResolvedFunctionSymbol.returnType
+                polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
+                for overrides in typedResolvedFunctionSymbol.overridedBy {
+                    guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbol else {
+                        continue
+                    }
+                    polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
                 }
-                polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
+                expr.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
             }
-            expr.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
         } else {
             assertionFailure("Expect FunctionLike symbol")
         }
@@ -522,8 +527,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
-        // TODO: use code from the call expr for this
-        expr.type = QsAnyType(assignable: false)
+        // TODO: resolve the call using code from the call expr for this
+        let classSignature = generateClassSignature(className: expr.classType.name.lexeme, templateAstTypes: expr.classType.templateArguments)
+        let classSymbol = symbolTable.queryAtGlobalOnly(classSignature) as! ClassSymbol
+        expr.type = QsClass(name: expr.classType.name.lexeme, id: classSymbol.id)
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
