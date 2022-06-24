@@ -234,14 +234,23 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitStaticClassExpr(expr: StaticClassExpr) {
+    internal func visitStaticClassExpr(expr: StaticClassExpr) {
         // handle it at its source (CallExprs and GetExprs)
         // should never be visited
     }
     
     internal func visitThisExpr(expr: ThisExpr) {
-        // TODO
-        expr.type = QsAnyType(assignable: false)
+        if expr.symbolTableIndex == nil {
+            expr.type = QsErrorType(assignable: false)
+            return
+        }
+        let symbol = symbolTable.getSymbol(id: expr.symbolTableIndex!) as! VariableSymbol
+        expr.type = symbol.type
+        if expr.type == nil {
+            expr.type = QsErrorType(assignable: false)
+            return
+        }
+        expr.type!.assignable = false
     }
     
     internal func visitSuperExpr(expr: SuperExpr) {
@@ -308,6 +317,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) {
+        // TODO: public and private
+        
         if expr.object != nil {
             typeCheck(expr.object!)
         }
@@ -667,7 +678,51 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
-        // TODO
+        symbolTable.gotoTable(stmt.scopeIndex!)
+        // type all of the fields
+        func typeField(_ field: ClassField) {
+            if field.symbolTableIndex == nil {
+                return
+            }
+            let fieldSymbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
+            if field.initializer != nil {
+                typeCheck(field.initializer!)
+            }
+            if field.astType != nil {
+                let fieldType = typeCheck(field.astType!)
+                fieldSymbol.type = fieldType
+                if field.initializer != nil {
+                    assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType))
+                }
+            } else {
+                if field.initializer == nil {
+                    fieldSymbol.type = QsErrorType(assignable: false)
+                } else {
+                    let inferredType = field.initializer!.type
+                    fieldSymbol.type = inferredType
+                }
+            }
+        }
+        for field in stmt.fields {
+            typeField(field)
+        }
+        for field in stmt.staticFields {
+            typeField(field)
+        }
+        if stmt.thisSymbolTableIndex != nil && stmt.symbolTableIndex != nil {
+            let relatedThisSymbol = symbolTable.getSymbol(id: stmt.thisSymbolTableIndex!) as! VariableSymbol
+            relatedThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
+        }
+        symbolTable.exitScope()
+        
+        // type all of the methods
+        // TODO: Think about initializers?
+        for method in stmt.methods {
+            typeCheck(method)
+        }
+        for method in stmt.staticMethods {
+            typeCheck(method)
+        }
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
@@ -741,9 +796,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitBlockStmt(stmt: BlockStmt) {
+        symbolTable.gotoTable(stmt.scopeIndex!)
         for statement in stmt.statements {
             typeCheck(statement)
         }
+        symbolTable.exitScope()
     }
     
     private func typeCheck(_ stmt: Stmt) {
