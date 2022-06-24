@@ -1,7 +1,7 @@
 class SymbolTables {
     private class SymbolTable {
         let id: Int
-        let parent: SymbolTable?
+        var parent: SymbolTable?
         var childTables: [SymbolTable] = []
         private var table: [String : Symbol] = [:]
         init(parent: SymbolTable?, id: Int) {
@@ -14,6 +14,9 @@ class SymbolTables {
         }
         public func addToTable(symbol: Symbol) {
             table[symbol.name] = symbol
+        }
+        public func linkTableToParent(_ parent: SymbolTable) {
+            self.parent = parent
         }
     }
     private var allSymbols: [Symbol] = []
@@ -90,6 +93,10 @@ class SymbolTables {
     
     public func getAllSymbols() -> [Symbol] {
         return allSymbols
+    }
+    
+    public func linkCurrentTableToParent(_ parent: Int) {
+        current.linkTableToParent(tables[parent])
     }
     
     public func printTable() {

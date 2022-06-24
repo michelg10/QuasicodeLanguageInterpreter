@@ -225,6 +225,16 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let currentClassName = stmt.name.lexeme
         
         symbolTable.gotoTable(stmt.scopeIndex!)
+    linkSymbolTableToSuperclass: if stmt.superclass != nil {
+            let superclassSignature = generateClassSignature(className: stmt.superclass!.name.lexeme, templateAstTypes: stmt.superclass!.templateArguments)
+            let superclassSymbol = symbolTable.queryAtGlobalOnly(superclassSignature)
+            guard let superclassSymbol = superclassSymbol as? ClassSymbol else {
+                break linkSymbolTableToSuperclass
+            }
+            if superclassSymbol.classStmt.scopeIndex != nil {
+                symbolTable.linkCurrentTableToParent(superclassSymbol.classStmt.scopeIndex!)
+            }
+        }
         stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(id: -1, name: "this", variableStatus: .finishedInit))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
@@ -825,7 +835,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                             // a new function name symbol to encapsulate them all
                             let symbol = symbol as! FunctionNameSymbol
                             let symbolToMerge = symbolToMerge as! FunctionNameSymbol
-                            let newFunctionNameSymbol = FunctionNameSymbol(id: -1, isForMethods: true, name: "$\(uniqueId)Merge$", belongingFunctions: symbolToMerge.belongingFunctions+symbol.belongingFunctions)
+                            let newFunctionNameSymbol = FunctionNameSymbol(id: -1, isForMethods: true, name: "$\(uniqueId)Merge$\(symbol.name)", belongingFunctions: symbolToMerge.belongingFunctions+symbol.belongingFunctions)
                             symbolTable.resetScope()
                             symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
                             result[cummulativeElement.key] = symbolTable.addToSymbolTable(symbol: newFunctionNameSymbol)
@@ -835,8 +845,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 }
                 return result
             }
-            classSymbol.instancePropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedInstanceProperties, currentClassMap: classSymbol.instancePropertyMap, uniqueId: classSymbol.name+"Instance")
-            classSymbol.classPropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedClassProperties, currentClassMap: classSymbol.classPropertyMap, uniqueId: classSymbol.name+"Class")
+            classSymbol.instancePropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedInstanceProperties, currentClassMap: classSymbol.instancePropertyMap, uniqueId: "Instance")
+            classSymbol.classPropertyMap = mergePropertyMaps(cummulativeMap: cummulativeInheritedClassProperties, currentClassMap: classSymbol.classPropertyMap, uniqueId: "Class")
             for child in classChain.parentOf {
                 computeInheritedProperties(classId: child, cummulativeInheritedInstanceProperties: classSymbol.instancePropertyMap, cummulativeInheritedClassProperties: classSymbol.classPropertyMap)
             }
