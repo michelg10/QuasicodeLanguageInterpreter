@@ -368,92 +368,91 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         print(potentialFunctions)
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
-        /*
-        if expr.callee.type! is QsFunction {
-            // Resolve based on a "match level": the lower the level, the greater it is
-            var bestMatches: [Int] = []
-            var bestMatchLevel = Int.max
-            let belongingFunctions = functionNameSymbolEntry.belongingFunctions;
-            for belongingFunction in belongingFunctions {
-                guard let functionSymbolEntry = symbolTable.getSymbol(id: belongingFunction) as? FunctionLikeSymbol else {
-                    assertionFailure("Symbol at index is not a function symbol")
-                    expr.type = QsErrorType(assignable: false)
-                    return
-                }
-                if functionSymbolEntry.getParamCount() != expr.arguments.count {
-                    continue
-                }
-                // determine match level between the functions
-                var matchLevel = 1
-                for i in 0..<expr.arguments.count {
-                    let givenType = expr.arguments[i].type!
-                    let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].type!
-                    if typesIsEqual(givenType, expectedType) {
-                        matchLevel = max(matchLevel, 1)
-                        continue
-                    }
-                    let commonType = findCommonType(givenType, expectedType)
-                    if typesIsEqual(commonType, expectedType) {
-                        if expectedType is QsAnyType {
-                            // the given type is being casted to an any
-                            matchLevel = max(matchLevel, 3)
-                        } else {
-                            matchLevel = max(matchLevel, 2)
-                        }
-                    } else {
-                        matchLevel = Int.max
-                        break
-                    }
-                }
-                if matchLevel < bestMatchLevel {
-                    bestMatchLevel = matchLevel
-                    bestMatches = [belongingFunction]
-                } else if matchLevel == bestMatchLevel {
-                    bestMatches.append(belongingFunction)
-                }
+        var bestMatches: [Int] = []
+        var bestMatchLevel = Int.max
+        var bestMatchBelongsToClassId = -1 // the symbol table ID for the class symbol to which the best classes belong to
+        for potentialFunction in potentialFunctions {
+            guard let functionSymbolEntry = symbolTable.getSymbol(id: potentialFunction) as? FunctionLikeSymbol else {
+                assertionFailure("Symbol at index is not a function symbol")
+                continue
                 
             }
             // TODO: Default parameters
-            // TODO: Implicit casts
-            if bestMatchLevel == Int.max || bestMatches.count == 0 {
-                error(message: "No matching function to call", start: expr.startLocation, end: expr.endLocation)
-                expr.type = QsErrorType(assignable: false)
-                return
+            // TODO: Infer types for function parameters from their initializers
+            if functionSymbolEntry.getParamCount() != expr.arguments.count {
+                // that's a no go
+                continue
             }
-            if bestMatches.count>1 {
-                error(message: "Function call is ambiguous", start: expr.startLocation, end: expr.endLocation)
-                expr.type = QsErrorType(assignable: false)
-                return
-            }
-            
-            let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
-            if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbol {
-                expr.uniqueFunctionCall = bestMatches[0]
-                expr.type = typedResolvedFunctionSymbol.returnType
-            } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
-                var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
-                expr.type = typedResolvedFunctionSymbol.returnType
-                polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
-                for overrides in typedResolvedFunctionSymbol.overridedBy {
-                    guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbol else {
-                        continue
-                    }
-                    polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
+            var matchLevel = 1
+            for i in 0..<expr.arguments.count {
+                let givenType = expr.arguments[i].type!
+                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].type!
+                if typesIsEqual(givenType, expectedType) {
+                    matchLevel = max(matchLevel, 1)
+                    continue
                 }
-                expr.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
-            } else {
-                assertionFailure("Expect FunctionLike symbol")
+                let commonType = findCommonType(givenType, expectedType)
+                if typesIsEqual(commonType, expectedType) {
+                    if expectedType is QsAnyType {
+                        // the given type is being casted to an any
+                        matchLevel = max(matchLevel, 3)
+                    } else {
+                        matchLevel = max(matchLevel, 2)
+                    }
+                } else {
+                    matchLevel = Int.max
+                    break
+                }
             }
-            expr.type!.assignable = false
             
+            var belongsToClass = -1
+            if functionSymbolEntry is MethodSymbol {
+                let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
+                belongsToClass = functionSymbolEntry.withinClass
+            }
+            if matchLevel < bestMatchLevel {
+                bestMatchLevel = matchLevel
+                bestMatches = [potentialFunction]
+                if functionSymbolEntry is MethodSymbol {
+                    let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
+                    bestMatchBelongsToClassId = belongsToClass
+                }
+            } else if matchLevel == bestMatchLevel {
+                if belongsToClass == bestMatchBelongsToClassId {
+                    bestMatches.append(potentialFunction)
+                }
+            }
+        }
+        if bestMatches.count == 0 {
+            error(message: "No matching function to call", start: expr.startLocation, end: expr.endLocation)
+            expr.type = QsErrorType(assignable: false)
             return
         }
-        if !(expr.callee.type! is QsErrorType) {
-            error(message: "Expression cannot be called", start: expr.startLocation, end: expr.endLocation)
+        if bestMatches.count > 1 {
+            error(message: "Function call is ambiguous", start: expr.startLocation, end: expr.endLocation)
+            expr.type = QsErrorType(assignable: false)
+            return
         }
-        expr.type = QsErrorType(assignable: false)
-        return
-         */
+        // TODO: Implicit casts
+        let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
+        if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbol {
+            expr.uniqueFunctionCall = bestMatches[0]
+            expr.type = typedResolvedFunctionSymbol.returnType
+        } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
+            var polymorphicCallClassIdToIdDict: [Int : Int] = [:]
+            expr.type = typedResolvedFunctionSymbol.returnType
+            polymorphicCallClassIdToIdDict[typedResolvedFunctionSymbol.withinClass] = typedResolvedFunctionSymbol.id
+            for overrides in typedResolvedFunctionSymbol.overridedBy {
+                guard let methodSymbol = symbolTable.getSymbol(id: overrides) as? MethodSymbol else {
+                    continue
+                }
+                polymorphicCallClassIdToIdDict[methodSymbol.withinClass] = overrides
+            }
+            expr.polymorphicCallClassIdToIdDict = polymorphicCallClassIdToIdDict
+        } else {
+            assertionFailure("Expect FunctionLike symbol")
+        }
+        expr.type!.assignable = false
     }
     
     internal func visitGetExpr(expr: GetExpr) {
