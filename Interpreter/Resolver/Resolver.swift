@@ -68,6 +68,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 // initing -> use of variable within its own declaration
                 // globalIniting -> global circular reference
                 // finishedInit -> no problem
+                if symbol.isInstanceVariable && currentFunction == .staticMethod {
+                    error(message: "Use of instance variable from a static method", start: expr.startLocation, end: expr.endLocation)
+                }
                 switch symbol.variableStatus {
                 case .uninit:
                     // is a global, init it
@@ -181,7 +184,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if expr.isFirstAssignment! {
                 // define the variable but set it as unusable
                 
-                let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing)
+                let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing, isInstanceVariable: false)
                 expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: associatedSymbol)
                 defer {
                     associatedSymbol.variableStatus = .finishedInit
@@ -213,7 +216,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             error(message: "Invalid redeclaration of \(name.lexeme)", token: name)
             return nil
         }
-        let symbol = VariableSymbol(name: name.lexeme, variableStatus: .initing)
+        let symbol = VariableSymbol(name: name.lexeme, variableStatus: .initing, isInstanceVariable: false)
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         if initializer != nil {
             catchErrorClosure {
@@ -243,7 +246,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 symbolTable.linkCurrentTableToParent(superclassSymbol.classStmt.scopeIndex!)
             }
         }
-        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "this", variableStatus: .finishedInit))
+        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "this", variableStatus: .finishedInit, isInstanceVariable: false))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
         if stmt.superclass != nil {
@@ -453,7 +456,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if existingSymbol is VariableSymbol {
                 try resolve(stmt.variable)
             } else {
-                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit))
+                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, isInstanceVariable: false))
                 stmt.variable.type = QsInt(assignable: true)
             }
         }
@@ -561,7 +564,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
                 return
             }
-            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting)
+            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting, isInstanceVariable: !field.isStatic)
             field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
         for field in stmt.fields {

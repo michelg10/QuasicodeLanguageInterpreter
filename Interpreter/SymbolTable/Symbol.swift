@@ -17,12 +17,13 @@ enum VariableStatus {
 }
 
 class VariableSymbol: Symbol {
-    init(type: QsType? = nil, name: String, variableStatus: VariableStatus) {
+    init(type: QsType? = nil, name: String, variableStatus: VariableStatus, isInstanceVariable: Bool) {
         self.id = -1
         self.belongsToTable = -1
         self.type = type
         self.name = name
         self.variableStatus = variableStatus
+        self.isInstanceVariable = isInstanceVariable
     }
     
     var id: Int
@@ -30,11 +31,12 @@ class VariableSymbol: Symbol {
     var type: QsType?
     var name: String
     var variableStatus: VariableStatus
+    var isInstanceVariable: Bool
 }
 class GlobalVariableSymbol: VariableSymbol {
     init(type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
         self.globalDefiningAssignExpr = globalDefiningAssignExpr
-        super.init(type: type, name: name, variableStatus: variableStatus)
+        super.init(type: type, name: name, variableStatus: variableStatus, isInstanceVariable: false)
     }
     
     var globalDefiningAssignExpr: AssignExpr

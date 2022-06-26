@@ -170,16 +170,19 @@ class Parser {
                 if match(types: .EQUAL) {
                     initializer = try expression()
                 }
-                if typeAnnotation == nil && initializer == nil {
-                    error(message: "Field requires either a type annotation or an initial value", token: fieldName)
+                if isStatic! && initializer == nil {
+                    error(message: "Static field requires an initial value", token: fieldName)
                 } else {
-                    let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
-                    try consume(type: .EOL, message: "Expect end-of-line after field declaration")
-                    if isStatic! {
-                        staticFields.append(field)
-                    } else {
-                        fields.append(field)
+                    if typeAnnotation == nil && initializer == nil {
+                        error(message: "Field requires either a type annotation or an initial value", token: fieldName)
                     }
+                }
+                let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
+                try consume(type: .EOL, message: "Expect end-of-line after field declaration")
+                if isStatic! {
+                    staticFields.append(field)
+                } else {
+                    fields.append(field)
                 }
             } else if match(types: .EOL) {
                 // ignore

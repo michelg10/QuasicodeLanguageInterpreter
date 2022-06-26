@@ -136,7 +136,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         case isSuperTypeOf(QsType)
     }
     private func assertType(expr: Expr, errorMessage: String?, typeAssertions: TypeAssertion...) -> Bool {
-        if expr.type is QsErrorType {
+        if expr.type is QsErrorType || expr.type == nil {
             return false
         }
         for typeAssertion in typeAssertions {
@@ -703,6 +703,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
             }
         }
+        // TODO: you can't access instance variables from static functions
         for field in stmt.fields {
             typeField(field)
         }
@@ -713,20 +714,29 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let relatedThisSymbol = symbolTable.getSymbol(id: stmt.thisSymbolTableIndex!) as! VariableSymbol
             relatedThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
         }
-        symbolTable.exitScope()
         
         // type all of the methods
         // TODO: Think about initializers?
         for method in stmt.methods {
+            processMethodStmt(stmt: method, isInitializer: method.function.name.lexeme == stmt.name.lexeme) 
             typeCheck(method)
         }
         for method in stmt.staticMethods {
-            typeCheck(method)
+            processMethodStmt(stmt: method, isInitializer: false)
         }
+        
+        symbolTable.exitScope()
+    }
+    
+    static var initializedField: Int
+    
+    private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool) {
+        
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
-        // TODO
+        assertionFailure("visitMethodStmt should never be called!")
+        // this should never be visited
     }
     
     internal func visitFunctionStmt(stmt: FunctionStmt) {
