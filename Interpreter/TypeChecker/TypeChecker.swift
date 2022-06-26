@@ -202,6 +202,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     internal func visitGroupingExpr(expr: GroupingExpr) {
         typeCheck(expr.expression)
         expr.type = expr.expression.type
+        expr.type!.assignable = false
     }
     
     internal func visitLiteralExpr(expr: LiteralExpr) {
@@ -703,7 +704,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
             }
         }
-        // TODO: you can't access instance variables from static functions
         for field in stmt.fields {
             typeField(field)
         }
@@ -718,19 +718,16 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // type all of the methods
         // TODO: Think about initializers?
         for method in stmt.methods {
-            processMethodStmt(stmt: method, isInitializer: method.function.name.lexeme == stmt.name.lexeme) 
-            typeCheck(method)
+            processMethodStmt(stmt: method, isInitializer: method.function.name.lexeme == stmt.name.lexeme, accompanyingClassStmt: stmt)
         }
         for method in stmt.staticMethods {
-            processMethodStmt(stmt: method, isInitializer: false)
+            processMethodStmt(stmt: method, isInitializer: false, accompanyingClassStmt: stmt)
         }
         
         symbolTable.exitScope()
     }
     
-    static var initializedField: Int
-    
-    private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool) {
+    private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool, accompanyingClassStmt: ClassStmt) {
         
     }
     

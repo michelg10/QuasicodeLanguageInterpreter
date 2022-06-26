@@ -397,13 +397,15 @@ class VariableExpr: Expr {
 class SubscriptExpr: Expr {
     var expression: Expr
     var index: Expr
+    var accessingInstanceVariable: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(expression: Expr, index: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(expression: Expr, index: Expr, accessingInstanceVariable: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
         self.index = index
+        self.accessingInstanceVariable = accessingInstanceVariable
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -411,6 +413,7 @@ class SubscriptExpr: Expr {
     init(_ objectToCopy: SubscriptExpr) {
         self.expression = objectToCopy.expression
         self.index = objectToCopy.index
+        self.accessingInstanceVariable = objectToCopy.accessingInstanceVariable
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
@@ -488,14 +491,16 @@ class GetExpr: Expr {
     var object: Expr
     var property: Token
     var propertyId: Int?
+    var accessingInstanceVariable: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(object: Expr, property: Token, propertyId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(object: Expr, property: Token, propertyId: Int?, accessingInstanceVariable: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.object = object
         self.property = property
         self.propertyId = propertyId
+        self.accessingInstanceVariable = accessingInstanceVariable
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -504,6 +509,7 @@ class GetExpr: Expr {
         self.object = objectToCopy.object
         self.property = objectToCopy.property
         self.propertyId = objectToCopy.propertyId
+        self.accessingInstanceVariable = objectToCopy.accessingInstanceVariable
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation

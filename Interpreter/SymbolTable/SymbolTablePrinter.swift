@@ -32,7 +32,7 @@ func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
     return printVariableInfo(symbol)
 }
 func printVariableInfo(_ symbol: VariableSymbol) -> String {
-    return "type: \(printType(symbol.type)), status: \(symbol.variableStatus)"
+    return "type: \(printType(symbol.type)), status: \(symbol.variableStatus), isInstanceVariable: \(symbol.isInstanceVariable)"
 }
 func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
     return "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
