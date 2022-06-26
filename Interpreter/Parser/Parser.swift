@@ -671,6 +671,9 @@ class Parser {
             let leftParen = previous()
             let expr = try expression()
             try consume(type: .RIGHT_PAREN, message: "Expect ')' after expression.")
+            if expr is VariableExpr {
+                return expr
+            }
             return GroupingExpr(expression: expr, type: nil, startLocation: .init(start: leftParen), endLocation: .init(end: previous()))
         }
         
