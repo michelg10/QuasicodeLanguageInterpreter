@@ -197,7 +197,7 @@ class Parser {
         
         currentClassName = nil
         currentClassTemplateParameters = []
-        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, thisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, instanceThisSymbolTableIndex: nil, staticThisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
         classStmts.append(result)
         return result
     }
@@ -668,7 +668,7 @@ class Parser {
             let keyword = previous()
             if match(types: .DOT) {
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-                return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, propertyId: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
+                return SuperExpr(keyword: keyword, property: property, propertyId: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
             } else if match(types: .LEFT_PAREN) {
                 return try finishCall(callee: VariableExpr(name: keyword, symbolTableIndex: nil, type: nil, startLocation: keyword.startLocation, endLocation: keyword.endLocation))
             } else {

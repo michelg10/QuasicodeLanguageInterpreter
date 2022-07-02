@@ -56,7 +56,8 @@ class ClassStmt: Stmt {
     var keyword: Token
     var name: Token
     var symbolTableIndex: Int?
-    var thisSymbolTableIndex: Int?
+    var instanceThisSymbolTableIndex: Int?
+    var staticThisSymbolTableIndex: Int?
     var scopeIndex: Int?
     var templateParameters: [Token]?
     var expandedTemplateParameters: [AstType]?
@@ -66,11 +67,12 @@ class ClassStmt: Stmt {
     var fields: [ClassField]
     var staticFields: [ClassField]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, thisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
-        self.thisSymbolTableIndex = thisSymbolTableIndex
+        self.instanceThisSymbolTableIndex = instanceThisSymbolTableIndex
+        self.staticThisSymbolTableIndex = staticThisSymbolTableIndex
         self.scopeIndex = scopeIndex
         self.templateParameters = templateParameters
         self.expandedTemplateParameters = expandedTemplateParameters
@@ -84,7 +86,8 @@ class ClassStmt: Stmt {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
         self.symbolTableIndex = objectToCopy.symbolTableIndex
-        self.thisSymbolTableIndex = objectToCopy.thisSymbolTableIndex
+        self.instanceThisSymbolTableIndex = objectToCopy.instanceThisSymbolTableIndex
+        self.staticThisSymbolTableIndex = objectToCopy.staticThisSymbolTableIndex
         self.scopeIndex = objectToCopy.scopeIndex
         self.templateParameters = objectToCopy.templateParameters
         self.expandedTemplateParameters = objectToCopy.expandedTemplateParameters

@@ -104,7 +104,7 @@ class SymbolTables {
         let currentSymbolTableState = getCurrentTableId()
         var allMethods: [Int] = []
         while true {
-            let functionNameSymbol = query("$FuncName$\(methodName)")
+            let functionNameSymbol = query("#FuncName#\(methodName)")
             if functionNameSymbol == nil {
                 break
             } else {
