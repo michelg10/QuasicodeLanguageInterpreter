@@ -317,6 +317,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitCallExpr(expr: CallExpr) {
         // TODO: public and private
+        // static and nonstatic? they are underneath the same symbol table name index
         
         if expr.object != nil {
             typeCheck(expr.object!)

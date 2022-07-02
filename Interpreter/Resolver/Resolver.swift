@@ -8,6 +8,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private enum ClassType {
         case Class, Subclass
     }
+    var superInitCallIsFirstLineOfInitializer: Bool? = nil // this is for the super expressions
     private struct ClassStatus {
         var classType: ClassType
         var name: String
@@ -109,6 +110,17 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     internal func visitCallExpr(expr: CallExpr) throws {
         if expr.object != nil {
             try resolve(expr.object!)
+        }
+        if expr.property.lexeme == "super" {
+            if currentFunction != .initializer {
+                error(message: "'super' cannot be called outside of an initializer", token: expr.property)
+            } else {
+                if superInitCallIsFirstLineOfInitializer == true {
+                    superInitCallIsFirstLineOfInitializer = false
+                } else {
+                    error(message: "Call to 'super' must be first statement in constructor", token: expr.property)
+                }
+            }
         }
         for argument in expr.arguments {
             try resolve(argument)
@@ -295,7 +307,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if method.function.symbolTableIndex == nil {
                 continue
             }
-            // TODO: Remember that static and nonstatic functions can be underneath the exact same name symbol table index
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
         }
@@ -323,6 +334,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let previousFunctionStatus = currentFunction
         if stmt.function.name.lexeme == currentClassStatus?.name {
             currentFunction = .initializer
+            if currentClassStatus?.classType == .Subclass {
+                superInitCallIsFirstLineOfInitializer = true
+            }
             if stmt.isStatic {
                 error(message: "Initializer declaration cannot be marked 'static'", token: stmt.staticKeyword!)
             }
@@ -345,7 +359,25 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             stmt.params[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.params[i].name, initializer: stmt.params[i].initializer)
         }
         for stmt in stmt.body {
+            if superInitCallIsFirstLineOfInitializer == true {
+                if !(stmt is ExpressionStmt) {
+                    superInitCallIsFirstLineOfInitializer = false
+                } else {
+                    let expr = (stmt as! ExpressionStmt).expression
+                    if !(expr is CallExpr) {
+                        superInitCallIsFirstLineOfInitializer = false
+                    } else {
+                        let expr = expr as! CallExpr
+                        if expr.property.lexeme != "super" {
+                            superInitCallIsFirstLineOfInitializer = false
+                        }
+                    }
+                }
+            }
             resolve(stmt)
+            if superInitCallIsFirstLineOfInitializer == true {
+                superInitCallIsFirstLineOfInitializer = false
+            }
         }
         symbolTable.exitScope()
         isInGlobalScope = previousIsInGlobalScope
