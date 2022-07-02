@@ -5,6 +5,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     private var reportErrorForStatement: ((_ statement: Stmt, _ message: String) -> Void)
     private var reportErrorForExpression: ((_ expression: Expr, _ message: String) -> Void)
     private var isInControlFlow: Bool = false
+    private var withinClass: Int = 0
     
     internal init(reportErrorForStatement: @escaping ((Stmt, String) -> Void), reportErrorForExpression: @escaping ((Expr, String) -> Void), symbolTable: SymbolTables) {
         self.reportErrorForStatement = reportErrorForStatement
@@ -73,7 +74,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
             markVariables(stmt.value!)
         }
         // check and report errors
-        if totalUninitialized != 0 {
+        if !finishedInitialization() {
             reportError(stmt, message: "Return from initializer without initializing all stored properties")
         }
     }
@@ -150,11 +151,21 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        // TODO: disallow calling instance functions
         if expr.object != nil {
             markVariables(expr.object!)
         }
         markVariables(expr.arguments)
+        if expr.uniqueFunctionCall != nil {
+            let symbol = symbolTable.getSymbol(id: expr.uniqueFunctionCall!)
+            if symbol is MethodSymbol {
+                let symbol = symbol as! MethodSymbol
+                
+//                if symbol
+                reportError(expr, message: "Methods cannot be called before all stored properties are initialized")
+            }
+        } else if expr.polymorphicCallClassIdToIdDict != nil {
+            // its definitely a method call
+        }
     }
     
     internal func visitGetExpr(expr: GetExpr) {
@@ -269,6 +280,10 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         }
     }
     
+    private func finishedInitialization() -> Bool {
+        return totalUninitialized == 0
+    }
+    
     public func trackVariable(_ name: String) {
         if hasInitializedDict[name] == nil {
             totalUninitialized+=1
@@ -276,8 +291,8 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         hasInitializedDict[name] = false
     }
     
-    public func checkStatements(_ statements: [Stmt]) {
+    public func checkStatements(_ statements: [Stmt], withinClass: Int) {
         isInControlFlow = false
-        
+        self.withinClass = withinClass
     }
 }

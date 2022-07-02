@@ -1,5 +1,3 @@
-// TODO: Symbol table indexes may be nil in the event of an error!
-
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
@@ -330,10 +328,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // Find all the functions that can be called
         var potentialFunctions: [Int] = []
         
+        var blockPolymorphicCall = false
         let currentSymbolTablePosition = symbolTable.getCurrentTableId()
         if expr.object == nil {
             // look up an instance method, a class method, or a global function
             // TODO: track the symbol table along with the type checking
+            // cannot be polymorphic
+            blockPolymorphicCall = true
             let allMethods = symbolTable.getAllMethods(methodName: expr.property.lexeme)
             if allMethods == [] {
                 // search for global functions
@@ -347,6 +348,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         } else if expr.object is ThisExpr || expr.object is GetExpr || expr.object is VariableExpr {
             // look up an instance method on the object
+            if expr.object is ThisExpr {
+                blockPolymorphicCall = true
+            }
             if expr.object!.type is QsClass {
                 let objectClassType = expr.object!.type! as! QsClass
                 let classSymbol = symbolTable.getSymbol(id: objectClassType.id) as! ClassSymbol
@@ -359,6 +363,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
             }
         } else if expr.object is StaticClassExpr {
+            blockPolymorphicCall = true
             // look up a class method on the object
             let object = expr.object as! StaticClassExpr
             if object.classId != nil {
@@ -450,7 +455,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.uniqueFunctionCall = bestMatches[0]
             expr.type = typedResolvedFunctionSymbol.returnType
         } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
-            if typedResolvedFunctionSymbol.methodStmt.isStatic {
+            if typedResolvedFunctionSymbol.methodStmt.isStatic || blockPolymorphicCall /*|| typedResolvedFunctionSymbol.overridedBy.isEmpty*/ {
                 // static calls cannot be polymorphic
                 expr.uniqueFunctionCall = bestMatches[0]
                 expr.type = typedResolvedFunctionSymbol.returnType
@@ -605,6 +610,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func typeVariable(variable: VariableExpr, type: QsType) {
         // adds the type of a variable into the symbol table and also updates the type in the variableExpr
+        if variable.symbolTableIndex == nil {
+            return
+        }
         guard let symbol = symbolTable.getSymbol(id: variable.symbolTableIndex!) as? VariableSymbol else {
             return
         }
@@ -614,6 +622,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func extractGlobalIdFromExpr(expr: Expr) -> Int? {
         guard let variableExpr = expr as? VariableExpr else {
+            return nil
+        }
+        if variableExpr.symbolTableIndex == nil {
             return nil
         }
         if symbolTable.getSymbol(id: variableExpr.symbolTableIndex!) is GlobalVariableSymbol {
@@ -728,7 +739,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool, accompanyingClassStmt: ClassStmt) {
-        
+        if isInitializer {
+            // do the initializer stuff
+        }
+        // otherwise just process it like a function
+        typeCheck(stmt.function)
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
