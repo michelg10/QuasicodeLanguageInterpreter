@@ -585,7 +585,7 @@ class Parser {
     }
     
     private func finishCall(callee: Expr) throws -> Expr {
-        var argumentsList: [Expr] = try arguments()
+        let argumentsList: [Expr] = try arguments()
         
         let paren = try consume(type: .RIGHT_PAREN, message: "Expect ')' after arguments.")
         var object: Expr? = nil
@@ -663,9 +663,14 @@ class Parser {
         }
         if match(types: .SUPER) {
             let keyword = previous()
-            try consume(type: .DOT, message: "Expected '.' after 'super'.")
-            let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-            return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, propertyId: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
+            if match(types: .DOT) {
+                let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
+                return SuperExpr(keyword: keyword, property: property, symbolTableIndex: nil, propertyId: nil, type: nil, startLocation: .init(start: keyword), endLocation: .init(end: previous()))
+            } else if match(types: .LEFT_PAREN) {
+                return try finishCall(callee: VariableExpr(name: keyword, symbolTableIndex: nil, type: nil, startLocation: keyword.startLocation, endLocation: keyword.endLocation))
+            } else {
+                throw error(message: "Expect property name or call after 'super'.", token: peek())
+            }
         }
         if match(types: .LEFT_PAREN) {
             let leftParen = previous()

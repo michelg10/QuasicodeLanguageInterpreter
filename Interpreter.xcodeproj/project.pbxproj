@@ -122,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				D06A492F282FEACB005DE578 /* TypeChecker.swift */,
+				D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */,
 			);
 			path = TypeChecker;
 			sourceTree = "<group>";
@@ -143,7 +144,6 @@
 			isa = PBXGroup;
 			children = (
 				D0AA390828215DB200CF94ED /* Resolver.swift */,
-				D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */,
 			);
 			path = Resolver;
 			sourceTree = "<group>";
@@ -378,7 +378,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -395,7 +395,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};

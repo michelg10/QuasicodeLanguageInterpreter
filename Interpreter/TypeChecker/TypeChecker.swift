@@ -455,7 +455,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.uniqueFunctionCall = bestMatches[0]
             expr.type = typedResolvedFunctionSymbol.returnType
         } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
-            if typedResolvedFunctionSymbol.methodStmt.isStatic || blockPolymorphicCall /*|| typedResolvedFunctionSymbol.overridedBy.isEmpty*/ {
+            if typedResolvedFunctionSymbol.methodStmt.isStatic || blockPolymorphicCall || typedResolvedFunctionSymbol.overridedBy.isEmpty {
                 // static calls cannot be polymorphic
                 expr.uniqueFunctionCall = bestMatches[0]
                 expr.type = typedResolvedFunctionSymbol.returnType
