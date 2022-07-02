@@ -550,12 +550,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         for method in stmt.methods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.id)
             }
         }
         for method in stmt.staticMethods {
             catchErrorClosure {
-                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.classId)
+                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.id)
             }
         }
         
