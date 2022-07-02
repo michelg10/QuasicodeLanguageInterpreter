@@ -58,7 +58,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     internal func visitSuperExpr(expr: SuperExpr) throws {
         if currentClassStatus?.classType != .Subclass {
-            throw error(message: "Can't use 'super' outside of a subclass", token: expr.keyword)
+            throw error(message: "'super' cannot be referenced in a root class", token: expr.keyword)
         }
     }
     

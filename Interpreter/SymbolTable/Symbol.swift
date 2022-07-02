@@ -1,11 +1,11 @@
 protocol Symbol {
     var id: Int { get set }
     var belongsToTable: Int { get set }
-    var name: String { get set }
+    var name: String { get }
 }
 protocol FunctionLikeSymbol: Symbol {
     var returnType: QsType { get set }
-    func getParamCount() -> Int
+    var paramRange: ClosedRange<Int> { get }
     func getUnderlyingFunctionStmt() -> FunctionStmt
 }
 
@@ -29,7 +29,7 @@ class VariableSymbol: Symbol {
     var id: Int
     var belongsToTable: Int
     var type: QsType?
-    var name: String
+    let name: String
     var variableStatus: VariableStatus
     var isInstanceVariable: Bool
 }
@@ -55,8 +55,18 @@ class FunctionNameSymbol: Symbol {
     var id: Int
     var belongsToTable: Int
     var isForMethods: Bool
-    var name: String
+    let name: String
     var belongingFunctions: [Int]
+}
+func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
+    var lowerBound = functionStmt.params.count
+    for i in 0..<functionStmt.params.count {
+        let index = functionStmt.params.count-i-1
+        if functionStmt.params[index].initializer != nil {
+            lowerBound=index
+        }
+    }
+    return lowerBound...functionStmt.params.count
 }
 class FunctionSymbol: FunctionLikeSymbol {
     init(name: String, functionStmt: FunctionStmt, returnType: QsType) {
@@ -65,17 +75,15 @@ class FunctionSymbol: FunctionLikeSymbol {
         self.name = name
         self.functionStmt = functionStmt
         self.returnType = returnType
+        self.paramRange = getParamRangeForFunction(functionStmt: functionStmt)
     }
     
     var id: Int
     var belongsToTable: Int
-    var name: String
-    var functionStmt: FunctionStmt
+    let name: String
+    let functionStmt: FunctionStmt
+    let paramRange: ClosedRange<Int>
     var returnType: QsType
-    
-    func getParamCount() -> Int {
-        return functionStmt.params.count
-    }
     
     func getUnderlyingFunctionStmt() -> FunctionStmt {
         return functionStmt
@@ -89,16 +97,18 @@ class MethodSymbol: FunctionLikeSymbol {
         self.withinClass = withinClass
         self.overridedBy = overridedBy
         self.methodStmt = methodStmt
+        self.paramRange = getParamRangeForFunction(functionStmt: methodStmt.function)
         self.returnType = returnType
         self.finishedInit = finishedInit
     }
     
     var id: Int
     var belongsToTable: Int
-    var name: String
-    var withinClass: Int
+    let name: String
+    let withinClass: Int
     var overridedBy: [Int]
-    var methodStmt: MethodStmt
+    let methodStmt: MethodStmt
+    let paramRange: ClosedRange<Int>
     var returnType: QsType
     var finishedInit: Bool
     
@@ -135,7 +145,7 @@ class ClassSymbol: Symbol {
     
     var id: Int
     var belongsToTable: Int
-    var name: String
+    let name: String
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt
@@ -149,5 +159,5 @@ class ClassNameSymbol: Symbol {
     
     var id: Int
     var belongsToTable: Int
-    var name: String
+    let name: String
 }

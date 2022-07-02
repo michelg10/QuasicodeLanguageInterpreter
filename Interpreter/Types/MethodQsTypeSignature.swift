@@ -26,10 +26,10 @@ struct MethodQsTypeSignature: Hashable {
         }
     }
     
-    init(functionStmt: FunctionStmt) {
+    init(functionStmt: FunctionStmt, symbolTable: SymbolTables) {
         self.name = functionStmt.name.lexeme
         self.parameters = functionStmt.params.map({ functionParam in
-            functionParam.type!
+            functionParam.getType(symbolTable: symbolTable)!
         })
     }
 }

@@ -1,6 +1,9 @@
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
+    // type checker needs to know:
+    // current function / method the checker is currently in for return checks
+    // current class the checker is currently in for public / private checks and super checks
     
     private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
         if a is QsErrorType || b is QsErrorType {
@@ -316,9 +319,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        // TODO: public and private
-        // static and nonstatic? they are underneath the same symbol table name index
-        
+        // TODO: Do not allow an initializer to be called (unless it's from a super expression)
         if expr.object != nil {
             typeCheck(expr.object!)
         }
@@ -333,7 +334,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         let currentSymbolTablePosition = symbolTable.getCurrentTableId()
         if expr.object == nil {
             // look up an instance method, a class method, or a global function
-            // TODO: track the symbol table along with the type checking
             // cannot be polymorphic
             blockPolymorphicCall = true
             let allMethods = symbolTable.getAllMethods(methodName: expr.property.lexeme)
@@ -363,6 +363,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return functionSymbol.methodStmt.isStatic
                 }
             }
+            // TODO: public and private
         } else if expr.object is StaticClassExpr {
             blockPolymorphicCall = true
             // look up a class method on the object
@@ -377,6 +378,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return !functionSymbol.methodStmt.isStatic
                 }
             }
+            // TODO: public and private
         } else {
             expr.type = QsErrorType(assignable: false)
             assertionFailure("Call expression on unknown object")
@@ -394,16 +396,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 continue
                 
             }
-            // TODO: Default parameters
-            // TODO: Infer types for function parameters from their initializers
-            if functionSymbolEntry.getParamCount() != expr.arguments.count {
+            if !functionSymbolEntry.paramRange.contains(expr.arguments.count) {
                 // that's a no go
                 continue
             }
             var matchLevel = 1
             for i in 0..<expr.arguments.count {
                 let givenType = expr.arguments[i].type!
-                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].type!
+                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
                 if typesIsEqual(givenType, expectedType) {
                     matchLevel = max(matchLevel, 1)
                     continue
@@ -728,7 +728,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         // type all of the methods
-        // TODO: Think about initializers?
         for method in stmt.methods {
             processMethodStmt(stmt: method, isInitializer: method.function.name.lexeme == stmt.name.lexeme, accompanyingClassStmt: stmt)
         }
@@ -741,7 +740,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool, accompanyingClassStmt: ClassStmt) {
         if isInitializer {
-            // do the initializer stuff
+            // TODO: do the initializer stuff
         }
         // otherwise just process it like a function
         typeCheck(stmt.function)
@@ -753,7 +752,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitFunctionStmt(stmt: FunctionStmt) {
-        // TODO
+        if stmt.scopeIndex == nil {
+            return
+        }
+        symbolTable.gotoTable(stmt.scopeIndex!)
+        
+        // parameters are already typed
+        for stmt in stmt.body {
+            typeCheck(stmt)
+        }
+        
+        symbolTable.exitScope()
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
@@ -857,7 +866,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if param.astType != nil {
                     paramType = typeCheck(param.astType!)
                 }
-                functionStmt.params[i].type = paramType
+                if functionStmt.params[i].symbolTableIndex != nil {
+                    let symbol = self.symbolTable.getSymbol(id: functionStmt.params[i].symbolTableIndex!) as! VariableSymbol
+                    symbol.type = paramType
+                }
             }
         }
     }

@@ -219,7 +219,7 @@ class Parser {
                 if match(types: .EQUAL) {
                     initializer = try expression()
                 }
-                parameters.append(.init(name: parameterName, astType: parameterType, initializer: initializer, type: nil))
+                parameters.append(.init(name: parameterName, astType: parameterType, initializer: initializer))
             } while match(types: .COMMA)
         }
         try consume(type: .RIGHT_PAREN, message: "Expect ')' after parameters")
