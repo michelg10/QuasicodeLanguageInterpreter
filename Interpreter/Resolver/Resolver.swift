@@ -151,11 +151,31 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     internal func visitCallExpr(expr: CallExpr) throws {
         if expr.object != nil {
-            try resolve(expr.object!)
+            var isSuperCall = false
+            if expr.object is VariableExpr {
+                let object = expr.object as! VariableExpr
+                if object.name.lexeme == "super" {
+                    // don't resolve and check if its in a method
+                    isSuperCall = true
+                    if currentFunction != .staticMethod && currentFunction != .initializer && currentFunction != .nonstaticMethod {
+                        error(message: "'super' cannot be referenced outside of a method", start: expr.startLocation, end: expr.endLocation)
+                    } else if currentClassStatus?.classType != .Subclass {
+                        // must be in a method because it's an "else if," so if it's not a subclass then it must be a root class.
+                        error(message: "'super' cannot be referenced in a root class", token: expr.property)
+                    }
+                }
+            }
+            if !isSuperCall {
+                try resolve(expr.object!)
+            }
         }
         if expr.property.lexeme == "super" {
             if currentClassStatus?.classType != .Subclass {
-                error(message: "'super' cannot be referenced in a root class", token: expr.property)
+                if currentClassStatus?.classType == .Class {
+                    error(message: "'super' cannot be referenced in a root class", token: expr.property)
+                } else {
+                    error(message: "'super' cannot be referenced outside of a class", token: expr.property)
+                }
             } else {
                 if currentFunction != .initializer {
                     error(message: "'super' cannot be called outside of an initializer", token: expr.property)

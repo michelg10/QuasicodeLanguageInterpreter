@@ -267,20 +267,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSuperExpr(expr: SuperExpr) {
-        if currentClassIndex == nil {
+        if expr.propertyId == nil {
             expr.type = QsErrorType(assignable: true)
             return
         }
-        let currentClassSymbol = symbolTable.getSymbol(id: currentClassIndex!) as! ClassSymbol
-        guard let classChain = currentClassSymbol.classChain else {
-            expr.type = QsErrorType(assignable: true)
-            return
-        }
-        if classChain.upperClass == nil {
-            expr.type = QsErrorType(assignable: true)
-        }
-        // TODO
-        expr.type = QsAnyType(assignable: true) // could be assignable or not assignable
+        let symbol = symbolTable.getSymbol(id: expr.propertyId!) as! VariableSymbol
+        expr.type = symbol.type ?? QsErrorType(assignable: true)
+        expr.type!.assignable = true
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
