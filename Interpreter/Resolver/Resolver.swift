@@ -12,6 +12,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private struct ClassStatus {
         var classType: ClassType
         var name: String
+        var symbolTableIndex: Int
     }
     
     // include functions and classes in the symbol table and resolve them like everything else
@@ -43,23 +44,64 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitThisExpr(expr: ThisExpr) throws {
-        if currentClassStatus == nil {
-            throw error(message: "Can't use 'this' outside of a class", token: expr.keyword)
+        if currentClassStatus == nil || currentFunction != .nonstaticMethod && currentFunction != .staticMethod {
+            throw error(message: "Cannot use 'this' outside of a method", token: expr.keyword)
         }
-        if currentFunction != .nonstaticMethod && currentFunction != .staticMethod {
-            throw error(message: "Can't use 'this' outside of a method", token: expr.keyword)
+        if currentFunction == .staticMethod {
+            expr.symbolTableIndex = symbolTable.query("$Static$this")?.id
+        } else {
+            expr.symbolTableIndex = symbolTable.query("$Instance$this")?.id
         }
-        if currentFunction != .nonstaticMethod {
-            throw error(message: "Can't use 'this' in a static context", token: expr.keyword)
-        }
-        expr.symbolTableIndex = symbolTable.query("this")?.id
         assert(expr.symbolTableIndex != nil, "'this' is undefined")
     }
     
     internal func visitSuperExpr(expr: SuperExpr) throws {
         if currentClassStatus?.classType != .Subclass {
-            throw error(message: "'super' cannot be referenced in a root class", token: expr.keyword)
+            if currentClassStatus == nil {
+                throw error(message: "'super' cannot be referenced outside of a class", token: expr.keyword)
+            } else if currentClassStatus!.classType == .Class {
+                throw error(message: "'super' cannot be referenced in a root class", token: expr.keyword)
+            }
         }
+        if currentFunction != .nonstaticMethod && currentFunction != .staticMethod && currentFunction != .initializer {
+            throw error(message: "'super' cannot be referenced outside of a method", token: expr.keyword)
+        }
+        let currentClassSymbol = symbolTable.getSymbol(id: currentClassStatus!.symbolTableIndex) as! ClassSymbol
+        guard let classChain = currentClassSymbol.classChain else {
+            return
+        }
+        if classChain.upperClass == nil {
+            return
+        }
+        let upperClass = symbolTable.getSymbol(id: classChain.upperClass!) as! ClassSymbol
+        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
+        if upperClass.classStmt.scopeIndex == nil {
+            return
+        }
+        symbolTable.gotoTable(upperClass.classStmt.scopeIndex!)
+        
+        let findVariable = symbolTable.query(expr.property.lexeme)
+        let errorString = "Superclass '\(expr.property.lexeme)' has no member '\(expr.property.lexeme)'"
+        if !(findVariable is VariableSymbol) {
+            error(message: errorString, start: expr.startLocation, end: expr.endLocation)
+            return
+        }
+        let variableSymbol = findVariable as! VariableSymbol
+        switch variableSymbol.variableType {
+        case .instance:
+            expr.propertyId = variableSymbol.id
+            if currentFunction == .staticMethod {
+                error(message: "Instance member '\(expr.property.lexeme)' cannot be used in a static context", start: expr.startLocation, end: expr.endLocation)
+            }
+        case .staticVar:
+            expr.propertyId = variableSymbol.id
+            if currentFunction == .nonstaticMethod {
+                error(message: "Static member '\(expr.property.lexeme)' cannot be used in a non-static context", start: expr.startLocation, end: expr.endLocation)
+            }
+        default:
+            error(message: errorString, start: expr.startLocation, end: expr.endLocation)
+        }
+        symbolTable.gotoTable(previousSymbolTablePosition)
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
@@ -69,7 +111,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 // initing -> use of variable within its own declaration
                 // globalIniting -> global circular reference
                 // finishedInit -> no problem
-                if symbol.isInstanceVariable && currentFunction == .staticMethod {
+                if symbol.variableType == .instance && currentFunction == .staticMethod {
                     error(message: "Use of instance variable from a static method", start: expr.startLocation, end: expr.endLocation)
                 }
                 switch symbol.variableStatus {
@@ -200,7 +242,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if expr.isFirstAssignment! {
                 // define the variable but set it as unusable
                 
-                let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing, isInstanceVariable: false)
+                let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing, variableType: .local)
                 expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: associatedSymbol)
                 defer {
                     associatedSymbol.variableStatus = .finishedInit
@@ -227,12 +269,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     func defineVariableWithInitializer(name: Token, initializer: Expr?) -> Int? {
-        // use this with class fields, function parameters, etc.
+        // use this with function parameters, etc.
         if symbolTable.queryAtScopeOnly(name.lexeme) != nil {
             error(message: "Invalid redeclaration of \(name.lexeme)", token: name)
             return nil
         }
-        let symbol = VariableSymbol(name: name.lexeme, variableStatus: .initing, isInstanceVariable: false)
+        let symbol = VariableSymbol(name: name.lexeme, variableStatus: .initing, variableType: .local)
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         if initializer != nil {
             catchErrorClosure {
@@ -262,7 +304,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 symbolTable.linkCurrentTableToParent(superclassSymbol.classStmt.scopeIndex!)
             }
         }
-        stmt.thisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "this", variableStatus: .finishedInit, isInstanceVariable: false))
+        stmt.instanceThisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "$Instance$this", variableStatus: .finishedInit, variableType: .instance))
+        stmt.staticThisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "$Static$this", variableStatus: .finishedInit, variableType: .staticVar))
         let previousClassStatus = currentClassStatus
         var currentClassType = ClassType.Class
         if stmt.superclass != nil {
@@ -270,7 +313,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         } else {
             currentClassType = .Class
         }
-        currentClassStatus = .init(classType: currentClassType, name: currentClassName)
+        currentClassStatus = .init(classType: currentClassType, name: currentClassName, symbolTableIndex: stmt.symbolTableIndex!)
         
         guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbol else {
             assertionFailure("Symbol at class statement is not a class symbol")
@@ -410,7 +453,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false))
         }
         stmt.symbolTableIndex = symbolTableIndex
-        let functionNameSymbolName = "$FuncName$"+stmt.name.lexeme
+        let functionNameSymbolName = "#FuncName#"+stmt.name.lexeme
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(functionNameSymbolName) {
             guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbol else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
@@ -492,7 +535,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             if existingSymbol is VariableSymbol {
                 try resolve(stmt.variable)
             } else {
-                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, isInstanceVariable: false))
+                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, variableType: .local))
                 stmt.variable.type = QsInt(assignable: true)
             }
         }
@@ -600,7 +643,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
                 return
             }
-            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting, isInstanceVariable: !field.isStatic)
+            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting, variableType: (field.isStatic ? .staticVar : .instance))
             field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
         for field in stmt.fields {
@@ -691,7 +734,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assertionFailure("Symbol table symbol is not a class symbol")
                 continue
             }
-            let currentClassChain = ClassChain(upperClass: -1, depth: -1, classStmt: classStmt, parentOf: [])
+            let currentClassChain = ClassChain(upperClass: nil, depth: -1, classStmt: classStmt, parentOf: [])
             classSymbolInfo.classChain = currentClassChain
             
             classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol)?.classId) ?? 0)

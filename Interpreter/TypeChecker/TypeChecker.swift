@@ -51,7 +51,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         struct JumpError: Error { }
         func jumpUpChain(classChain: ClassChain) throws -> (Int, ClassChain) {
-            let newClassId = classChain.upperClass
+            guard let newClassId = classChain.upperClass else {
+                throw JumpError()
+            }
             guard let newChain = symbolTable.getClassChain(id: newClassId) else {
                 throw JumpError()
             }
@@ -266,11 +268,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitSuperExpr(expr: SuperExpr) {
         if currentClassIndex == nil {
-            expr.type = QsErrorType(assignable: false)
+            expr.type = QsErrorType(assignable: true)
             return
         }
         let currentClassSymbol = symbolTable.getSymbol(id: currentClassIndex!) as! ClassSymbol
-//        currentClassSymbol.
+        guard let classChain = currentClassSymbol.classChain else {
+            expr.type = QsErrorType(assignable: true)
+            return
+        }
+        if classChain.upperClass == nil {
+            expr.type = QsErrorType(assignable: true)
+        }
         // TODO
         expr.type = QsAnyType(assignable: true) // could be assignable or not assignable
     }
@@ -354,7 +362,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let allMethods = symbolTable.getAllMethods(methodName: expr.property.lexeme)
             if allMethods == [] {
                 // search for global functions
-                let globalFunctionNameSymbol = symbolTable.queryAtGlobalOnly("$FuncName$\(expr.property.lexeme)")
+                let globalFunctionNameSymbol = symbolTable.queryAtGlobalOnly("#FuncName#\(expr.property.lexeme)")
                 if globalFunctionNameSymbol != nil {
                     let globalFunctionNameSymbol = globalFunctionNameSymbol as! FunctionNameSymbol
                     potentialFunctions.append(contentsOf: globalFunctionNameSymbol.belongingFunctions)
@@ -747,9 +755,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for field in stmt.staticFields {
             typeField(field)
         }
-        if stmt.thisSymbolTableIndex != nil && stmt.symbolTableIndex != nil {
-            let relatedThisSymbol = symbolTable.getSymbol(id: stmt.thisSymbolTableIndex!) as! VariableSymbol
-            relatedThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
+        if stmt.staticThisSymbolTableIndex != nil && stmt.instanceThisSymbolTableIndex != nil && stmt.symbolTableIndex != nil {
+            let relatedInstanceThisSymbol = symbolTable.getSymbol(id: stmt.instanceThisSymbolTableIndex!) as! VariableSymbol
+            relatedInstanceThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
+            let relatedStaticThisSymbol = symbolTable.getSymbol(id: stmt.staticThisSymbolTableIndex!) as! VariableSymbol
+            relatedStaticThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
         }
         
         // type all of the methods

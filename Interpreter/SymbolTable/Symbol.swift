@@ -9,21 +9,21 @@ protocol FunctionLikeSymbol: Symbol {
     func getUnderlyingFunctionStmt() -> FunctionStmt
 }
 
-enum SymbolType {
-    case Variable, Function, Class
-}
 enum VariableStatus {
     case uninit, initing, globalIniting, fieldIniting, finishedInit
 }
+enum VariableType {
+    case global, local, instance, staticVar
+}
 
 class VariableSymbol: Symbol {
-    init(type: QsType? = nil, name: String, variableStatus: VariableStatus, isInstanceVariable: Bool) {
+    init(type: QsType? = nil, name: String, variableStatus: VariableStatus, variableType: VariableType) {
         self.id = -1
         self.belongsToTable = -1
         self.type = type
         self.name = name
         self.variableStatus = variableStatus
-        self.isInstanceVariable = isInstanceVariable
+        self.variableType = variableType
     }
     
     var id: Int
@@ -31,12 +31,12 @@ class VariableSymbol: Symbol {
     var type: QsType?
     let name: String
     var variableStatus: VariableStatus
-    var isInstanceVariable: Bool
+    var variableType: VariableType
 }
 class GlobalVariableSymbol: VariableSymbol {
     init(type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
         self.globalDefiningAssignExpr = globalDefiningAssignExpr
-        super.init(type: type, name: name, variableStatus: variableStatus, isInstanceVariable: false)
+        super.init(type: type, name: name, variableStatus: variableStatus, variableType: .global)
     }
     
     var globalDefiningAssignExpr: AssignExpr
@@ -121,14 +121,14 @@ class MethodSymbol: FunctionLikeSymbol {
     }
 }
 class ClassChain {
-    init(upperClass: Int, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
+    init(upperClass: Int?, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
         self.upperClass = upperClass
         self.classStmt = classStmt
         self.parentOf = parentOf
         self.depth = depth
     }
     
-    var upperClass: Int
+    var upperClass: Int?
     var depth: Int
     var classStmt: ClassStmt
     var parentOf: [Int]

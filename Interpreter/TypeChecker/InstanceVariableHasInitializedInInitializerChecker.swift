@@ -137,7 +137,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         let index = expr.symbolTableIndex
         if index != nil {
             let symbol = symbolTable.getSymbol(id: index!) as! VariableSymbol
-            if symbol.isInstanceVariable {
+            if symbol.variableType == .local {
                 if hasInitializedDict[symbol.name] == false {
                     reportError(expr, message: "Variable 'this.\(symbol.name)' used before being initialized")
                 }
@@ -235,7 +235,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         markVariables(expr.value)
         if expr.to.symbolTableIndex != nil {
             let symbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
-            if symbol.isInstanceVariable {
+            if symbol.variableType == .instance {
                 markAsInitialized(symbol.name)
             }
         }
