@@ -112,13 +112,17 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             try resolve(expr.object!)
         }
         if expr.property.lexeme == "super" {
-            if currentFunction != .initializer {
-                error(message: "'super' cannot be called outside of an initializer", token: expr.property)
+            if currentClassStatus?.classType != .Subclass {
+                error(message: "'super' cannot be referenced in a root class", token: expr.property)
             } else {
-                if superInitCallIsFirstLineOfInitializer == true {
-                    superInitCallIsFirstLineOfInitializer = false
+                if currentFunction != .initializer {
+                    error(message: "'super' cannot be called outside of an initializer", token: expr.property)
                 } else {
-                    error(message: "Call to 'super' must be first statement in constructor", token: expr.property)
+                    if superInitCallIsFirstLineOfInitializer == true {
+                        superInitCallIsFirstLineOfInitializer = false
+                    } else {
+                        error(message: "Call to 'super' must be first statement in constructor", token: expr.property)
+                    }
                 }
             }
         }
