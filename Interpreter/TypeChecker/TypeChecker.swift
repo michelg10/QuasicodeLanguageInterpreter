@@ -541,7 +541,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.type = QsErrorType(assignable: false)
             return
         }
-        // TODO: Implicit casts
+        let functionSymbolEntry = symbolTable.getSymbol(id: bestMatches[0]) as! FunctionLikeSymbol
+        for i in 0..<expr.arguments.count {
+            let givenType = expr.arguments[i].type!
+            let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
+            if !typesIsEqual(givenType, expectedType) {
+                expr.arguments[i] = ImplicitCastExpr(expression: expr.arguments[i], type: expectedType, startLocation: expr.startLocation, endLocation: expr.endLocation)
+            }
+        }
         let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
         if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbol {
             expr.uniqueFunctionCall = bestMatches[0]
