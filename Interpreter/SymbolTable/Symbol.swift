@@ -90,7 +90,7 @@ class FunctionSymbol: FunctionLikeSymbol {
     }
 }
 class MethodSymbol: FunctionLikeSymbol {
-    init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool) {
+    init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool, isConstructor: Bool) {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
@@ -100,6 +100,7 @@ class MethodSymbol: FunctionLikeSymbol {
         self.paramRange = getParamRangeForFunction(functionStmt: methodStmt.function)
         self.returnType = returnType
         self.finishedInit = finishedInit
+        self.isConstructor = isConstructor
     }
     
     var id: Int
@@ -111,6 +112,7 @@ class MethodSymbol: FunctionLikeSymbol {
     let paramRange: ClosedRange<Int>
     var returnType: QsType
     var finishedInit: Bool
+    let isConstructor: Bool
     
     func getParamCount() -> Int {
         return methodStmt.function.params.count

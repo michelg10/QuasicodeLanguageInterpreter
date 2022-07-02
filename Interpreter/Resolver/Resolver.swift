@@ -178,7 +178,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 }
             } else {
                 if currentFunction != .initializer {
-                    error(message: "'super' cannot be called outside of an initializer", token: expr.property)
+                    error(message: "'super' cannot be called outside of a constructor", token: expr.property)
                 } else {
                     if superInitCallIsFirstLineOfInitializer == true {
                         superInitCallIsFirstLineOfInitializer = false
@@ -405,7 +405,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 superInitCallIsFirstLineOfInitializer = true
             }
             if stmt.isStatic {
-                error(message: "Initializer declaration cannot be marked 'static'", token: stmt.staticKeyword!)
+                error(message: "Constructor declaration cannot be marked 'static'", token: stmt.staticKeyword!)
             }
         } else {
             if stmt.isStatic {
@@ -470,7 +470,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         if withinClass == nil {
             symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsVoidType()))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false))
+            let classSymbol = symbolTable.getSymbol(id: withinClass!) as! ClassSymbol
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false, isConstructor: classSymbol.classStmt.name.lexeme == stmt.name.lexeme))
         }
         stmt.symbolTableIndex = symbolTableIndex
         let functionNameSymbolName = "#FuncName#"+stmt.name.lexeme
@@ -540,7 +541,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         
         if stmt.value != nil {
             if currentFunction == .initializer {
-                error(message: "Can't return a value from an initializer", token: stmt.keyword)
+                error(message: "Can't return a value from a constructor", token: stmt.keyword)
             }
             catchErrorClosure {
                 try resolve(stmt.value!)

@@ -347,7 +347,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        // TODO: Do not allow an initializer to be called (unless it's from a super expression)
         if expr.object != nil {
             typeCheck(expr.object!)
         }
@@ -360,6 +359,50 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         var blockPolymorphicCall = false
         let currentSymbolTablePosition = symbolTable.getCurrentTableId()
+        enum FunctionsFilter {
+            case leaveStatic
+            case leaveNonstatic
+            case leavePublic
+            case leavePublicAndPrivateOfClass(Int)
+            case removeConstructors
+            case leaveConstructorsOfClass(Int)
+        }
+        func filterPotentialFunctions(functionsFilter: FunctionsFilter...) {
+            var removeIsStatic: Bool?
+            var removeIsPrivate: Bool?
+            var doNotRemovePrivateOfClass: Int?
+            var removeConstructor: Bool?
+            var doNotRemoveConstructorOfClass: Int?
+            for filter in functionsFilter {
+                switch filter {
+                case .leaveNonstatic:
+                    removeIsStatic = true
+                case .leaveStatic:
+                    removeIsStatic = false
+                case .leavePublic:
+                    removeIsPrivate = true
+                case .leavePublicAndPrivateOfClass(let classId):
+                    doNotRemovePrivateOfClass = classId
+                case .removeConstructors:
+                    removeConstructor = true
+                case .leaveConstructorsOfClass(let classId):
+                    doNotRemoveConstructorOfClass = classId
+                }
+            }
+            potentialFunctions.removeAll { val in
+                let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
+                if removeIsStatic != nil && functionSymbol.methodStmt.isStatic == removeIsStatic {
+                    return true
+                }
+                if removeIsPrivate == true && functionSymbol.methodStmt.visibilityModifier == .PRIVATE && doNotRemovePrivateOfClass != functionSymbol.withinClass {
+                    return true
+                }
+                if removeConstructor == true && functionSymbol.isConstructor && doNotRemoveConstructorOfClass != functionSymbol.withinClass {
+                    return true
+                }
+                return false
+            }
+        }
         if expr.object == nil {
             // look up an instance method, a class method, or a global function
             // cannot be polymorphic
@@ -373,18 +416,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     potentialFunctions.append(contentsOf: globalFunctionNameSymbol.belongingFunctions)
                 }
             } else {
+                // no constructors!
                 potentialFunctions = allMethods
+                filterPotentialFunctions(functionsFilter: .removeConstructors)
             }
         } else if expr.object is ThisExpr || expr.object is GetExpr || expr.object is VariableExpr {
             // look up an instance method on the object
             if expr.object is ThisExpr {
                 blockPolymorphicCall = true
-            } else if expr.object!.type is QsClass {
+            }
+            if expr.object!.type is QsClass {
                 let objectClassType = expr.object!.type! as! QsClass
                 let classSymbol = symbolTable.getSymbol(id: objectClassType.id) as! ClassSymbol
                 symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
                 potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
                 if expr.object is VariableExpr && (expr.object as! VariableExpr).name.lexeme == "super" {
+                    filterPotentialFunctions(functionsFilter: .removeConstructors, .leaveConstructorsOfClass(objectClassType.id))
                     // 'super' is dependent on whether the context is static or nonstatic
                     if currentFunctionIndex != nil {
                         let currentFunctionSymbol = symbolTable.getSymbol(id: currentFunctionIndex!)
@@ -392,21 +439,21 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                             let currentFunctionSymbol = currentFunctionSymbol as! MethodSymbol
                             let isStatic = currentFunctionSymbol.methodStmt.isStatic
                             // got whether or not its static, now filter through
-                            potentialFunctions.removeAll { val in
-                                let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
-                                return functionSymbol.methodStmt.isStatic != isStatic
-                            }
+                            filterPotentialFunctions(functionsFilter: (isStatic ? .leaveStatic : .leaveNonstatic))
                         }
                     }
                 } else {
                     // filter through and get only the instance methods
-                    potentialFunctions.removeAll { val in
-                        let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
-                        return functionSymbol.methodStmt.isStatic
-                    }
+                    filterPotentialFunctions(functionsFilter: .leaveNonstatic)
+                }
+                filterPotentialFunctions(functionsFilter: .removeConstructors)
+                // filter through public and private
+                if currentClassIndex != nil {
+                    filterPotentialFunctions(functionsFilter: .leavePublic, .leavePublicAndPrivateOfClass(currentClassIndex!))
+                } else {
+                    filterPotentialFunctions(functionsFilter: .leavePublic)
                 }
             }
-            // TODO: public and private
         } else if expr.object is StaticClassExpr {
             blockPolymorphicCall = true
             // look up a class method on the object
@@ -416,12 +463,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
                 potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
                 // filter through and get only the class methods
-                potentialFunctions.removeAll { val in
-                    let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
-                    return !functionSymbol.methodStmt.isStatic
+                filterPotentialFunctions(functionsFilter: .removeConstructors)
+                filterPotentialFunctions(functionsFilter: .leaveStatic)
+                if currentClassIndex != object.classId {
+                    // filter to leave only public ones
+                    filterPotentialFunctions(functionsFilter: .leavePublic)
                 }
             }
-            // TODO: public and private
         } else {
             expr.type = QsErrorType(assignable: false)
             assertionFailure("Call expression on unknown object")
