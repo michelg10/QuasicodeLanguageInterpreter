@@ -596,6 +596,9 @@ class Parser {
         } else if callee is GetExpr {
             object = (callee as! GetExpr).object
             property = (callee as! GetExpr).property
+        } else if callee is SuperExpr {
+            object = VariableExpr(name: (callee as! SuperExpr).keyword, symbolTableIndex: nil, type: nil, startLocation: (callee as! SuperExpr).keyword.startLocation, endLocation: (callee as! SuperExpr).keyword.endLocation)
+            property = (callee as! SuperExpr).property
         }
         return CallExpr(object: object, property: property!, paren: paren, arguments: argumentsList, uniqueFunctionCall: nil, polymorphicCallClassIdToIdDict: nil, type: nil, startLocation: callee.startLocation, endLocation: .init(end: previous()))
     }
@@ -605,7 +608,7 @@ class Parser {
         
         while true {
             if match(types: .LEFT_PAREN) {
-                if expr is GetExpr || expr is VariableExpr {
+                if expr is GetExpr || expr is VariableExpr || expr is SuperExpr {
                     expr = try finishCall(callee: expr)
                 }
             } else if match(types: .DOT) {
