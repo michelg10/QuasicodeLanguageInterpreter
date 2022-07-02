@@ -350,6 +350,9 @@ class Scanner {
         if c == nil {
             return false
         }
+        if c=="$" || c=="_" {
+            return true
+        }
         if c!.isASCII {
             let asciiValue = c!.asciiValue!
             if asciiValue>=97 && asciiValue<=122 {
