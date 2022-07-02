@@ -20,6 +20,8 @@ func printType(_ value: QsType?) -> String {
         return "Function(\((value as! QsFunction).nameId))"
     case is QsErrorType:
         return "<Error>"
+    case is QsVoidType:
+        return "<Void>"
     default:
         return "<Unknown \"\(type(of: value))\">"
     }

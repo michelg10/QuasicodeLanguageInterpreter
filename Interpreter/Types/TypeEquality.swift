@@ -3,6 +3,10 @@ func typesIsEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
         return false
     }
     
+    if lhs is QsVoidType || rhs is QsVoidType {
+        return lhs is QsVoidType && rhs is QsVoidType
+    }
+    
     if lhs is QsNativeType {
         if rhs is QsNativeType {
             return type(of: lhs) == type(of: rhs)

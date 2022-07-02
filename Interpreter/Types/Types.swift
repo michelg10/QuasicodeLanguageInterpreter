@@ -121,3 +121,11 @@ class QsErrorType: QsType {
     
     var assignable: Bool
 }
+
+class QsVoidType: QsType {
+    init() {
+        self.assignable = false
+    }
+    
+    var assignable: Bool
+}

@@ -4,10 +4,19 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     // type checker needs to know:
     // current function / method the checker is currently in for return checks
     // current class the checker is currently in for public / private checks and super checks
+    var currentFunctionIndex: Int?
+    var currentClassIndex: Int?
+    
+    private func isInMethod() -> Bool {
+        return currentFunctionIndex != nil && currentClassIndex != nil
+    }
     
     private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
         if a is QsErrorType || b is QsErrorType {
             return QsErrorType()
+        }
+        if a is QsVoidType || b is QsVoidType {
+            return QsVoidType()
         }
         if typesIsEqual(a, b) {
             return a
@@ -121,7 +130,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
-        return QsDouble()
+        return QsBoolean()
     }
     
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
@@ -256,6 +265,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitSuperExpr(expr: SuperExpr) {
+        if currentClassIndex == nil {
+            expr.type = QsErrorType(assignable: false)
+            return
+        }
+        let currentClassSymbol = symbolTable.getSymbol(id: currentClassIndex!) as! ClassSymbol
+//        currentClassSymbol.
         // TODO
         expr.type = QsAnyType(assignable: true) // could be assignable or not assignable
     }
@@ -668,9 +683,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type!.assignable = false
                 return
             } else {
-                typeVariable(variable: expr.to as! VariableExpr, type: expr.value.type!)
-                expr.type = expr.to.type!
-                expr.type!.assignable = false
+                // infer type
+                // do not allow void to be assigned to a variable!
+                if expr.value.type is QsVoidType {
+                    error(message: "Type '\(printType(expr.value.type))' cannot be assigned to a variable", start: expr.value.startLocation, end: expr.value.endLocation)
+                    typeVariable(variable: expr.to as! VariableExpr, type: QsErrorType())
+                    expr.type = QsErrorType(assignable: false)
+                } else {
+                    typeVariable(variable: expr.to as! VariableExpr, type: expr.value.type!)
+                    expr.type = expr.to.type!
+                    expr.type!.assignable = false
+                }
                 return
             }
         } else {
@@ -692,6 +715,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     internal func visitClassStmt(stmt: ClassStmt) {
         symbolTable.gotoTable(stmt.scopeIndex!)
+        let previousClassIndex = currentClassIndex
+        currentClassIndex = stmt.symbolTableIndex
         // type all of the fields
         func typeField(_ field: ClassField) {
             if field.symbolTableIndex == nil {
@@ -735,6 +760,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             processMethodStmt(stmt: method, isInitializer: false, accompanyingClassStmt: stmt)
         }
         
+        currentClassIndex = previousClassIndex
         symbolTable.exitScope()
     }
     
@@ -756,6 +782,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return
         }
         symbolTable.gotoTable(stmt.scopeIndex!)
+        let previousFunction = currentFunctionIndex
+        currentFunctionIndex = stmt.symbolTableIndex
         
         // parameters are already typed
         for stmt in stmt.body {
@@ -763,6 +791,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         symbolTable.exitScope()
+        currentFunctionIndex = previousFunction
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
@@ -798,7 +827,25 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitReturnStmt(stmt: ReturnStmt) {
-        // TODO
+        if stmt.value != nil {
+            typeCheck(stmt.value!)
+        }
+        if currentFunctionIndex != nil {
+            let symbol = symbolTable.getSymbol(id: currentFunctionIndex!) as! FunctionLikeSymbol
+            let returnType = symbol.returnType
+            if returnType is QsVoidType {
+                if !(stmt.value is QsVoidType) {
+                    error(message: "Expected non-void return value in void function", start: stmt.value!.startLocation, end: stmt.value!.endLocation)
+                }
+            } else {
+                if stmt.value is QsVoidType {
+                    error(message: "Non-void function should return a value", start: stmt.keyword.startLocation, end: stmt.keyword.startLocation)
+                } else {
+                    
+                    assertType(expr: stmt.value!, errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'", typeAssertions: .isSubTypeOf(returnType))
+                }
+            }
+        }
     }
     
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
@@ -850,27 +897,33 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return type.accept(visitor: self)
     }
     
+    private func typeFunction(functionSymbol: inout FunctionLikeSymbol) {
+        let functionStmt = functionSymbol.getUnderlyingFunctionStmt()
+        if functionStmt.annotation != nil {
+            functionSymbol.returnType = typeCheck(functionStmt.annotation!)
+        } else {
+            functionSymbol.returnType = QsVoidType()
+        }
+        for i in 0..<functionStmt.params.count {
+            let param = functionStmt.params[i]
+            var paramType: QsType = QsAnyType(assignable: false)
+            if param.astType != nil {
+                paramType = typeCheck(param.astType!)
+            }
+            if functionStmt.params[i].symbolTableIndex != nil {
+                let symbol = self.symbolTable.getSymbol(id: functionStmt.params[i].symbolTableIndex!) as! VariableSymbol
+                symbol.type = paramType
+            }
+        }
+    }
+    
     private func typeFunctions() {
         // assign types to their parameters and their return types
         for symbolTable in symbolTable.getAllSymbols() {
             guard var functionSymbol = symbolTable as? FunctionLikeSymbol else {
                 continue
             }
-            let functionStmt = functionSymbol.getUnderlyingFunctionStmt()
-            if functionStmt.annotation != nil {
-                functionSymbol.returnType = typeCheck(functionStmt.annotation!)
-            }
-            for i in 0..<functionStmt.params.count {
-                let param = functionStmt.params[i]
-                var paramType: QsType = QsAnyType(assignable: false)
-                if param.astType != nil {
-                    paramType = typeCheck(param.astType!)
-                }
-                if functionStmt.params[i].symbolTableIndex != nil {
-                    let symbol = self.symbolTable.getSymbol(id: functionStmt.params[i].symbolTableIndex!) as! VariableSymbol
-                    symbol.type = paramType
-                }
-            }
+            typeFunction(functionSymbol: &functionSymbol)
         }
     }
     

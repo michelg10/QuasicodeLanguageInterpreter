@@ -405,9 +405,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var symbolTableIndex = -1
         if withinClass == nil {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsAnyType(assignable: false)))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsVoidType()))
         } else {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsAnyType(assignable: false), finishedInit: false))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false))
         }
         stmt.symbolTableIndex = symbolTableIndex
         let functionNameSymbolName = "$FuncName$"+stmt.name.lexeme
