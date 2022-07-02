@@ -277,6 +277,18 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
+        if expr.name.lexeme == "super" && currentClassIndex != nil {
+            let currentClassSymbol = symbolTable.getSymbol(id: currentClassIndex!) as! ClassSymbol
+            if currentClassSymbol.classChain != nil {
+                let classChain = currentClassSymbol.classChain!
+                if classChain.upperClass != nil {
+                    let parentClass = classChain.upperClass!
+                    let parentClassSymbol = symbolTable.getSymbol(id: parentClass) as! ClassSymbol
+                    expr.type = QsClass(name: parentClassSymbol.name, id: parentClass, assignable: false)
+                    return
+                }
+            }
+        }
         if expr.symbolTableIndex == nil {
             expr.type = QsErrorType(assignable: true)
             return
@@ -367,16 +379,31 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             // look up an instance method on the object
             if expr.object is ThisExpr {
                 blockPolymorphicCall = true
-            }
-            if expr.object!.type is QsClass {
+            } else if expr.object!.type is QsClass {
                 let objectClassType = expr.object!.type! as! QsClass
                 let classSymbol = symbolTable.getSymbol(id: objectClassType.id) as! ClassSymbol
                 symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
                 potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
-                // filter through and get only the instance methods
-                potentialFunctions.removeAll { val in
-                    let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
-                    return functionSymbol.methodStmt.isStatic
+                if expr.object is VariableExpr && (expr.object as! VariableExpr).name.lexeme == "super" {
+                    // 'super' is dependent on whether the context is static or nonstatic
+                    if currentFunctionIndex != nil {
+                        let currentFunctionSymbol = symbolTable.getSymbol(id: currentFunctionIndex!)
+                        if currentFunctionSymbol is MethodSymbol {
+                            let currentFunctionSymbol = currentFunctionSymbol as! MethodSymbol
+                            let isStatic = currentFunctionSymbol.methodStmt.isStatic
+                            // got whether or not its static, now filter through
+                            potentialFunctions.removeAll { val in
+                                let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
+                                return functionSymbol.methodStmt.isStatic != isStatic
+                            }
+                        }
+                    }
+                } else {
+                    // filter through and get only the instance methods
+                    potentialFunctions.removeAll { val in
+                        let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
+                        return functionSymbol.methodStmt.isStatic
+                    }
                 }
             }
             // TODO: public and private
