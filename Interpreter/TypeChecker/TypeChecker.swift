@@ -357,6 +357,63 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+    private func pickBestFunctions(potentialFunctions: [Int], withParameters: [QsType]) -> [Int] {
+        var bestMatches: [Int] = []
+        var bestMatchLevel = Int.max
+        var bestMatchBelongsToClassId = -1 // the symbol table ID for the class symbol to which the best classes belong to
+        for potentialFunction in potentialFunctions {
+            guard let functionSymbolEntry = symbolTable.getSymbol(id: potentialFunction) as? FunctionLikeSymbol else {
+                assertionFailure("Symbol at index is not a function symbol")
+                continue
+                
+            }
+            if !functionSymbolEntry.paramRange.contains(withParameters.count) {
+                // that's a no go
+                continue
+            }
+            var matchLevel = 1
+            for i in 0..<withParameters.count {
+                let givenType = withParameters[i]
+                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
+                if typesIsEqual(givenType, expectedType) {
+                    matchLevel = max(matchLevel, 1)
+                    continue
+                }
+                let commonType = findCommonType(givenType, expectedType)
+                if typesIsEqual(commonType, expectedType) {
+                    if expectedType is QsAnyType {
+                        // the given type is being casted to an any
+                        matchLevel = max(matchLevel, 3)
+                    } else {
+                        matchLevel = max(matchLevel, 2)
+                    }
+                } else {
+                    matchLevel = Int.max
+                    break
+                }
+            }
+            
+            var belongsToClass = -1
+            if functionSymbolEntry is MethodSymbol {
+                let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
+                belongsToClass = functionSymbolEntry.withinClass
+            }
+            if matchLevel < bestMatchLevel {
+                bestMatchLevel = matchLevel
+                bestMatches = [potentialFunction]
+                if functionSymbolEntry is MethodSymbol {
+                    let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
+                    bestMatchBelongsToClassId = belongsToClass
+                }
+            } else if matchLevel == bestMatchLevel {
+                if belongsToClass == bestMatchBelongsToClassId {
+                    bestMatches.append(potentialFunction)
+                }
+            }
+        }
+        return bestMatches
+    }
+    
     internal func visitCallExpr(expr: CallExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
@@ -494,59 +551,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
-        var bestMatches: [Int] = []
-        var bestMatchLevel = Int.max
-        var bestMatchBelongsToClassId = -1 // the symbol table ID for the class symbol to which the best classes belong to
-        for potentialFunction in potentialFunctions {
-            guard let functionSymbolEntry = symbolTable.getSymbol(id: potentialFunction) as? FunctionLikeSymbol else {
-                assertionFailure("Symbol at index is not a function symbol")
-                continue
-                
-            }
-            if !functionSymbolEntry.paramRange.contains(expr.arguments.count) {
-                // that's a no go
-                continue
-            }
-            var matchLevel = 1
-            for i in 0..<expr.arguments.count {
-                let givenType = expr.arguments[i].type!
-                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
-                if typesIsEqual(givenType, expectedType) {
-                    matchLevel = max(matchLevel, 1)
-                    continue
-                }
-                let commonType = findCommonType(givenType, expectedType)
-                if typesIsEqual(commonType, expectedType) {
-                    if expectedType is QsAnyType {
-                        // the given type is being casted to an any
-                        matchLevel = max(matchLevel, 3)
-                    } else {
-                        matchLevel = max(matchLevel, 2)
-                    }
-                } else {
-                    matchLevel = Int.max
-                    break
-                }
-            }
-            
-            var belongsToClass = -1
-            if functionSymbolEntry is MethodSymbol {
-                let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
-                belongsToClass = functionSymbolEntry.withinClass
-            }
-            if matchLevel < bestMatchLevel {
-                bestMatchLevel = matchLevel
-                bestMatches = [potentialFunction]
-                if functionSymbolEntry is MethodSymbol {
-                    let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
-                    bestMatchBelongsToClassId = belongsToClass
-                }
-            } else if matchLevel == bestMatchLevel {
-                if belongsToClass == bestMatchBelongsToClassId {
-                    bestMatches.append(potentialFunction)
-                }
-            }
-        }
+        let bestMatches: [Int] = pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: expr.arguments.map({ expr in
+            expr.type!
+        }))
         if bestMatches.count == 0 {
             error(message: "No matching function to call", on: expr)
             return
