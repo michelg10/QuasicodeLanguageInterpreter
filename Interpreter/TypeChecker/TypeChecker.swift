@@ -686,7 +686,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             let symbol = symbolTable.getSymbol(id: object.symbolTableIndex!) as! VariableSymbol
             
-            getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .limitToNonstatic)
+            getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .noLimit)
             return
         } else {
             if expr.object.type is QsErrorType {
