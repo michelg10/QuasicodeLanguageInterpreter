@@ -2,8 +2,9 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
     private var symbolTable: SymbolTables
-    private var reportErrorForStatement: ((_ statement: Stmt, _ message: String) -> Void)
+    private var reportErrorForReturnStatement: ((_ returnStatement: ReturnStmt, _ message: String) -> Void)
     private var reportErrorForExpression: ((_ expression: Expr, _ message: String) -> Void)
+    private var reportEndingError: ((_ message: String) -> Void)
     private var withinClass: Int = 0
     
     typealias State = ([Int : Bool], Int, Int)
@@ -16,17 +17,21 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         symbolTable.gotoTable(state.2)
     }
     
-    internal init(reportErrorForStatement: @escaping ((Stmt, String) -> Void), reportErrorForExpression: @escaping ((Expr, String) -> Void), symbolTable: SymbolTables) {
-        self.reportErrorForStatement = reportErrorForStatement
+    internal init(reportErrorForReturnStatement: @escaping ((ReturnStmt, String) -> Void), reportErrorForExpression: @escaping ((Expr, String) -> Void), reportEndingError: @escaping ((String) -> Void), symbolTable: SymbolTables) {
+        self.reportErrorForReturnStatement = reportErrorForReturnStatement
         self.reportErrorForExpression = reportErrorForExpression
+        self.reportEndingError = reportEndingError
         self.symbolTable = symbolTable
     }
     
-    private func reportError(_ statement: Stmt, message: String) {
-        reportErrorForStatement(statement, message)
+    private func reportError(_ returnStatement: ReturnStmt, message: String) {
+        reportErrorForReturnStatement(returnStatement, message)
     }
     private func reportError(_ expression: Expr, message: String) {
         reportErrorForExpression(expression, message)
+    }
+    private func reportEndingError(message: String) {
+        reportEndingError(message)
     }
     
     private func getUninitialized() -> [Int] {
@@ -55,7 +60,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         markVariables(stmt.expression)
     }
     
-    var branchingInitializedSetsStack: [Set<Int>] = []
+    private var branchingInitializedSetsStack: [Set<Int>] = []
     
     internal func visitIfStmt(stmt: IfStmt) {
         markVariables(stmt.condition)
@@ -93,7 +98,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         
         restoreState(state: previousTrackedState)
         for remaining in runningUnion {
-            hasInitializedDict[remaining] = true
+            markAsInitialized(remaining)
         }
     }
     
@@ -332,11 +337,11 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     private func assertIsMarked(variableId: Int, expr: Expr) {
         if hasInitializedDict[variableId] == false {
             let symbolName = symbolTable.getSymbol(id: variableId).name
-            reportError(expr, message: "Variable 'this.\(symbolName) used before being initialized")
+            reportError(expr, message: "Variable 'this.\(symbolName)' used before being initialized")
         }
     }
     
-    public func trackVariable(_ variableId: Int) {
+    public func trackVariable(variableId: Int) {
         if hasInitializedDict[variableId] == nil {
             totalUninitialized+=1
         }
@@ -345,5 +350,11 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     
     public func checkStatements(_ statements: [Stmt], withinClass: Int) {
         self.withinClass = withinClass
+        for statement in statements {
+            markVariables(statement)
+        }
+        if !finishedInitialization() {
+            reportEndingError(message: "Implicit return from initializer without initializing all stored properties")
+        }
     }
 }

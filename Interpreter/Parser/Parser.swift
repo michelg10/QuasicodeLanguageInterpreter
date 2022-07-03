@@ -232,11 +232,11 @@ class Parser {
         
         let body = block(additionalEndMarkers: [])
         
-        try consume(type: .END, message: "Expect 'end function' after function declaration")
+        let endOfFunction = try consume(type: .END, message: "Expect 'end function' after function declaration")
         try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
-        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: parameters, annotation: functionType, body: body.statements)
+        return FunctionStmt(keyword: keyword, name: name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: parameters, annotation: functionType, body: body.statements, endOfFunction: endOfFunction)
     }
     
     private func statement() throws -> Stmt {

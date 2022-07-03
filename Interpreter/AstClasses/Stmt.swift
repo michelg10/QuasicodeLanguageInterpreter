@@ -148,8 +148,9 @@ class FunctionStmt: Stmt {
     var params: [FunctionParam]
     var annotation: AstType?
     var body: [Stmt]
+    var endOfFunction: Token
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
@@ -158,6 +159,7 @@ class FunctionStmt: Stmt {
         self.params = params
         self.annotation = annotation
         self.body = body
+        self.endOfFunction = endOfFunction
     }
     init(_ objectToCopy: FunctionStmt) {
         self.keyword = objectToCopy.keyword
@@ -168,6 +170,7 @@ class FunctionStmt: Stmt {
         self.params = objectToCopy.params
         self.annotation = objectToCopy.annotation
         self.body = objectToCopy.body
+        self.endOfFunction = objectToCopy.endOfFunction
     }
 
     func accept(visitor: StmtVisitor) {

@@ -932,10 +932,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
         }
+        
         typeCheck(expr.value)
         typeCheck(expr.to)
         
-        if assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
+        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
             // this shouldn't be possible but... just in case constants are added in later on?
             return
         }
@@ -952,9 +953,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 // do not allow void to be assigned to a variable!
                 if expr.value.type is QsVoidType {
                     error(message: "Type '\(printType(expr.value.type))' cannot be assigned to a variable", on: expr.value)
-                    typeVariable(variable: expr.to as! VariableExpr, type: QsErrorType())
+                    typeVariable(variable: expr.to, type: QsErrorType())
                 } else {
-                    typeVariable(variable: expr.to as! VariableExpr, type: expr.value.type!)
+                    typeVariable(variable: expr.to, type: expr.value.type!)
+                    
                     expr.type = expr.to.type!
                 }
                 return
@@ -1031,8 +1033,30 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool, accompanyingClassStmt: ClassStmt) {
         // otherwise just process it like a function
         typeCheck(stmt.function)
-        if isInitializer {
-            // TODO: do the initializer stuff
+        let isDub = stmt.function.keyword.isDummy()
+        
+        if isInitializer && !isDub {
+            let instanceVariableHasInitializedInInitializerChecker = InstanceVariableHasInitializedInInitializerChecker(
+                reportErrorForReturnStatement: { returnStmt, message in
+                    self.error(message: message, on: returnStmt.keyword)
+                },
+                reportErrorForExpression: { expr, message in
+                    self.error(message: message, on: expr)
+                },
+                reportEndingError: { message in
+                    self.error(message: message, on: stmt.function.endOfFunction)
+                },
+                symbolTable: symbolTable
+            )
+            for field in accompanyingClassStmt.fields {
+                if field.symbolTableIndex != nil {
+                    instanceVariableHasInitializedInInitializerChecker.trackVariable(variableId: field.symbolTableIndex!)
+                }
+            }
+            if accompanyingClassStmt.symbolTableIndex != nil {
+                
+                instanceVariableHasInitializedInInitializerChecker.checkStatements(stmt.function.body, withinClass: accompanyingClassStmt.symbolTableIndex!)
+            }
         }
     }
     
@@ -1100,14 +1124,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let symbol = symbolTable.getSymbol(id: currentFunctionIndex!) as! FunctionLikeSymbol
             let returnType = symbol.returnType
             if returnType is QsVoidType {
-                if !(stmt.value is QsVoidType) {
+                if stmt.value != nil {
                     error(message: "Expected non-void return value in void function", on: stmt.value!)
                 }
             } else {
-                if stmt.value is QsVoidType {
+                if stmt.value == nil {
                     error(message: "Non-void function should return a value", on: stmt.keyword)
                 } else {
-                    
                     assertType(expr: stmt.value!, errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'", typeAssertions: .isSubTypeOf(returnType))
                 }
             }

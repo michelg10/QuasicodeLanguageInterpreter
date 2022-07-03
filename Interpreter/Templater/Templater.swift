@@ -565,7 +565,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
                 }
             }
             if canAddEmptyInitializer {
-                let newFunctionStmt = FunctionStmt(keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"), name: classStmt.name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: [], annotation: nil, body: [])
+                let newFunctionStmt = FunctionStmt(keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"), name: classStmt.name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: [], annotation: nil, body: [], endOfFunction: .dummyToken(tokenType: .END, lexeme: "end"))
                 let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt)
                 classStmt.methods.append(newMethodStmt)
             }

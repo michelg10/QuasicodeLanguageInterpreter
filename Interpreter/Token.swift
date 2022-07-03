@@ -5,6 +5,10 @@ struct Token {
     let endLocation: InterpreterLocation
     let value: Any?
     
+    func isDummy() -> Bool {
+        return startLocation.line == -1
+    }
+    
     static func dummyToken(tokenType: TokenType, lexeme: String) -> Token {
         return .init(tokenType: tokenType, lexeme: lexeme, start: .dub(), end: .dub())
     }
