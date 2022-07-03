@@ -140,6 +140,11 @@ class ClassSymbol: Symbol {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
+        if classStmt.expandedTemplateParameters == nil || classStmt.expandedTemplateParameters!.count == 0 {
+            displayName = classStmt.name.lexeme
+        } else {
+            displayName = name
+        }
         self.classId = classId
         self.classChain = classChain
         self.classStmt = classStmt
@@ -148,6 +153,7 @@ class ClassSymbol: Symbol {
     var id: Int
     var belongsToTable: Int
     let name: String
+    let displayName: String
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt

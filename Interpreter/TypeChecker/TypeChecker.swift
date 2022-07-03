@@ -97,7 +97,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     (bClassId, bChain) = try jumpUpChain(classChain: bChain)
                 }
                 
-                return QsClass(name: aChain.classStmt.name.lexeme, id: aClassId)
+                let classSymbol = symbolTable.getSymbol(id: aClassId) as! ClassSymbol
+                return QsClass(name: classSymbol.displayName, id: aClassId)
             }
         } catch {
             return QsErrorType()
@@ -111,10 +112,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
         let classSignature = generateClassSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
-        guard let symbolTableId = symbolTable.queryAtGlobalOnly(classSignature)?.id else {
+        guard let symbol = symbolTable.queryAtGlobalOnly(classSignature) as? ClassSymbol else {
             return QsErrorType()
         }
-        return QsClass(name: asttype.name.lexeme, id: symbolTableId)
+        return QsClass(name: symbol.displayName, id: symbol.id)
     }
     
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
@@ -299,7 +300,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if classChain.upperClass != nil {
                     let parentClass = classChain.upperClass!
                     let parentClassSymbol = symbolTable.getSymbol(id: parentClass) as! ClassSymbol
-                    expr.type = QsClass(name: parentClassSymbol.name, id: parentClass, assignable: false)
+                    expr.type = QsClass(name: parentClassSymbol.displayName, id: parentClass, assignable: false)
                     return
                 }
             }
@@ -662,7 +663,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return
             }
             
-            getPropertyForObject(property: expr.property, className: object.classType.name.lexeme, classId: object.classId!, staticLimit: .limitToStatic)
+            let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
+            getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classStmt.scopeIndex!, staticLimit: .limitToStatic)
             return
         } else if expr.object is ThisExpr {
             let object = expr.object as! ThisExpr
@@ -774,7 +776,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // TODO: resolve the call using code from the call expr for this
         let classSignature = generateClassSignature(className: expr.classType.name.lexeme, templateAstTypes: expr.classType.templateArguments)
         let classSymbol = symbolTable.queryAtGlobalOnly(classSignature) as! ClassSymbol
-        expr.type = QsClass(name: expr.classType.name.lexeme, id: classSymbol.id)
+        expr.type = QsClass(name: classSymbol.displayName, id: classSymbol.id)
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
@@ -935,6 +937,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitClassStmt(stmt: ClassStmt) {
+        if stmt.symbolTableIndex == nil {
+            return
+        }
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         symbolTable.gotoTable(stmt.scopeIndex!)
         let previousClassIndex = currentClassIndex
@@ -963,11 +968,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for field in stmt.staticFields {
             typeField(field)
         }
+        let symbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! ClassSymbol
         if stmt.staticThisSymbolTableIndex != nil && stmt.instanceThisSymbolTableIndex != nil && stmt.symbolTableIndex != nil {
             let relatedInstanceThisSymbol = symbolTable.getSymbol(id: stmt.instanceThisSymbolTableIndex!) as! VariableSymbol
-            relatedInstanceThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
+            relatedInstanceThisSymbol.type = QsClass(name: symbol.displayName, id: stmt.symbolTableIndex!)
             let relatedStaticThisSymbol = symbolTable.getSymbol(id: stmt.staticThisSymbolTableIndex!) as! VariableSymbol
-            relatedStaticThisSymbol.type = QsClass(name: stmt.name.lexeme, id: stmt.symbolTableIndex!)
+            relatedStaticThisSymbol.type = QsClass(name: symbol.displayName, id: stmt.symbolTableIndex!)
         }
         
         // type all of the methods
@@ -980,11 +986,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func processMethodStmt(stmt: MethodStmt, isInitializer: Bool, accompanyingClassStmt: ClassStmt) {
+        // otherwise just process it like a function
+        typeCheck(stmt.function)
         if isInitializer {
             // TODO: do the initializer stuff
         }
-        // otherwise just process it like a function
-        typeCheck(stmt.function)
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {

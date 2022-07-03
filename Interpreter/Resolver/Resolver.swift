@@ -85,7 +85,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         symbolTable.gotoTable(upperClass.classStmt.scopeIndex!)
         
         let findVariable = symbolTable.query(expr.property.lexeme)
-        let errorString = "Superclass '\(expr.property.lexeme)' has no member '\(expr.property.lexeme)'"
+        let errorString = "Superclass '\(upperClass.displayName)' has no member '\(expr.property.lexeme)'"
         if !(findVariable is VariableSymbol) {
             error(message: errorString, start: expr.startLocation, end: expr.endLocation)
             return
@@ -815,7 +815,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             
             // check if the two classes are already related.
             if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
-                error(message: "'\(classStmt.name.lexeme)' inherits from itself", token: classStmt.name)
+                error(message: "'\(classSymbol.displayName)' inherits from itself", token: classStmt.name)
                 continue
             }
             inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)

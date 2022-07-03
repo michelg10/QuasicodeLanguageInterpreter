@@ -44,7 +44,7 @@ func printMethodInfo(_ symbol: MethodSymbol) -> String {
     return "returnType: \(printType(symbol.returnType)),withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit), isConstructor: \(symbol.isConstructor)"
 }
 func printClassInfo(_ symbol: ClassSymbol) -> String {
-    return "classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.classChain?.depth)), parentOf: \(stringifyOptionalIntArray(symbol.classChain?.parentOf)), upperClass: \(stringifyOptionalInt(symbol.classChain?.upperClass))"
+    return "displayName: \(symbol.displayName), classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.classChain?.depth)), parentOf: \(stringifyOptionalIntArray(symbol.classChain?.parentOf)), upperClass: \(stringifyOptionalInt(symbol.classChain?.upperClass))"
 }
 func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
     return ""
