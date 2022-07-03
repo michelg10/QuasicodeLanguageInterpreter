@@ -48,7 +48,7 @@ class SymbolTables {
         current = tables[index]
     }
     
-    public func exitScope() {
+    private func exitScope() {
         current = current.parent!
     }
     

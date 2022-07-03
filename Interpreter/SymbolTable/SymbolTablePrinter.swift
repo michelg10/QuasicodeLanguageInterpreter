@@ -26,7 +26,7 @@ func printSymbol(symbol: Symbol) -> [String] {
     default:
         result = "Unexpected symbol type \(type(of: symbol))"
     }
-    return [String(symbol.id), String(symbol.name), symbolType, result]
+    return [String(symbol.id), String(symbol.belongsToTable), String(symbol.name), symbolType, result]
 }
 func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
     return printVariableInfo(symbol)

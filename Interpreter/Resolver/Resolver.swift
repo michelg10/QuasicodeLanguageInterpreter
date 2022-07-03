@@ -74,9 +74,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             return
         }
         let upperClass = symbolTable.getSymbol(id: classChain.upperClass!) as! ClassSymbol
-        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
         if upperClass.classStmt.scopeIndex == nil {
             return
+        }
+        
+        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
+        defer {
+            symbolTable.gotoTable(previousSymbolTablePosition)
         }
         symbolTable.gotoTable(upperClass.classStmt.scopeIndex!)
         
@@ -101,7 +105,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         default:
             error(message: errorString, start: expr.startLocation, end: expr.endLocation)
         }
-        symbolTable.gotoTable(previousSymbolTablePosition)
     }
     
     internal func visitVariableExpr(expr: VariableExpr) {
@@ -309,10 +312,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         guard stmt.symbolTableIndex != nil else {
             return
         }
-        let previousIsInGlobalScope = isInGlobalScope
-        isInGlobalScope = false
         let currentClassName = stmt.name.lexeme
         
+        let previousIsInGlobalScope = isInGlobalScope
+        isInGlobalScope = false
+        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
         symbolTable.gotoTable(stmt.scopeIndex!)
     linkSymbolTableToSuperclass: if stmt.superclass != nil {
             let superclassSignature = generateClassSignature(className: stmt.superclass!.name.lexeme, templateAstTypes: stmt.superclass!.templateArguments)
@@ -334,6 +338,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             currentClassType = .Class
         }
         currentClassStatus = .init(classType: currentClassType, name: currentClassName, symbolTableIndex: stmt.symbolTableIndex!)
+        
+        defer {
+            isInGlobalScope = previousIsInGlobalScope
+            currentClassStatus = previousClassStatus
+            symbolTable.gotoTable(previousSymbolTablePosition)
+        }
         
         guard let classSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as? ClassSymbol else {
             assertionFailure("Symbol at class statement is not a class symbol")
@@ -392,9 +402,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         for method in stmt.methods {
             resolve(method)
         }
-        symbolTable.exitScope()
-        currentClassStatus = previousClassStatus
-        isInGlobalScope = previousIsInGlobalScope
     }
     
     internal func visitMethodStmt(stmt: MethodStmt) {
@@ -421,7 +428,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private func resolveFunction(stmt: FunctionStmt) {
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = false
+        let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
+        defer {
+            symbolTable.gotoTable(previousSymbolTableIndex)
+            isInGlobalScope = previousIsInGlobalScope
+        }
         for i in 0..<stmt.params.count {
             stmt.params[i].symbolTableIndex = defineVariableWithInitializer(name: stmt.params[i].name, initializer: stmt.params[i].initializer)
         }
@@ -446,8 +458,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 superInitCallIsFirstLineOfInitializer = false
             }
         }
-        symbolTable.exitScope()
-        isInGlobalScope = previousIsInGlobalScope
     }
     
     private func defineFunction(stmt: FunctionStmt) throws -> Int {
@@ -568,9 +578,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         isInLoop = true
+        defer {
+            isInLoop = previousLoopState
+        }
         resolve(stmt.body)
-        
-        isInLoop = previousLoopState
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) {
@@ -581,9 +592,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         isInLoop = true
+        defer {
+            isInLoop = previousLoopState
+        }
         resolve(stmt.body)
-        
-        isInLoop = previousLoopState
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) {
@@ -599,12 +611,15 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitBlockStmt(stmt: BlockStmt) {
+        let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         let previousInGlobalScope = isInGlobalScope
         isInGlobalScope = false
+        defer {
+            isInGlobalScope = previousInGlobalScope
+            symbolTable.gotoTable(previousSymbolTableIndex)
+        }
         resolve(stmt.statements)
-        isInGlobalScope = previousInGlobalScope
-        symbolTable.exitScope()
     }
     
     private func error(message: String, token: Token) -> ResolverError {
@@ -647,7 +662,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: stmt.name.lexeme))
         }
         
+        let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
+        defer {
+            symbolTable.gotoTable(previousSymbolTableIndex)
+        }
         for method in stmt.methods {
             catchErrorClosure {
                 try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.id)
@@ -673,7 +692,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         for field in stmt.staticFields {
             defineField(field: field)
         }
-        symbolTable.exitScope()
         
         return symbolTableIndex
     }

@@ -101,12 +101,17 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     internal func visitBlockStmt(stmt: BlockStmt) {
         let previousIsInControlFlow = isInControlFlow
         isInControlFlow = true
-        if stmt.scopeIndex != nil {
-            symbolTable.gotoTable(stmt.scopeIndex!)
-            markVariables(stmt.statements)
-            symbolTable.exitScope()
+        defer {
+            isInControlFlow = previousIsInControlFlow
         }
-        isInControlFlow = previousIsInControlFlow
+        if stmt.scopeIndex != nil {
+            let previousSymbolTablePosition = symbolTable.getCurrentTableId()
+            symbolTable.gotoTable(stmt.scopeIndex!)
+            defer {
+                symbolTable.gotoTable(previousSymbolTablePosition)
+            }
+            markVariables(stmt.statements)
+        }
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {

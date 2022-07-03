@@ -4,6 +4,7 @@ protocol Expr {
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
+    func fallbackToErrorType(assignable: Bool)
     var type: QsType? { get set }
     var startLocation: InterpreterLocation { get set }
     var endLocation: InterpreterLocation { get set }
@@ -143,6 +144,12 @@ class GroupingExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitGroupingExpr(expr: self)
     }
@@ -179,6 +186,12 @@ class LiteralExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitLiteralExpr(expr: self)
     }
@@ -213,6 +226,12 @@ class ArrayLiteralExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -254,6 +273,12 @@ class StaticClassExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitStaticClassExpr(expr: self)
     }
@@ -291,6 +316,12 @@ class ThisExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -335,6 +366,12 @@ class SuperExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitSuperExpr(expr: self)
     }
@@ -372,6 +409,12 @@ class VariableExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -414,6 +457,12 @@ class SubscriptExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -467,6 +516,12 @@ class CallExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitCallExpr(expr: self)
     }
@@ -512,6 +567,12 @@ class GetExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitGetExpr(expr: self)
     }
@@ -549,6 +610,12 @@ class UnaryExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -590,6 +657,12 @@ class CastExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitCastExpr(expr: self)
     }
@@ -629,6 +702,12 @@ class ArrayAllocationExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitArrayAllocationExpr(expr: self)
     }
@@ -666,6 +745,12 @@ class ClassAllocationExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -710,6 +795,12 @@ class BinaryExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(expr: self)
     }
@@ -752,6 +843,12 @@ class LogicalExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitLogicalExpr(expr: self)
     }
@@ -789,6 +886,12 @@ class SetExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
@@ -839,6 +942,12 @@ class AssignExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitAssignExpr(expr: self)
     }
@@ -884,6 +993,12 @@ class IsTypeExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
     func accept(visitor: ExprVisitor) {
         visitor.visitIsTypeExpr(expr: self)
     }
@@ -918,6 +1033,12 @@ class ImplicitCastExpr: Expr {
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
     }
 
     func accept(visitor: ExprVisitor) {
