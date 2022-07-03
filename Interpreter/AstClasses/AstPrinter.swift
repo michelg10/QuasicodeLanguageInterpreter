@@ -132,7 +132,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     internal func visitSubscriptExprString(expr: SubscriptExpr) -> String {
         return parenthesize(name: "Subscript", additionalProperties: [
-            ("accessingInstanceVariable", stringifyOptionalInt(expr.accessingInstanceVariable))
         ]+generateAdditionalTypePropertyArray(expr), exprs: expr.expression, expr.index)
     }
     
@@ -159,7 +158,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return parenthesize(name: "Get", additionalProperties: [
             ("property", expr.property.lexeme),
             ("propertyId", stringifyOptionalInt(expr.propertyId)),
-            ("accessingInstanceVariable", stringifyOptionalInt(expr.accessingInstanceVariable))
         ]+generateAdditionalTypePropertyArray(expr), exprs: expr.object)
     }
     

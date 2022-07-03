@@ -614,10 +614,10 @@ class Parser {
                 }
             } else if match(types: .DOT) {
                 let name = try consume(type: .IDENTIFIER, message: "Expect property name after '.'.")
-                expr = GetExpr(object: expr, property: name, propertyId: nil, accessingInstanceVariable: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: name))
+                expr = GetExpr(object: expr, property: name, propertyId: nil, type: nil, startLocation: expr.startLocation, endLocation: .init(end: name))
             } else if match(types: .LEFT_BRACKET) {
                 let index = try expression()
-                expr = SubscriptExpr(expression: expr, index: index, accessingInstanceVariable: nil, type: nil, startLocation: expr.startLocation, endLocation: index.endLocation)
+                expr = SubscriptExpr(expression: expr, index: index, type: nil, startLocation: expr.startLocation, endLocation: index.endLocation)
                 try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
             } else {
                 break
@@ -658,7 +658,7 @@ class Parser {
                 let staticClassExpr = StaticClassExpr(classType: classSignature as! AstClassType, classId: nil, type: nil, startLocation: classSignature!.startLocation, endLocation: classSignature!.endLocation)
                 try consume(type: .DOT, message: "Expected member name or constructor call after type name")
                 let property = try consume(type: .IDENTIFIER, message: "Expect member name following '.'")
-                return GetExpr(object: staticClassExpr, property: property, propertyId: nil, accessingInstanceVariable: nil, type: nil, startLocation: staticClassExpr.startLocation, endLocation: property.endLocation)
+                return GetExpr(object: staticClassExpr, property: property, propertyId: nil, type: nil, startLocation: staticClassExpr.startLocation, endLocation: property.endLocation)
             }
             return VariableExpr(name: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
