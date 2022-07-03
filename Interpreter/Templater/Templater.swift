@@ -49,9 +49,9 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         for field in fields {
             var newField = field
             if field.astType != nil {
-                newField.astType = catchErrorClosure {
-                    try expandClasses(field.astType!)
-                }
+                newField.astType = (catchErrorClosure {
+                    try expandClasses(field.astType)
+                } ?? field.astType)
             }
             
             if field.initializer != nil {

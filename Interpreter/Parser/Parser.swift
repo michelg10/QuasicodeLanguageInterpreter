@@ -162,27 +162,28 @@ class Parser {
                 }
             } else if match(types: .IDENTIFIER) {
                 let fieldName = previous()
-                var typeAnnotation: AstType? = nil
+                var typeAnnotation: AstType
                 var initializer: Expr? = nil
-                if match(types: .COLON) {
-                    typeAnnotation = try typeSignature(matchArray: true, optional: false)
-                }
-                if match(types: .EQUAL) {
-                    initializer = try expression()
-                }
-                if isStatic! && initializer == nil {
-                    error(message: "Static field requires an initial value", token: fieldName)
-                } else {
-                    if typeAnnotation == nil && initializer == nil {
-                        error(message: "Field requires either a type annotation or an initial value", token: fieldName)
+                do {
+                    try consume(type: .COLON, message: "Expect type annotation for field declaration")
+                    guard let typeAnnotation = try typeSignature(matchArray: true, optional: false) else {
+                        throw ParserError.error("Expected non-nil")
                     }
-                }
-                let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
-                try consume(type: .EOL, message: "Expect end-of-line after field declaration")
-                if isStatic! {
-                    staticFields.append(field)
-                } else {
-                    fields.append(field)
+                    if match(types: .EQUAL) {
+                        initializer = try expression()
+                    }
+                    if isStatic! && initializer == nil {
+                        error(message: "Static field requires an initial value", token: fieldName)
+                    }
+                    let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
+                    try consume(type: .EOL, message: "Expect end-of-line after field declaration")
+                    if isStatic! {
+                        staticFields.append(field)
+                    } else {
+                        fields.append(field)
+                    }
+                } catch {
+                    synchronize()
                 }
             } else if match(types: .EOL) {
                 // ignore

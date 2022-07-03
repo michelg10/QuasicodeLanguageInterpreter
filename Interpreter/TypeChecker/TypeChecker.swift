@@ -646,6 +646,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
             }
             
+            expr.type = queriedSymbol.type
+            expr.type?.assignable = true
             expr.propertyId = queriedSymbol.id
         }
         func getPropertyForObject(property: Token, className: String, classId: Int, staticLimit: StaticLimit) {
@@ -685,9 +687,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return
                 }
             } else if expr.object.type is QsClass {
-                
+                // fetch the instance property
+                let objectType = expr.object.type as! QsClass
+                getPropertyForObject(property: expr.property, className: objectType.name, classId: objectType.id, staticLimit: .limitToNonstatic)
             } else {
-                
+                error(message: propertyDoesNotExistErrorMessage, on: expr)
             }
         }
     }
@@ -948,19 +952,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if field.initializer != nil {
                 typeCheck(field.initializer!)
             }
-            if field.astType != nil {
-                let fieldType = typeCheck(field.astType!)
-                fieldSymbol.type = fieldType
-                if field.initializer != nil {
-                    assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType))
-                }
-            } else {
-                if field.initializer == nil {
-                    fieldSymbol.type = QsErrorType(assignable: false)
-                } else {
-                    let inferredType = field.initializer!.type
-                    fieldSymbol.type = inferredType
-                }
+            let fieldType = fieldSymbol.type!
+            if field.initializer != nil {
+                assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType))
             }
         }
         for field in stmt.fields {
@@ -1145,11 +1139,36 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func typeFunctions() {
         // assign types to their parameters and their return types
-        for symbolTable in symbolTable.getAllSymbols() {
-            guard var functionSymbol = symbolTable as? FunctionLikeSymbol else {
+        for symbol in symbolTable.getAllSymbols() {
+            guard var functionSymbol = symbol as? FunctionLikeSymbol else {
                 continue
             }
             typeFunction(functionSymbol: &functionSymbol)
+        }
+    }
+    
+    private func typeClassFields(classStmt: ClassStmt) {
+        func typeField(classField: ClassField) {
+            guard let symbolTableIndex = classField.symbolTableIndex else {
+                return
+            }
+            let symbol = symbolTable.getSymbol(id: symbolTableIndex) as! VariableSymbol
+            symbol.type = typeCheck(classField.astType)
+        }
+        for field in classStmt.fields {
+            typeField(classField: field)
+        }
+        for field in classStmt.staticFields {
+            typeField(classField: field)
+        }
+    }
+    
+    private func typeClassFields() {
+        for symbol in symbolTable.getAllSymbols() {
+            guard var classSymbol = symbol as? ClassSymbol else {
+                continue
+            }
+            typeClassFields(classStmt: classSymbol.classStmt)
         }
     }
     
@@ -1178,6 +1197,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         self.symbolTable = symbolTables
         
         typeFunctions()
+        typeClassFields()
         typeGlobals(statements: statements)
         
         for statement in statements {

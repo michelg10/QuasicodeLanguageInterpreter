@@ -1,5 +1,5 @@
 class ClassField {
-    init(isStatic: Bool, visibilityModifier: VisibilityModifier, name: Token, astType: AstType? = nil, initializer: Expr? = nil, symbolTableIndex: Int? = nil) {
+    init(isStatic: Bool, visibilityModifier: VisibilityModifier, name: Token, astType: AstType, initializer: Expr? = nil, symbolTableIndex: Int? = nil) {
         self.isStatic = isStatic
         self.visibilityModifier = visibilityModifier
         self.name = name
@@ -11,7 +11,7 @@ class ClassField {
     var isStatic: Bool
     var visibilityModifier: VisibilityModifier
     var name: Token
-    var astType: AstType?
+    var astType: AstType
     var initializer: Expr?
     var symbolTableIndex: Int?
 }
