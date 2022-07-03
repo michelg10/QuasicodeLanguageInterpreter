@@ -546,10 +546,37 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         }
     }
     
+    func addEmptyInitializers(classStmts: [ClassStmt]) {
+        for classStmt in classStmts {
+            var canAddEmptyInitializer = true
+            for field in classStmt.fields {
+                if field.initializer == nil {
+                    canAddEmptyInitializer = false
+                    break
+                }
+            }
+            if !canAddEmptyInitializer {
+                continue
+            }
+            for field in classStmt.staticFields {
+                if field.initializer == nil {
+                    canAddEmptyInitializer = false
+                    break
+                }
+            }
+            if canAddEmptyInitializer {
+                let newFunctionStmt = FunctionStmt(keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"), name: classStmt.name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: [], annotation: nil, body: [])
+                let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt)
+                classStmt.methods.append(newMethodStmt)
+            }
+        }
+    }
+    
     func expandClasses(statements: [Stmt], classStmts: [ClassStmt]) -> ([Stmt], [InterpreterProblem]) {
         self.statements = statements
         problems = []
         classes = [:]
+        addEmptyInitializers(classStmts: classStmts)
         gatherClasses(classStmts: classStmts)
         
         expandClasses(statements)

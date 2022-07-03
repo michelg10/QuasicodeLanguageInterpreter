@@ -357,6 +357,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+    private func pickBestFunctions(potentialFunctions: [Int], withParameters: [Expr]) -> [Int] {
+        return pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: withParameters.map({ expr in
+            expr.type!
+        }))
+    }
+    
     private func pickBestFunctions(potentialFunctions: [Int], withParameters: [QsType]) -> [Int] {
         var bestMatches: [Int] = []
         var bestMatchLevel = Int.max
@@ -551,9 +557,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
-        let bestMatches: [Int] = pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: expr.arguments.map({ expr in
-            expr.type!
-        }))
+        let bestMatches: [Int] = pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: expr.arguments)
         if bestMatches.count == 0 {
             error(message: "No matching function to call", on: expr)
             return
@@ -780,10 +784,42 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
         }
-        // TODO: resolve the call using code from the call expr for this
         let classSignature = generateClassSignature(className: expr.classType.name.lexeme, templateAstTypes: expr.classType.templateArguments)
-        let classSymbol = symbolTable.queryAtGlobalOnly(classSignature) as! ClassSymbol
+        guard let classSymbol = symbolTable.queryAtGlobalOnly(classSignature) as? ClassSymbol else {
+            return
+        }
         expr.type = QsClass(name: classSymbol.displayName, id: classSymbol.id)
+        for argument in expr.arguments {
+            typeCheck(argument)
+        }
+        
+        
+        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
+        if classSymbol.classStmt.scopeIndex == nil {
+            return
+        }
+        symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+        defer {
+            symbolTable.gotoTable(previousSymbolTablePosition)
+        }
+        
+        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.classStmt.name.lexeme)
+        let noInitializerFoundErrorMessage = "No matches in call to initializer"
+        guard let initializerFunctionNameSymbol = initializerFunctionNameSymbol as? FunctionNameSymbol else {
+            error(message: noInitializerFoundErrorMessage, on: expr)
+            return
+        }
+        
+        let bestMatches = pickBestFunctions(potentialFunctions: initializerFunctionNameSymbol.belongingFunctions, withParameters: expr.arguments)
+        if bestMatches.count == 0 {
+            error(message: noInitializerFoundErrorMessage, on: expr)
+            return
+        }
+        if bestMatches.count > 1 {
+            error(message: "Constructor call is ambiguous", on: expr)
+            return
+        }
+        expr.callsFunction = bestMatches[0]
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {

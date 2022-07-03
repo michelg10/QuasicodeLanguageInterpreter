@@ -728,13 +728,15 @@ class ArrayAllocationExpr: Expr {
 class ClassAllocationExpr: Expr {
     var classType: AstClassType
     var arguments: [Expr]
+    var callsFunction: Int?
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(classType: AstClassType, arguments: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(classType: AstClassType, arguments: [Expr], callsFunction: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
         self.arguments = arguments
+        self.callsFunction = callsFunction
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
@@ -742,6 +744,7 @@ class ClassAllocationExpr: Expr {
     init(_ objectToCopy: ClassAllocationExpr) {
         self.classType = objectToCopy.classType
         self.arguments = objectToCopy.arguments
+        self.callsFunction = objectToCopy.callsFunction
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation

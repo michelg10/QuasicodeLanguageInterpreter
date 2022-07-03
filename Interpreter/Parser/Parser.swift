@@ -542,7 +542,7 @@ class Parser {
                 throw error(message: "Expect class", token: baseType)
             }
             try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
-            return ClassAllocationExpr(classType: allocationType as! AstClassType, arguments: argumentsList, type: nil, startLocation: .init(start: baseType), endLocation: .init(end: previous()))
+            return ClassAllocationExpr(classType: allocationType as! AstClassType, arguments: argumentsList, callsFunction: nil, type: nil, startLocation: .init(start: baseType), endLocation: .init(end: previous()))
         }
         
         throw error(message: "Expect expression", token: previous())

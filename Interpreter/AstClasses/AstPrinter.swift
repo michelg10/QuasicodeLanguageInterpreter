@@ -181,7 +181,8 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     internal func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String {
         return parenthesize(name: "ClassAllocate", additionalProperties: [
-            ("ofType", printAst(expr.classType))
+            ("ofType", printAst(expr.classType)),
+            ("callsFunction", stringifyOptionalInt(expr.callsFunction))
         ]+generateAdditionalTypePropertyArray(expr))
     }
     
