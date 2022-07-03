@@ -116,7 +116,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     
     func visitAstClassTypeAstType(asttype: AstClassType) throws -> AstType {
         guard let belongingClass = classes[asttype.name.lexeme] else {
-            assertionFailure("Class \(asttype.name.lexeme) does not exist in classes")
+//            assertionFailure("Class \(asttype.name.lexeme) does not exist in classes")
             return asttype
         }
         

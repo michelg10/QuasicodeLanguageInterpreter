@@ -1,11 +1,20 @@
 class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisitor {
-    private var hasInitializedDict: [String : Bool] = [:]
+    private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
     private var symbolTable: SymbolTables
     private var reportErrorForStatement: ((_ statement: Stmt, _ message: String) -> Void)
     private var reportErrorForExpression: ((_ expression: Expr, _ message: String) -> Void)
-    private var isInControlFlow: Bool = false
     private var withinClass: Int = 0
+    
+    typealias State = ([Int : Bool], Int, Int)
+    private func saveState() -> State {
+        return (hasInitializedDict, totalUninitialized, symbolTable.getCurrentTableId())
+    }
+    private func restoreState(state: State) {
+        hasInitializedDict = state.0
+        totalUninitialized = state.1
+        symbolTable.gotoTable(state.2)
+    }
     
     internal init(reportErrorForStatement: @escaping ((Stmt, String) -> Void), reportErrorForExpression: @escaping ((Expr, String) -> Void), symbolTable: SymbolTables) {
         self.reportErrorForStatement = reportErrorForStatement
@@ -20,8 +29,8 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         reportErrorForExpression(expression, message)
     }
     
-    private func getUninitialized() -> [String] {
-        var uninitializedVariables: [String] = []
+    private func getUninitialized() -> [Int] {
+        var uninitializedVariables: [Int] = []
         for element in hasInitializedDict {
             if element.value == false {
                 uninitializedVariables.append(element.key)
@@ -46,18 +55,52 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         markVariables(stmt.expression)
     }
     
+    var branchingInitializedSetsStack: [Set<Int>] = []
+    
     internal func visitIfStmt(stmt: IfStmt) {
         markVariables(stmt.condition)
-        let previousIsInControlFlow = isInControlFlow
-        isInControlFlow = true
-        
+        let previousTrackedState = saveState()
+        var runningState = previousTrackedState
+        branchingInitializedSetsStack.append(Set<Int>())
         markVariables(stmt.thenBranch)
-        markVariables(stmt.elseIfBranches)
+        // else if conditions MUST be executed in the else branch. thus, after some on-paper derivations, i came up with this algorithm:
+        for elseIfBranch in stmt.elseIfBranches {
+            // restore
+            restoreState(state: runningState)
+            // execute
+            branchingInitializedSetsStack.append(Set<Int>())
+            markVariables(elseIfBranch.condition)
+            // save state
+            runningState = saveState()
+            // execute
+            branchingInitializedSetsStack.append(Set<Int>())
+            markVariables(elseIfBranch.thenBranch)
+        }
+        // execute the else branch.
+        restoreState(state: runningState)
+        branchingInitializedSetsStack.append(Set<Int>())
         if stmt.elseBranch != nil {
             markVariables(stmt.elseBranch!)
         }
         
-        isInControlFlow = previousIsInControlFlow
+        // now union the last two
+        var runningUnion = branchingInitializedSetsStack.popLast()!
+        for _ in 0..<stmt.elseIfBranches.count {
+            runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
+            runningUnion = runningUnion.union(branchingInitializedSetsStack.popLast()!)
+        }
+        runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
+        
+        restoreState(state: previousTrackedState)
+        for remaining in runningUnion {
+            hasInitializedDict[remaining] = true
+        }
+    }
+    
+    private func processNonbranchingBlockStmt(_ stmt: BlockStmt) {
+        let state = saveState()
+        markVariables(stmt)
+        restoreState(state: state)
     }
     
     internal func visitOutputStmt(stmt: OutputStmt) {
@@ -65,8 +108,23 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitInputStmt(stmt: InputStmt) {
+        if stmt is GetExpr && (stmt as! GetExpr).object is VariableExpr && ((stmt as! GetExpr).object as! VariableExpr).name.lexeme == "this" {
+            guard let id = (stmt as! GetExpr).propertyId else {
+                return
+            }
+            markAsInitialized((stmt as! GetExpr).propertyId!)
+            return
+        }
+        if stmt is VariableExpr {
+            let stmt = stmt as! VariableExpr
+            if stmt.symbolTableIndex != nil {
+                let symbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! VariableSymbol
+                if symbol.variableType == .instance {
+                    markAsInitialized(symbol.id)
+                }
+            }
+        }
         markVariables(stmt.expressions)
-        markAsInitialized(stmt.expressions)
     }
     
     internal func visitReturnStmt(stmt: ReturnStmt) {
@@ -82,12 +140,12 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
         markVariables(stmt.lRange)
         markVariables(stmt.rRange)
-        markVariables(stmt.body)
+        processNonbranchingBlockStmt(stmt.body)
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) {
         markVariables(stmt.expression)
-        markVariables(stmt.body)
+        processNonbranchingBlockStmt(stmt.body)
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) {
@@ -99,11 +157,6 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitBlockStmt(stmt: BlockStmt) {
-        let previousIsInControlFlow = isInControlFlow
-        isInControlFlow = true
-        defer {
-            isInControlFlow = previousIsInControlFlow
-        }
         if stmt.scopeIndex != nil {
             let previousSymbolTablePosition = symbolTable.getCurrentTableId()
             symbolTable.gotoTable(stmt.scopeIndex!)
@@ -142,10 +195,8 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         let index = expr.symbolTableIndex
         if index != nil {
             let symbol = symbolTable.getSymbol(id: index!) as! VariableSymbol
-            if symbol.variableType == .local {
-                if hasInitializedDict[symbol.name] == false {
-                    reportError(expr, message: "Variable 'this.\(symbol.name)' used before being initialized")
-                }
+            if symbol.variableType == .instance {
+                assertIsMarked(variableId: symbol.id, expr: expr)
             }
         }
     }
@@ -156,6 +207,9 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitCallExpr(expr: CallExpr) {
+        // TODO: finish this
+        // maybe use somethings from the type checker to see if the method being called belongs to a superclass
+        
         if expr.object != nil {
             markVariables(expr.object!)
         }
@@ -169,25 +223,17 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
                 reportError(expr, message: "Methods cannot be called before all stored properties are initialized")
             }
         } else if expr.polymorphicCallClassIdToIdDict != nil {
-            // its definitely a method call
+            // its definitely a method call. check if it belongs to this class.
         }
     }
     
     internal func visitGetExpr(expr: GetExpr) {
+        // as long as there is a get expression, as long as it's not on a ThisExpr, it *must* be marked!
         markVariables(expr.object)
         if expr.object is ThisExpr {
-            expr.accessingInstanceVariable = symbolTable.getSymbolIndex(name: "this")
-        } else if expr.object is VariableExpr {
-            let object = expr.object as! VariableExpr
-            if object.symbolTableIndex != nil {
-                expr.accessingInstanceVariable = object.symbolTableIndex
+            if expr.propertyId != nil {
+                assertIsMarked(variableId: expr.propertyId!, expr: expr)
             }
-        } else if expr.object is GetExpr {
-            let object = expr.object as! GetExpr
-            expr.accessingInstanceVariable = object.accessingInstanceVariable
-        } else if expr.object is SubscriptExpr {
-            let object = expr.object as! SubscriptExpr
-            expr.accessingInstanceVariable = object.accessingInstanceVariable
         }
     }
     
@@ -215,25 +261,22 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     internal func visitLogicalExpr(expr: LogicalExpr) {
         markVariables(expr.left)
         // the right might not always be executed because logical operators are short-circuited
-        let previousIsInControlFlow = isInControlFlow
-        isInControlFlow = true
+        let state = saveState()
         markVariables(expr.right)
-        isInControlFlow = previousIsInControlFlow
+        restoreState(state: state)
     }
     
     internal func visitSetExpr(expr: SetExpr) {
         markVariables(expr.value)
-        // the only exception should be : set object is this.?
+        // the only exception should be: set object is this.?
         if expr.to is GetExpr {
             let to = expr.to as! GetExpr
             if to.object is ThisExpr {
-                markAsInitialized(to.property.lexeme)
-            } else {
-                markVariables(expr.to)
+                markAsInitialized(to.propertyId!)
+                return
             }
-        } else {
-            markVariables(expr.to)
         }
+        markVariables(expr.to)
     }
     
     internal func visitAssignExpr(expr: AssignExpr) {
@@ -241,7 +284,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         if expr.to.symbolTableIndex != nil {
             let symbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
             if symbol.variableType == .instance {
-                markAsInitialized(symbol.name)
+                markAsInitialized(symbol.id)
             }
         }
     }
@@ -254,17 +297,14 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         markVariables(expr.expression)
     }
     
-    private func markAsInitialized(_ exprs: [Expr]) {
-        for expr in exprs {
-            markAsInitialized(expr)
-        }
-    }
-    private func markAsInitialized(_ expr: Expr) {
-        
-    }
-    private func markAsInitialized(_ variable: String) {
-        if hasInitializedDict[variable] == false {
-            hasInitializedDict[variable] = true
+    private func markAsInitialized(_ variableId: Int) {
+        if hasInitializedDict[variableId] == false {
+            if !branchingInitializedSetsStack.isEmpty {
+                var top = branchingInitializedSetsStack.popLast()!
+                top.insert(variableId)
+                branchingInitializedSetsStack.append(top)
+            }
+            hasInitializedDict[variableId] = true
             totalUninitialized -= 1
         }
     }
@@ -289,15 +329,21 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
         return totalUninitialized == 0
     }
     
-    public func trackVariable(_ name: String) {
-        if hasInitializedDict[name] == nil {
+    private func assertIsMarked(variableId: Int, expr: Expr) {
+        if hasInitializedDict[variableId] == false {
+            let symbolName = symbolTable.getSymbol(id: variableId).name
+            reportError(expr, message: "Variable 'this.\(symbolName) used before being initialized")
+        }
+    }
+    
+    public func trackVariable(_ variableId: Int) {
+        if hasInitializedDict[variableId] == nil {
             totalUninitialized+=1
         }
-        hasInitializedDict[name] = false
+        hasInitializedDict[variableId] = false
     }
     
     public func checkStatements(_ statements: [Stmt], withinClass: Int) {
-        isInControlFlow = false
         self.withinClass = withinClass
     }
 }
