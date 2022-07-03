@@ -334,8 +334,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type = (symbolEntry as! VariableSymbol).type!
                 expr.type!.assignable = true
             }
-        case is FunctionNameSymbol:
-            expr.type = QsFunction(nameId: (symbolEntry as! FunctionNameSymbol).id)
         default:
             assertionFailure("Symbol entry for variable expression must be of type Variable or Function!")
         }
@@ -663,6 +661,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             getPropertyForObject(property: expr.property, className: object.classType.name.lexeme, classId: object.classId!, staticLimit: .limitToStatic)
+            return
         } else if expr.object is ThisExpr {
             let object = expr.object as! ThisExpr
             if object.symbolTableIndex == nil {
@@ -671,6 +670,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let symbol = symbolTable.getSymbol(id: object.symbolTableIndex!) as! VariableSymbol
             
             getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .limitToNonstatic)
+            return
         } else {
             if expr.object.type is QsErrorType {
                 return
@@ -679,10 +679,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if expr.object.type is QsArray {
                 // one built in property: length
                 if expr.property.lexeme == "length" {
-                    
+                    expr.type = QsInt(assignable: false)
                 } else {
                     error(message: propertyDoesNotExistErrorMessage, on: expr)
+                    return
                 }
+            } else if expr.object.type is QsClass {
+                
+            } else {
+                
             }
         }
     }

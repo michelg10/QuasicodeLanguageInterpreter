@@ -15,9 +15,6 @@ func hashTypeIntoHasher(_ value: QsType, _ hasher: inout Hasher) {
     case is QsArray:
         hasher.combine(TypeHashValues.ARRAY)
         hashTypeIntoHasher((value as! QsArray).contains, &hasher)
-    case is QsFunction:
-        hasher.combine(TypeHashValues.FUNCTION)
-        hasher.combine((value as! QsFunction).nameId)
     case is QsErrorType:
         hasher.combine(TypeHashValues.ERROR)
         hasher.combine(Int.random(in: Int.min...Int.max))

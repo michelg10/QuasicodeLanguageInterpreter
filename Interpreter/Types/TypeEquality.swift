@@ -38,14 +38,6 @@ func typesIsEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
         }
     }
     
-    if lhs is QsFunction {
-        if rhs is QsFunction {
-            return (lhs as! QsFunction).nameId == (rhs as! QsClass).id
-        } else {
-            return false
-        }
-    }
-    
     assertionFailure("Type equality reached end")
     
     return true
