@@ -103,7 +103,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     }
     
     internal func visitThisExprString(expr: ThisExpr) -> String {
-        return parenthesize(name: "this", additionalProperties: generateAdditionalTypePropertyArray(expr))
+        return parenthesize(name: "ThisExpr", additionalProperties: generateAdditionalTypePropertyArray(expr))
     }
     
     internal func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String {

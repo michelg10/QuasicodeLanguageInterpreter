@@ -189,7 +189,9 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitThisExpr(expr: ThisExpr) {
-        // do nothing
+        if !finishedInitialization() {
+            reportError(expr, message: "'this' is unavailable until all stored properties are initialized")
+        }
     }
     
     internal func visitSuperExpr(expr: SuperExpr) {
@@ -212,34 +214,40 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitCallExpr(expr: CallExpr) {
-        // TODO: finish this
-        // maybe use somethings from the type checker to see if the method being called belongs to a superclass
-        
         if expr.object != nil {
             markVariables(expr.object!)
         }
         markVariables(expr.arguments)
+        // polymorphic calls can't be on an instance method of the current class
         if expr.uniqueFunctionCall != nil {
-            let symbol = symbolTable.getSymbol(id: expr.uniqueFunctionCall!)
+            let symbol = symbolTable.getSymbol(id: expr.uniqueFunctionCall!) as! FunctionLikeSymbol
             if symbol is MethodSymbol {
                 let symbol = symbol as! MethodSymbol
-                
-//                if symbol
-                reportError(expr, message: "Methods cannot be called before all stored properties are initialized")
+                if symbol.methodStmt.isStatic == false {
+                    var isOnClassInstanceMethodCall = false
+                    if expr.object == nil || expr.object is ThisExpr {
+                        isOnClassInstanceMethodCall = true
+                    }
+                    if expr.object is VariableExpr && (expr.object as! VariableExpr).name.lexeme == "super" {
+                        isOnClassInstanceMethodCall = true
+                    }
+                    if isOnClassInstanceMethodCall {
+                        reportError(expr, message: "Instance methods cannot be called before all stored properties are initialized")
+                    }
+                }
             }
-        } else if expr.polymorphicCallClassIdToIdDict != nil {
-            // its definitely a method call. check if it belongs to this class.
         }
     }
     
     internal func visitGetExpr(expr: GetExpr) {
         // as long as there is a get expression, as long as it's not on a ThisExpr, it *must* be marked!
-        markVariables(expr.object)
         if expr.object is ThisExpr {
             if expr.propertyId != nil {
                 assertIsMarked(variableId: expr.propertyId!, expr: expr)
+                return
             }
         }
+        markVariables(expr.object)
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {

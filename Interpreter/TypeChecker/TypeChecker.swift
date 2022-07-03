@@ -520,7 +520,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                             let currentFunctionSymbol = currentFunctionSymbol as! MethodSymbol
                             let isStatic = currentFunctionSymbol.methodStmt.isStatic
                             // got whether or not its static, now filter through
-                            filterPotentialFunctions(functionsFilter: (isStatic ? .leaveStatic : .leaveNonstatic))
+                            if isStatic {
+                                filterPotentialFunctions(functionsFilter: .leaveStatic)
+                            }
                         }
                     }
                 } else {
@@ -936,9 +938,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         typeCheck(expr.to)
         
-        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
-            // this shouldn't be possible but... just in case constants are added in later on?
-            return
+        if !expr.isFirstAssignment! { // type is not know yet if it is first assignment
+            if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
+                // this shouldn't be possible but... just in case constants are added in later on?
+                return
+            }
         }
         
         if expr.isFirstAssignment! {

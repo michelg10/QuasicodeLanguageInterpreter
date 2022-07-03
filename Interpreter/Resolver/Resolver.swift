@@ -44,7 +44,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     internal func visitThisExpr(expr: ThisExpr) throws {
-        if currentClassStatus == nil || currentFunction != .nonstaticMethod && currentFunction != .staticMethod {
+        if currentClassStatus == nil || currentFunction != .nonstaticMethod && currentFunction != .staticMethod && currentFunction != .initializer {
             throw error(message: "Cannot use 'this' outside of a method", token: expr.keyword)
         }
         if currentFunction == .staticMethod {
@@ -99,9 +99,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
         case .staticVar:
             expr.propertyId = variableSymbol.id
-            if currentFunction == .nonstaticMethod {
-                error(message: "Static member '\(expr.property.lexeme)' cannot be used in a non-static context", start: expr.startLocation, end: expr.endLocation)
-            }
         default:
             error(message: errorString, start: expr.startLocation, end: expr.endLocation)
         }
