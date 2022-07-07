@@ -851,7 +851,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         case .MINUS, .SLASH, .STAR, .DIV:
             expr.type = QsErrorType()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
-                expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                if expr.opr.tokenType == .DIV {
+                    expr.type = QsInt()
+                } else {
+                    expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                }
                 return
             }
         case .MOD:
