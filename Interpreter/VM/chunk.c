@@ -13,6 +13,7 @@ void resetChunk(Chunk* chunk) {
     chunk->constants = NULL;
     chunk->lineInformation = NULL;
     chunk->constantsDebugType = NULL;
+    chunk->maxDepth = 0;
 }
 
 Chunk* initChunk() {
@@ -29,6 +30,7 @@ void freeChunk(Chunk* chunk) {
         NOVM_FREE_ARRAY(Type, chunk->constantsDebugType);
     }
     resetChunk(chunk);
+    chunk = novm_reallocate(chunk, 0);
 }
 
 void writeChunk(Chunk* chunk, uint8_t byte, int line) {
@@ -77,4 +79,8 @@ int addConstant(Chunk* chunk, uint8_t* bytes, int len, Type type) {
     memcpy(chunk->constants+chunk->constantsCount, bytes, len);
     chunk->constantsCount+=len;
     return index;
+}
+
+void setMaxDepth(Chunk* chunk, int maxDepth) {
+    chunk->maxDepth = maxDepth;
 }

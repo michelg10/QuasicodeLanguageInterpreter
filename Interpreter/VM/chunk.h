@@ -23,6 +23,7 @@ typedef struct {
 #ifdef DEBUG_INCLUDE_TYPES
     Type* constantsDebugType;
 #endif
+    int maxDepth;
 } Chunk;
 
 Chunk* initChunk(void);
@@ -30,5 +31,6 @@ void freeChunk(Chunk* chunk);
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
 int getChunkCodeCount(Chunk* chunk);
 int addConstant(Chunk* chunk, uint8_t *bytes, int len, Type type);
+void setMaxDepth(Chunk* chunk, int maxDepth);
 
 #endif

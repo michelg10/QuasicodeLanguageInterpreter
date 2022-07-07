@@ -17,6 +17,7 @@
 		D0691C542876D44600DA85F3 /* WriteFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0691C532876D44600DA85F3 /* WriteFunctions.swift */; };
 		D0691C582876E2EC00DA85F3 /* VMType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0691C572876E2EC00DA85F3 /* VMType.swift */; };
 		D0691C5C28770CD600DA85F3 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5B28770CD600DA85F3 /* memory.c */; };
+		D0691C5F2877220500DA85F3 /* disassembler.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5E2877220500DA85F3 /* disassembler.c */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -79,6 +80,8 @@
 		D0691C592876E32000DA85F3 /* Type.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Type.h; sourceTree = "<group>"; };
 		D0691C5A28770CD600DA85F3 /* memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
 		D0691C5B28770CD600DA85F3 /* memory.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
+		D0691C5D2877220500DA85F3 /* disassembler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = disassembler.h; sourceTree = "<group>"; };
+		D0691C5E2877220500DA85F3 /* disassembler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = disassembler.c; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -178,6 +181,8 @@
 			children = (
 				D0832F762876B65F0003B625 /* VM.h */,
 				D0832F772876B65F0003B625 /* VM.c */,
+				D0691C5D2877220500DA85F3 /* disassembler.h */,
+				D0691C5E2877220500DA85F3 /* disassembler.c */,
 				D0832F792876BA550003B625 /* chunk.h */,
 				D0832F7A2876BA550003B625 /* chunk.c */,
 				D0691C5A28770CD600DA85F3 /* memory.h */,
@@ -352,6 +357,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D047BE4528688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift in Sources */,
+				D0691C5F2877220500DA85F3 /* disassembler.c in Sources */,
 				D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */,
 				D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */,
 				D0832F602876A9DD0003B625 /* OpCode.swift in Sources */,
