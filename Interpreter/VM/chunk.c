@@ -62,6 +62,14 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
     }
 }
 
+void writeChunkLong(Chunk* chunk, uint64_t val, int line) {
+    for (int i=0;i<8;i++) {
+        uint8_t byte;
+        memcpy(&byte, (&val)+i, 1);
+        writeChunk(chunk, byte, line);
+    }
+}
+
 int getChunkCodeCount(Chunk* chunk) {
     return chunk->codeCount;
 }

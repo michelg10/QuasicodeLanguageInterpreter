@@ -1,135 +1,165 @@
 class Compiler: ExprVisitor, StmtVisitor {
-    func visitGroupingExpr(expr: GroupingExpr) {
+    var compilingChunk: UnsafeMutablePointer<Chunk>!
+    
+    internal func currentChunk() -> UnsafeMutablePointer<Chunk>! {
+        return compilingChunk
+    }
+    
+    internal func visitGroupingExpr(expr: GroupingExpr) {
         
     }
     
-    func visitLiteralExpr(expr: LiteralExpr) {
+    internal func visitLiteralExpr(expr: LiteralExpr) {
         
     }
     
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         
     }
     
-    func visitStaticClassExpr(expr: StaticClassExpr) {
+    internal func visitStaticClassExpr(expr: StaticClassExpr) {
         
     }
     
-    func visitThisExpr(expr: ThisExpr) {
+    internal func visitThisExpr(expr: ThisExpr) {
         
     }
     
-    func visitSuperExpr(expr: SuperExpr) {
+    internal func visitSuperExpr(expr: SuperExpr) {
         
     }
     
-    func visitVariableExpr(expr: VariableExpr) {
+    internal func visitVariableExpr(expr: VariableExpr) {
         
     }
     
-    func visitSubscriptExpr(expr: SubscriptExpr) {
+    internal func visitSubscriptExpr(expr: SubscriptExpr) {
         
     }
     
-    func visitCallExpr(expr: CallExpr) {
+    internal func visitCallExpr(expr: CallExpr) {
         
     }
     
-    func visitGetExpr(expr: GetExpr) {
+    internal func visitGetExpr(expr: GetExpr) {
         
     }
     
-    func visitUnaryExpr(expr: UnaryExpr) {
+    internal func visitUnaryExpr(expr: UnaryExpr) {
         
     }
     
-    func visitCastExpr(expr: CastExpr) {
+    internal func visitCastExpr(expr: CastExpr) {
         
     }
     
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         
     }
     
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         
     }
     
-    func visitBinaryExpr(expr: BinaryExpr) {
+    internal func visitBinaryExpr(expr: BinaryExpr) {
         
     }
     
-    func visitLogicalExpr(expr: LogicalExpr) {
+    internal func visitLogicalExpr(expr: LogicalExpr) {
         
     }
     
-    func visitSetExpr(expr: SetExpr) {
+    internal func visitSetExpr(expr: SetExpr) {
         
     }
     
-    func visitAssignExpr(expr: AssignExpr) {
+    internal func visitAssignExpr(expr: AssignExpr) {
         
     }
     
-    func visitIsTypeExpr(expr: IsTypeExpr) {
+    internal func visitIsTypeExpr(expr: IsTypeExpr) {
         
     }
     
-    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+    internal func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         
     }
     
-    func visitClassStmt(stmt: ClassStmt) {
+    internal func visitClassStmt(stmt: ClassStmt) {
         
     }
     
-    func visitMethodStmt(stmt: MethodStmt) {
+    internal func visitMethodStmt(stmt: MethodStmt) {
         
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) {
+    internal func visitFunctionStmt(stmt: FunctionStmt) {
         
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
+    internal func visitExpressionStmt(stmt: ExpressionStmt) {
         
     }
     
-    func visitIfStmt(stmt: IfStmt) {
+    internal func visitIfStmt(stmt: IfStmt) {
         
     }
     
-    func visitOutputStmt(stmt: OutputStmt) {
+    internal func visitOutputStmt(stmt: OutputStmt) {
         
     }
     
-    func visitInputStmt(stmt: InputStmt) {
+    internal func visitInputStmt(stmt: InputStmt) {
         
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) {
+    internal func visitReturnStmt(stmt: ReturnStmt) {
         
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) {
+    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
         
     }
     
-    func visitWhileStmt(stmt: WhileStmt) {
+    internal func visitWhileStmt(stmt: WhileStmt) {
         
     }
     
-    func visitBreakStmt(stmt: BreakStmt) {
+    internal func visitBreakStmt(stmt: BreakStmt) {
         
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
+    internal func visitContinueStmt(stmt: ContinueStmt) {
         
     }
     
-    func visitBlockStmt(stmt: BlockStmt) {
+    internal func visitBlockStmt(stmt: BlockStmt) {
         
     }
     
     
+    private func endCompiler() {
+        writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: -1)
+    }
+    
+    private func compile(_ stmt: Stmt) {
+        stmt.accept(visitor: self)
+    }
+    
+    private func compile(_ expr: Expr) {
+        expr.accept(visitor: self)
+    }
+    
+    public func compileAst(stmts: [Stmt]) -> UnsafeMutablePointer<Chunk>! {
+        compilingChunk = initChunk()
+        
+        for stmt in stmts {
+            compile(stmt)
+        }
+        
+        // end it off
+        endCompiler()
+        
+        return compilingChunk
+    }
 }

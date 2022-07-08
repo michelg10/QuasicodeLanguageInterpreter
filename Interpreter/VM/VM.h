@@ -18,6 +18,7 @@ typedef struct {
 
 VM* initVM(void);
 void freeVM(VM* vm);
+void interpret(VM* vm, Chunk* chunk);
 
 void pushLong(VM* vm, uint64_t value);
 void pushByte(VM* vm, uint8_t value);

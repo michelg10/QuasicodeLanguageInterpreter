@@ -3,3 +3,5 @@
 //
 
 #include "chunk.h"
+#include "vm.h"
+#include "disassembler.h"

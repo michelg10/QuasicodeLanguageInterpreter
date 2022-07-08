@@ -56,6 +56,15 @@ symbolTable.printTable()
 print("\nErrors")
 print(typeCheckerErrors)
 
+print("----- Compiler -----")
+let compiler = Compiler()
+let chunk = compiler.compileAst(stmts: ast)
+disassembleChunk(chunk, "main")
+
+print("----- VM -----")
+let vmInterface = VMInterface()
+vmInterface.run(chunk: chunk)
+
 
 let end = DispatchTime.now()
 let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
