@@ -64,8 +64,8 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
     
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
-        case OP_loadEmbeddedLongConstant:
-            return instructionWithLong("OP_loadEmbeddedLongConstant", chunk, offset);
+        case OP_return:
+            return simpleInstruction("OP_return", offset);
         case OP_true:
             return simpleInstruction("OP_true", offset);
         case OP_false:
@@ -74,6 +74,8 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
             return simpleInstruction("OP_pop", offset);
         case OP_pop_n:
             return instructionWithByte("OP_pop_n", chunk, offset);
+        case OP_loadEmbeddedLongConstant:
+            return instructionWithLong("OP_loadEmbeddedLongConstant", chunk, offset);
         case OP_loadConstantFromTable:
             return instructionWithByte("OP_loadConstantFromTable", chunk, offset);
         case OP_LONG_loadConstantFromTable:

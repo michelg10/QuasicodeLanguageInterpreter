@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "common.h"
+#include "chunk.h"
 
 #define FRAMES_MAX 8192
 #define BYTES_PER_FRAME 8*2048
@@ -11,6 +12,7 @@
 typedef struct {
     uint8_t stack[STACK_MAX];
     uint8_t* stackTop;
+    Chunk* chunk;
     uint8_t* ip; // this is getting moved to a call frame soon
 } VM;
 

@@ -1,9 +1,10 @@
 enum OpCode: Int {
-    case OP_loadEmbeddedLongConstant
+    case OP_return
     case OP_true
     case OP_false
     case OP_pop
     case OP_pop_n
+    case OP_loadEmbeddedLongConstant
     case OP_loadConstantFromTable
     case OP_LONG_loadConstantFromTable
     case OP_addInt
