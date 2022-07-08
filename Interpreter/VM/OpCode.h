@@ -1,3 +1,6 @@
+#ifndef opcode_h
+#define opcode_h
+
 enum OpCode {
     OP_return=0,
     OP_true=1,
@@ -45,3 +48,5 @@ enum OpCode {
     OP_orBool=43,
     OP_andBool=44,
 };
+
+#endif /* opcode_h */

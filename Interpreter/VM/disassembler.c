@@ -37,7 +37,7 @@ static int simpleInstruction(const char* name, int offset) {
 
 static int instructionWithLong(const char* name, Chunk* chunk, int offset) {
     long *value = (void*)&chunk->code[offset+1];
-    printf("%-32s %ld\n", name, value);
+    printf("%-32s %ld\n", name, *value);
     return offset+9;
 }
 
@@ -47,7 +47,7 @@ static int instructionWithByte(const char* name, Chunk* chunk, int offset) {
 }
 
 static int instructionWith3Byte(const char* name, Chunk* chunk, int offset) {
-    int value = *(long*)&chunk->code[offset];
+    int value = *(int*)&chunk->code[offset];
     value = value>>4;
     printf("%-32s %d", name, value);
     return offset+4;
@@ -62,16 +62,13 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
         printf("   | ");
     }
     
+#define SIMPLE_INSTRUCTION(name) case name: return simpleInstruction(#name, offset);
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
-        case OP_return:
-            return simpleInstruction("OP_return", offset);
-        case OP_true:
-            return simpleInstruction("OP_true", offset);
-        case OP_false:
-            return simpleInstruction("OP_false", offset);
-        case OP_pop:
-            return simpleInstruction("OP_pop", offset);
+        SIMPLE_INSTRUCTION(OP_return)
+        SIMPLE_INSTRUCTION(OP_true)
+        SIMPLE_INSTRUCTION(OP_false)
+        SIMPLE_INSTRUCTION(OP_pop)
         case OP_pop_n:
             return instructionWithByte("OP_pop_n", chunk, offset);
         case OP_loadEmbeddedLongConstant:
@@ -80,39 +77,47 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
             return instructionWithByte("OP_loadConstantFromTable", chunk, offset);
         case OP_LONG_loadConstantFromTable:
             return instructionWith3Byte("OP_LONG_loadConstantFromTable", chunk, offset);
-        case OP_addInt:
-            return simpleInstruction("OP_addInt", offset);
-        case OP_addDouble:
-            return simpleInstruction("OP_addDouble", offset);
-        case OP_addAny:
-            return simpleInstruction("OP_addAny", offset);
-        case OP_minusInt:
-            return simpleInstruction("OP_minusInt", offset);
-        case OP_minusDouble:
-            return simpleInstruction("OP_minusDouble", offset);
-        case OP_minusAny:
-            return simpleInstruction("OP_minusAny", offset);
-        case OP_multiplyInt:
-            return simpleInstruction("OP_multiplyInt", offset);
-        case OP_multiplyDouble:
-            return simpleInstruction("OP_multiplyDouble", offset);
-        case OP_multiplyAny:
-            return simpleInstruction("OP_multiplyAny", offset);
-        case OP_divideInt:
-            return simpleInstruction("OP_divideInt", offset);
-        case OP_divideDouble:
-            return simpleInstruction("OP_divideDouble", offset);
-        case OP_divideAny:
-            return simpleInstruction("OP_divideAny", offset);
-        case OP_intDivideInt:
-            return simpleInstruction("OP_intDivideInt", offset);
-        case OP_intDivideDouble:
-            return simpleInstruction("OP_intDivideDouble", offset);
-        case OP_intDivideAny:
-            return simpleInstruction("OP_intDivideAny", offset);
+        SIMPLE_INSTRUCTION(OP_negateInt)
+        SIMPLE_INSTRUCTION(OP_negateDouble)
+        SIMPLE_INSTRUCTION(OP_notBool)
+        SIMPLE_INSTRUCTION(OP_greaterInt)
+        SIMPLE_INSTRUCTION(OP_greaterDouble)
+        SIMPLE_INSTRUCTION(OP_greaterString)
+        SIMPLE_INSTRUCTION(OP_greaterOrEqualInt)
+        SIMPLE_INSTRUCTION(OP_greaterOrEqualDouble)
+        SIMPLE_INSTRUCTION(OP_greaterOrEqualString)
+        SIMPLE_INSTRUCTION(OP_lessInt)
+        SIMPLE_INSTRUCTION(OP_lessDouble)
+        SIMPLE_INSTRUCTION(OP_lessString)
+        SIMPLE_INSTRUCTION(OP_lessOrEqualInt)
+        SIMPLE_INSTRUCTION(OP_lessOrEqualDouble)
+        SIMPLE_INSTRUCTION(OP_lessOrEqualString)
+        SIMPLE_INSTRUCTION(OP_equalEqualInt)
+        SIMPLE_INSTRUCTION(OP_equalEqualDouble)
+        SIMPLE_INSTRUCTION(OP_equalEqualString)
+        SIMPLE_INSTRUCTION(OP_equalEqualBool)
+        SIMPLE_INSTRUCTION(OP_notEqualInt)
+        SIMPLE_INSTRUCTION(OP_notEqualDouble)
+        SIMPLE_INSTRUCTION(OP_notEqualString)
+        SIMPLE_INSTRUCTION(OP_notEqualBool)
+        SIMPLE_INSTRUCTION(OP_minusInt)
+        SIMPLE_INSTRUCTION(OP_minusDouble)
+        SIMPLE_INSTRUCTION(OP_divideInt)
+        SIMPLE_INSTRUCTION(OP_divideDouble)
+        SIMPLE_INSTRUCTION(OP_multiplyInt)
+        SIMPLE_INSTRUCTION(OP_multiplyDouble)
+        SIMPLE_INSTRUCTION(OP_intDivideInt)
+        SIMPLE_INSTRUCTION(OP_intDivideDouble)
+        SIMPLE_INSTRUCTION(OP_modInt)
+        SIMPLE_INSTRUCTION(OP_addInt)
+        SIMPLE_INSTRUCTION(OP_addDouble)
+        SIMPLE_INSTRUCTION(OP_addString)
+        SIMPLE_INSTRUCTION(OP_orBool)
+        SIMPLE_INSTRUCTION(OP_andBool)
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset+1;
     }
     return 0;
+#undef SIMPLE_INSTRUCTION
 }

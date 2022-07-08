@@ -71,11 +71,20 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {
+        compile(expr.right)
         switch expr.opr.tokenType {
         case .NOT:
-            writeInstructionToChunk(op: .OP_not, expr: <#T##Expr#>)
+            writeInstructionToChunk(op: .OP_notBool, expr: expr)
         case .MINUS:
+            if expr.type is QsInt {
+                writeInstructionToChunk(op: .OP_negateInt, expr: expr)
+            } else if expr.type is QsDouble {
+                writeInstructionToChunk(op: .OP_negateDouble, expr: expr)
+            } else {
+                assertionFailure("Unexpected unary operand type \(printType(expr.type))")
+            }
         default:
+            assertionFailure("Unexpected unary operator \(expr.opr.tokenType)")
         }
     }
     
@@ -92,11 +101,64 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
+        compile(expr.left)
+        compile(expr.right)
+        let leftType = expr.left.type!
         
+        // convenience function
+        func writeInstruction(_ intInstruction: OpCode, _ doubleInstruction: OpCode, stringInstruction: OpCode? = nil, boolInstruction: OpCode? = nil) {
+            // TODO: Strings
+            if leftType is QsInt {
+                writeInstructionToChunk(op: intInstruction, expr: expr)
+            } else if leftType is QsDouble {
+                writeInstructionToChunk(op: doubleInstruction, expr: expr)
+            } else if leftType is QsBoolean && boolInstruction != nil {
+                writeInstructionToChunk(op: boolInstruction!, expr: expr)
+            } else {
+                assertionFailure("Unexpected binary operand type \(printType(leftType))")
+            }
+        }
+        switch expr.opr.tokenType {
+        case .GREATER:
+            writeInstruction(.OP_greaterInt, .OP_greaterDouble, stringInstruction: .OP_greaterString)
+        case .GREATER_EQUAL:
+            writeInstruction(.OP_greaterOrEqualInt, .OP_greaterOrEqualDouble, stringInstruction: .OP_greaterOrEqualString)
+        case .LESS:
+            writeInstruction(.OP_lessInt, .OP_lessDouble, stringInstruction: .OP_lessString)
+        case .LESS_EQUAL:
+            writeInstruction(.OP_lessOrEqualInt, .OP_lessOrEqualDouble, stringInstruction: .OP_lessOrEqualString)
+        case .EQUAL_EQUAL:
+            writeInstruction(.OP_equalEqualInt, .OP_equalEqualDouble, stringInstruction: .OP_equalEqualString, boolInstruction: .OP_equalEqualBool)
+        case .BANG_EQUAL:
+            writeInstruction(.OP_notEqualInt, .OP_notEqualDouble, stringInstruction: .OP_notEqualString, boolInstruction: .OP_notEqualBool)
+        case .MINUS:
+            writeInstruction(.OP_minusInt, .OP_minusDouble)
+        case .SLASH:
+            writeInstruction(.OP_divideInt, .OP_divideDouble)
+        case .STAR:
+            writeInstruction(.OP_multiplyInt, .OP_multiplyDouble)
+        case .DIV:
+            writeInstruction(.OP_intDivideInt, .OP_intDivideDouble)
+        case .MOD:
+            writeInstructionToChunk(op: .OP_modInt, expr: expr)
+        case .PLUS:
+            writeInstruction(.OP_addInt, .OP_addDouble, stringInstruction: .OP_addString)
+        default:
+            assertionFailure("Unexpected binary operator \(expr.opr.tokenType)")
+        }
     }
     
     internal func visitLogicalExpr(expr: LogicalExpr) {
-        
+        compile(expr.left)
+        compile(expr.right)
+        switch expr.opr.tokenType {
+        case .OR:
+            writeInstructionToChunk(op: .OP_orBool, expr: expr)
+        case .AND:
+            writeInstructionToChunk(op: .OP_andBool, expr: expr)
+        default:
+            assertionFailure("Unexpected logical operator \(expr.opr.tokenType)")
+        }
     }
     
     internal func visitSetExpr(expr: SetExpr) {
