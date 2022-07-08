@@ -19,4 +19,9 @@ typedef struct {
 VM* initVM(void);
 void freeVM(VM* vm);
 
+void pushLong(VM* vm, uint64_t value);
+void pushByte(VM* vm, uint8_t value);
+uint64_t popLong(VM* vm);
+uint8_t popByte(VM* vm);
+
 #endif /* VM_h */
