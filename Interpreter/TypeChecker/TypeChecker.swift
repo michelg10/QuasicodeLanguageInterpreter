@@ -825,6 +825,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
+        // TODO: Implement cast to double
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -832,16 +833,30 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // TODO
         typeCheck(expr.left)
         typeCheck(expr.right)
+        
+        func promoteToDoubleIfNecessary() {
+            if expr.left.type! is QsDouble || expr.right.type! is QsDouble {
+                if expr.left.type! is QsInt {
+                    expr.left = ImplicitCastExpr(expression: expr.left, type: QsDouble(assignable: false), startLocation: expr.left.startLocation, endLocation: expr.left.endLocation)
+                }
+                if expr.right.type! is QsInt {
+                    expr.right = ImplicitCastExpr(expression: expr.right, type: QsDouble(assignable: false), startLocation: expr.right.startLocation, endLocation: expr.right.endLocation)
+                }
+            }
+        }
+        
         switch expr.opr.tokenType {
         case .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL:
             expr.type = QsBoolean()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                promoteToDoubleIfNecessary()
                 return
             }
             // TODO: Strings
         case .EQUAL_EQUAL, .BANG_EQUAL:
             expr.type = QsBoolean()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                promoteToDoubleIfNecessary()
                 return
             }
             if typesIsEqual(expr.left.type!, QsBoolean()) && typesIsEqual(expr.right.type!, QsBoolean()) {
@@ -851,10 +866,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         case .MINUS, .SLASH, .STAR, .DIV:
             expr.type = QsErrorType()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
+                promoteToDoubleIfNecessary()
                 if expr.opr.tokenType == .DIV {
                     expr.type = QsInt()
                 } else {
-                    expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                    expr.type = expr.left.type!
                 }
                 return
             }
@@ -865,7 +881,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         case .PLUS:
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
-                expr.type = findCommonType(expr.left.type!, expr.right.type!)
+                promoteToDoubleIfNecessary()
+                expr.type = expr.left.type!
                 return
             }
             // TODO: Strings

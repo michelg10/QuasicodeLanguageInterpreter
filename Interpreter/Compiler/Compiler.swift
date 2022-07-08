@@ -6,11 +6,36 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {
-        
+        compile(expr.expression)
+    }
+    
+    private func writeInstructionToChunk(op: OpCode, expr: Expr) {
+        Interpreter.writeInstructionToChunk(chunk: currentChunk(), op: op, line: expr.startLocation.line)
+    }
+    
+    private func writeLongToChunk(data: UInt64, expr: Expr) {
+        Interpreter.writeLongToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
     }
     
     internal func visitLiteralExpr(expr: LiteralExpr) {
-        
+        // TODO: Strings
+        switch expr.type! {
+        case is QsInt:
+            writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
+            writeLongToChunk(data: UInt64(expr.value as! Int), expr: expr)
+        case is QsDouble:
+            writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
+            writeLongToChunk(data: (expr.value as! Double).bitPattern, expr: expr)
+        case is QsBoolean:
+            let value = expr.value as! Bool
+            if value {
+                writeInstructionToChunk(op: .OP_true, expr: expr)
+            } else {
+                writeInstructionToChunk(op: .OP_false, expr: expr)
+            }
+        default:
+            assertionFailure("Unexpected literal type \(printType(expr.type))")
+        }
     }
     
     internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
@@ -46,7 +71,14 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitUnaryExpr(expr: UnaryExpr) {
-        
+        switch expr.opr.tokenType {
+        case .NOT:
+            if expr.right.type is QsBoolean {
+                
+            }
+        case .MINUS:
+        default:
+        }
     }
     
     internal func visitCastExpr(expr: CastExpr) {
@@ -98,7 +130,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
-        
+        compile(stmt.expression)
     }
     
     internal func visitIfStmt(stmt: IfStmt) {
@@ -139,7 +171,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     
     
     private func endCompiler() {
-        writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: -1)
+        Interpreter.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)
     }
     
     private func compile(_ stmt: Stmt) {
