@@ -73,9 +73,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     internal func visitUnaryExpr(expr: UnaryExpr) {
         switch expr.opr.tokenType {
         case .NOT:
-            if expr.right.type is QsBoolean {
-                
-            }
+            writeInstructionToChunk(op: .OP_not, expr: <#T##Expr#>)
         case .MINUS:
         default:
         }

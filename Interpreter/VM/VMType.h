@@ -1,6 +1,3 @@
-#ifndef vmtype_h
-#define vmtype_h
-
 enum VMType {
     Int=0,
     Double=1,
@@ -8,5 +5,3 @@ enum VMType {
     AnyType=3,
     Array=4,
 };
-
-#endif /* vmtype_h */
