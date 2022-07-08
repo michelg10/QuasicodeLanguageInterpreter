@@ -22,22 +22,12 @@ void freeVM(VM* vm) {
     vm = realloc(vm, 0);
 }
 
-inline void pushLong(VM* vm, void* value) {
-    memcpy(vm->stackTop, &value, 8);
-    vm->stackTop+=8;
-}
-
-inline void pushByte(VM* vm, void* value) {
-    *vm->stackTop = *(uint8_t*)value;
+inline void push(VM* vm, uint64_t value) {
+    *vm->stackTop = value;
     vm->stackTop++;
 }
 
-inline uint64_t popLong(VM* vm) {
-    vm->stackTop-=8;
-    return *vm->stackTop;
-}
-
-inline uint8_t popByte(VM* vm) {
+inline uint64_t pop(VM* vm) {
     vm->stackTop--;
     return *vm->stackTop;
 }
@@ -46,28 +36,15 @@ inline void popCount(VM* vm, uint8_t count) {
     vm->stackTop-=count;
 }
 
-inline void* topLongByReference(VM* vm) {
-    return (void*)(vm->stackTop-8);
+inline void* topByReference(VM* vm) {
+    return (void*)(vm->stackTop-1);
+}
+inline uint64_t top(VM* vm) {
+    return *(vm->stackTop-1);
 }
 
-inline void* topByteByReference(VM* vm) {
-    return (void*)vm->stackTop;
-}
-
-inline uint64_t topLong(VM* vm) {
-    return *(vm->stackTop-8);
-}
-
-inline uint8_t topByte(VM* vm) {
-    return *(vm->stackTop);
-}
-
-inline void modifyTopLongInPlace(VM* vm, void* val) {
-    memcpy(vm->stackTop-8, val, 8);
-}
-
-inline void modifyTopByteInPlace(VM* vm, void* val) {
-    *vm->stackTop = *((uint8_t*)val);
+inline void modifyTopInPlace(VM* vm, long val) {
+    *(vm->stackTop-1)=val;
 }
 
 inline uint64_t readLong(VM* vm) {
@@ -82,9 +59,6 @@ static void run(VM* vm) {
 #ifdef DEBUG_TRACE_EXECUTION
     int lineInformationIndex = 0;
 #endif
-    
-    const uint8_t byteZero = 0;
-    const uint8_t byteOne = 1;
     
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -113,15 +87,15 @@ static void run(VM* vm) {
                 return;
             }
             case OP_true: {
-                pushByte(vm, (void*)&byteOne);
+                push(vm, 1);
                 break;
             }
             case OP_false: {
-                pushByte(vm, (void*)&byteZero);
+                push(vm, 0);
                 break;
             }
             case OP_pop: {
-                popByte(vm);
+                pop(vm);
                 break;
             }
             case OP_pop_n: {
@@ -131,7 +105,7 @@ static void run(VM* vm) {
             }
             case OP_loadEmbeddedLongConstant: {
                 uint64_t value = readLong(vm);
-                pushLong(vm, &value);
+                push(vm, value);
                 break;
             }
             case OP_loadConstantFromTable: {
@@ -143,13 +117,13 @@ static void run(VM* vm) {
                 break;
             }
             case OP_negateInt: {
-                long val = -(*((long *)topLongByReference(vm)));
-                modifyTopLongInPlace(vm, &val);
+                long val = -(*((long *)topByReference(vm)));
+                modifyTopInPlace(vm, val);
                 break;
             }
             case OP_negateDouble: {
-                double val = -((double)(*((double *)topLongByReference(vm))));
-                modifyTopLongInPlace(vm, &val);
+                double val = -((double)(*((double *)topByReference(vm))));
+                modifyTopInPlace(vm, *(long*)&val);
                 break;
             }
         }
