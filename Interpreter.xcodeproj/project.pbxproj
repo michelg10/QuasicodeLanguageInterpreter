@@ -14,6 +14,7 @@
 		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
 		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
 		D052DEF0283B321300C060FE /* stringifyOptional.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEF283B321300C060FE /* stringifyOptional.swift */; };
+		D05B53062878C4C9007F545C /* benchmarkVMprimitives.c in Sources */ = {isa = PBXBuildFile; fileRef = D05B53052878C4C9007F545C /* benchmarkVMprimitives.c */; };
 		D0691C582876E2EC00DA85F3 /* VMType.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0691C572876E2EC00DA85F3 /* VMType.swift */; };
 		D0691C5C28770CD600DA85F3 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5B28770CD600DA85F3 /* memory.c */; };
 		D0691C5F2877220500DA85F3 /* disassembler.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5E2877220500DA85F3 /* disassembler.c */; };
@@ -74,6 +75,8 @@
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
 		D052DEEF283B321300C060FE /* stringifyOptional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stringifyOptional.swift; sourceTree = "<group>"; };
+		D05B53042878C4C9007F545C /* benchmarkVMprimitives.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = benchmarkVMprimitives.h; sourceTree = "<group>"; };
+		D05B53052878C4C9007F545C /* benchmarkVMprimitives.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = benchmarkVMprimitives.c; sourceTree = "<group>"; };
 		D0691C552876D52000DA85F3 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		D0691C562876E2DF00DA85F3 /* VMType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VMType.h; sourceTree = "<group>"; };
 		D0691C572876E2EC00DA85F3 /* VMType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VMType.swift; sourceTree = "<group>"; };
@@ -183,6 +186,8 @@
 			children = (
 				D0832F762876B65F0003B625 /* VM.h */,
 				D0832F772876B65F0003B625 /* VM.c */,
+				D05B53042878C4C9007F545C /* benchmarkVMprimitives.h */,
+				D05B53052878C4C9007F545C /* benchmarkVMprimitives.c */,
 				D0691C5D2877220500DA85F3 /* disassembler.h */,
 				D0691C5E2877220500DA85F3 /* disassembler.c */,
 				D0832F792876BA550003B625 /* chunk.h */,
@@ -383,6 +388,7 @@
 				D0AA39312827B8DF00CF94ED /* PruneNils.swift in Sources */,
 				D001B9F22871CA1700293B8C /* Compiler.swift in Sources */,
 				D07B7111281D6920003A672F /* AstPrinter.swift in Sources */,
+				D05B53062878C4C9007F545C /* benchmarkVMprimitives.c in Sources */,
 				D0DD7C562819849600FBD20C /* Expr.swift in Sources */,
 				D0AA39142823C88500CF94ED /* AstTypeHasher.swift in Sources */,
 				D0691C582876E2EC00DA85F3 /* VMType.swift in Sources */,
@@ -449,7 +455,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",

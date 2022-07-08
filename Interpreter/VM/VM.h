@@ -16,6 +16,7 @@ typedef struct {
     uint8_t* ip; // this is getting moved to a call frame soon
 } VM;
 
+void resetVM(VM* vm);
 VM* initVM(void);
 void freeVM(VM* vm);
 void interpret(VM* vm, Chunk* chunk);

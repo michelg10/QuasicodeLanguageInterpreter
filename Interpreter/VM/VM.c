@@ -8,7 +8,7 @@ static void resetStack(VM* vm) {
     vm->stackTop = vm->stack;
 }
 
-static void resetVM(VM* vm) {
+void resetVM(VM* vm) {
     resetStack(vm);
 }
 
@@ -23,7 +23,7 @@ void freeVM(VM* vm) {
 }
 
 inline void pushLong(VM* vm, void* value) {
-    memcpy(vm->stackTop, value, 8);
+    memcpy(vm->stackTop, &value, 8);
     vm->stackTop+=8;
 }
 

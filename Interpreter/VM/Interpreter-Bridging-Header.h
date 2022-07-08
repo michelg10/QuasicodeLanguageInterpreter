@@ -5,3 +5,4 @@
 #include "chunk.h"
 #include "vm.h"
 #include "disassembler.h"
+#include "benchmarkVMprimitives.h"

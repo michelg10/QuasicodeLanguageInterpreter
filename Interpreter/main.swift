@@ -2,6 +2,12 @@ import Foundation
 
 let DEBUG = true
 
+if (true) {
+    print("----- VM Primitives Benchmark -----")
+    benchmarkVMprimitives()
+    exit(0)
+}
+
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test9.qs")
