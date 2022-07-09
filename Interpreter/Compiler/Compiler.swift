@@ -191,6 +191,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
         compile(stmt.expression)
+        writeInstructionToChunk(op: .OP_pop, expr: stmt.expression)
     }
     
     internal func visitIfStmt(stmt: IfStmt) {
@@ -198,7 +199,29 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     internal func visitOutputStmt(stmt: OutputStmt) {
-        
+        for expr in stmt.expressions {
+            compile(expr)
+            let type = expr.type!
+            switch type {
+            case is QsInt:
+                writeInstructionToChunk(op: .OP_outputInt, expr: expr)
+            case is QsDouble:
+                writeInstructionToChunk(op: .OP_outputDouble, expr: expr)
+            case is QsBoolean:
+                writeInstructionToChunk(op: .OP_outputBoolean, expr: expr)
+            case is QsClass:
+                // TODO: String
+                writeInstructionToChunk(op: .OP_outputClass, expr: expr)
+            case is QsArray:
+                writeInstructionToChunk(op: .OP_outputArray, expr: expr)
+            case is QsAnyType:
+                writeInstructionToChunk(op: .OP_outputAny, expr: expr)
+            case is QsVoidType:
+                writeInstructionToChunk(op: .OP_outputVoid, expr: expr)
+            default:
+                assertionFailure("Unexpected output type \(printType(type))")
+            }
+        }
     }
     
     internal func visitInputStmt(stmt: InputStmt) {

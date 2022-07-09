@@ -21,12 +21,13 @@ VM* initVM(void);
 void freeVM(VM* vm);
 void interpret(VM* vm, Chunk* chunk);
 
-void push(VM* vm, uint64_t value);
+void push(VM* vm, void* value);
 uint64_t pop(VM* vm);
+uint64_t* popByReference(VM* vm);
 void popCount(VM* vm, uint8_t count);
 void* topByReference(VM* vm);
 uint64_t top(VM* vm);
-void modifyTopInPlace(VM* vm, long val);
+void modifyTopInPlace(VM* vm, void* val);
 uint64_t readLong(VM* vm);
 
 #endif /* VM_h */

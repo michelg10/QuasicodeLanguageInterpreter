@@ -47,6 +47,14 @@ enum OpCode {
     OP_addString=42,
     OP_orBool=43,
     OP_andBool=44,
+    OP_outputInt=45,
+    OP_outputDouble=46,
+    OP_outputBoolean=47,
+    OP_outputString=48,
+    OP_outputArray=49,
+    OP_outputAny=50,
+    OP_outputClass=51,
+    OP_outputVoid=52,
 };
 
 #endif /* opcode_h */

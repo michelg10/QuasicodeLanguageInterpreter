@@ -114,6 +114,14 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
         SIMPLE_INSTRUCTION(OP_addString)
         SIMPLE_INSTRUCTION(OP_orBool)
         SIMPLE_INSTRUCTION(OP_andBool)
+        SIMPLE_INSTRUCTION(OP_outputInt)
+        SIMPLE_INSTRUCTION(OP_outputDouble)
+        SIMPLE_INSTRUCTION(OP_outputBoolean)
+        SIMPLE_INSTRUCTION(OP_outputString)
+        SIMPLE_INSTRUCTION(OP_outputArray)
+        SIMPLE_INSTRUCTION(OP_outputAny)
+        SIMPLE_INSTRUCTION(OP_outputClass)
+        SIMPLE_INSTRUCTION(OP_outputVoid)
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset+1;

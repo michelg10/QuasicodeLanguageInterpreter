@@ -44,4 +44,12 @@ enum OpCode: Int {
     case OP_addString
     case OP_orBool
     case OP_andBool
+    case OP_outputInt
+    case OP_outputDouble
+    case OP_outputBoolean
+    case OP_outputString
+    case OP_outputArray
+    case OP_outputAny
+    case OP_outputClass
+    case OP_outputVoid
 }
