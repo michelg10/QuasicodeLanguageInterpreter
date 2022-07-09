@@ -261,10 +261,16 @@ do { \
                 break;
             }
             case OP_intDivideInt: {
-                
+                // integer division for integer is just regular division
+                INT_BINARY_OP(/);
+                break;
             }
             case OP_intDivideDouble: {
-                
+                double b = READ_DOUBLE();
+                double a = READ_DOUBLE();
+                long result = a/b;
+                push(vm, &result);
+                break;
             }
             case OP_modInt: {
                 INT_BINARY_OP(%);

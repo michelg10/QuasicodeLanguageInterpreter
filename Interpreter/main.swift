@@ -1,11 +1,11 @@
 import Foundation
 
-let DEBUG = false
+let DEBUG = true
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
-//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test9.qs")
-let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test9.qs")
+//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
 
 let start = DispatchTime.now()
 
