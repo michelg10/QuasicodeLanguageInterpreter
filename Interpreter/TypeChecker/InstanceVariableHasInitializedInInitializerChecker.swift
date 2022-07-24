@@ -223,7 +223,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
             let symbol = symbolTable.getSymbol(id: expr.uniqueFunctionCall!) as! FunctionLikeSymbol
             if symbol is MethodSymbol {
                 let symbol = symbol as! MethodSymbol
-                if symbol.methodStmt.isStatic == false {
+                if symbol.isStatic == false {
                     var isOnClassInstanceMethodCall = false
                     if expr.object == nil || expr.object is ThisExpr {
                         isOnClassInstanceMethodCall = true

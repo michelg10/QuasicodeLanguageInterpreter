@@ -212,7 +212,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         result.params.reserveCapacity(stmt.params.count)
         
         for param in stmt.params {
-            var newParam = FunctionParam.init(name: param.name, astType: nil)
+            var newParam = AstFunctionParam(name: param.name, astType: nil)
             if param.astType != nil {
                 newParam.astType = catchErrorClosure {
                     try expandClasses(param.astType!)

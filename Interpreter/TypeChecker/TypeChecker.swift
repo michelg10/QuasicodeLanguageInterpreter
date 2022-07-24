@@ -380,7 +380,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             var matchLevel = 1
             for i in 0..<withParameters.count {
                 let givenType = withParameters[i]
-                let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
+                let expectedType = functionSymbolEntry.functionParams[i].type
                 if typesIsEqual(givenType, expectedType) {
                     matchLevel = max(matchLevel, 1)
                     continue
@@ -472,10 +472,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             potentialFunctions.removeAll { val in
                 let functionSymbol = symbolTable.getSymbol(id: val) as! MethodSymbol
-                if removeIsStatic != nil && functionSymbol.methodStmt.isStatic == removeIsStatic {
+                if removeIsStatic != nil && functionSymbol.isStatic == removeIsStatic {
                     return true
                 }
-                if removeIsPrivate == true && functionSymbol.methodStmt.visibilityModifier == .PRIVATE && doNotRemovePrivateOfClass != functionSymbol.withinClass {
+                if removeIsPrivate == true && functionSymbol.visibility == .PRIVATE && doNotRemovePrivateOfClass != functionSymbol.withinClass {
                     return true
                 }
                 if removeConstructor == true && functionSymbol.isConstructor && doNotRemoveConstructorOfClass != functionSymbol.withinClass {
@@ -518,7 +518,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                         let currentFunctionSymbol = symbolTable.getSymbol(id: currentFunctionIndex!)
                         if currentFunctionSymbol is MethodSymbol {
                             let currentFunctionSymbol = currentFunctionSymbol as! MethodSymbol
-                            let isStatic = currentFunctionSymbol.methodStmt.isStatic
+                            let isStatic = currentFunctionSymbol.isStatic
                             // got whether or not its static, now filter through
                             if isStatic {
                                 filterPotentialFunctions(functionsFilter: .leaveStatic)
@@ -571,7 +571,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         let functionSymbolEntry = symbolTable.getSymbol(id: bestMatches[0]) as! FunctionLikeSymbol
         for i in 0..<expr.arguments.count {
             let givenType = expr.arguments[i].type!
-            let expectedType = functionSymbolEntry.getUnderlyingFunctionStmt().params[i].getType(symbolTable: symbolTable)!
+            let expectedType = functionSymbolEntry.functionParams[i].type
             if !typesIsEqual(givenType, expectedType) {
                 expr.arguments[i] = ImplicitCastExpr(expression: expr.arguments[i], type: expectedType, startLocation: expr.startLocation, endLocation: expr.endLocation)
             }
@@ -581,7 +581,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.uniqueFunctionCall = bestMatches[0]
             expr.type = typedResolvedFunctionSymbol.returnType
         } else if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? MethodSymbol {
-            if typedResolvedFunctionSymbol.methodStmt.isStatic || blockPolymorphicCall || typedResolvedFunctionSymbol.overridedBy.isEmpty {
+            if typedResolvedFunctionSymbol.isStatic || blockPolymorphicCall || typedResolvedFunctionSymbol.overridedBy.isEmpty {
                 // static calls cannot be polymorphic
                 expr.uniqueFunctionCall = bestMatches[0]
                 expr.type = typedResolvedFunctionSymbol.returnType
@@ -1214,13 +1214,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return type.accept(visitor: self)
     }
     
-    private func typeFunction(functionSymbol: inout FunctionLikeSymbol) {
-        let functionStmt = functionSymbol.getUnderlyingFunctionStmt()
+    private func typeFunction(functionStmt: FunctionStmt) {
+        if functionStmt.symbolTableIndex == nil {
+            return
+        }
+        var functionSymbol = symbolTable.getSymbol(id: functionStmt.symbolTableIndex!) as! FunctionLikeSymbol
         if functionStmt.annotation != nil {
             functionSymbol.returnType = typeCheck(functionStmt.annotation!)
         } else {
             functionSymbol.returnType = QsVoidType()
         }
+        var functionParams: [FunctionParam] = []
         for i in 0..<functionStmt.params.count {
             let param = functionStmt.params[i]
             var paramType: QsType = QsAnyType(assignable: false)
@@ -1231,16 +1235,30 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 let symbol = self.symbolTable.getSymbol(id: functionStmt.params[i].symbolTableIndex!) as! VariableSymbol
                 symbol.type = paramType
             }
+            functionParams.append(.init(name: param.name.lexeme, type: paramType))
         }
+        functionSymbol.functionParams = functionParams
+        print("Set to", functionParams)
     }
     
-    private func typeFunctions() {
+    private func typeFunctions(statements: [Stmt]) {
         // assign types to their parameters and their return types
-        for symbol in symbolTable.getAllSymbols() {
-            guard var functionSymbol = symbol as? FunctionLikeSymbol else {
+        for statement in statements {
+            if statement is ClassStmt {
+                let statement = statement as! ClassStmt
+                typeFunctions(statements: statement.staticMethods)
+                typeFunctions(statements: statement.methods)
                 continue
             }
-            typeFunction(functionSymbol: &functionSymbol)
+            var functionStmt: FunctionStmt
+            if statement is FunctionStmt {
+                functionStmt = statement as! FunctionStmt
+            } else if statement is MethodStmt {
+                functionStmt = (statement as! MethodStmt).function
+            } else {
+                continue
+            }
+            typeFunction(functionStmt: functionStmt)
         }
     }
     
@@ -1293,7 +1311,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTables
         
-        typeFunctions()
+        typeFunctions(statements: statements)
         typeClassFields()
         typeGlobals(statements: statements)
         

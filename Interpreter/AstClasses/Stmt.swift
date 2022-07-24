@@ -145,12 +145,12 @@ class FunctionStmt: Stmt {
     var symbolTableIndex: Int?
     var nameSymbolTableIndex: Int?
     var scopeIndex: Int?
-    var params: [FunctionParam]
+    var params: [AstFunctionParam]
     var annotation: AstType?
     var body: [Stmt]
     var endOfFunction: Token
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [FunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex

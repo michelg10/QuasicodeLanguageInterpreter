@@ -99,5 +99,12 @@ class QsVoidType: QsType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    var assignable: Bool {
+        get {
+            false
+        }
+        set {
+            // kek
+        }
+    }
 }

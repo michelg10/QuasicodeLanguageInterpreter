@@ -256,12 +256,12 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return (astType == nil ? "NoMandatedType" : printAst(astType!))
     }
     
-    private func parenthesizeFunctionParam(functionParam: FunctionParam) -> String {
+    private func parenthesizeFunctionParam(functionParam: AstFunctionParam) -> String {
         let initializer = functionParam.initializer == nil ? "" : " = \(printAst(functionParam.initializer!))"
         return "(\(functionParam.name.lexeme){index: \(stringifyOptionalInt(functionParam.symbolTableIndex)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
     }
     
-    private func parenthesizeFunctionParams(functionParams: [FunctionParam]) -> String {
+    private func parenthesizeFunctionParams(functionParams: [AstFunctionParam]) -> String {
         var result = ""
         for functionParam in functionParams {
             result+=" "+parenthesizeFunctionParam(functionParam: functionParam)

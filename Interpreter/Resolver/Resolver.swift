@@ -478,7 +478,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsVoidType()))
         } else {
             let classSymbol = symbolTable.getSymbol(id: withinClass!) as! ClassSymbol
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false, isConstructor: classSymbol.classStmt.name.lexeme == stmt.name.lexeme))
+            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false, isConstructor: classSymbol.nonSignatureName == stmt.name.lexeme))
         }
         stmt.symbolTableIndex = symbolTableIndex
         let functionNameSymbolName = "#FuncName#"+stmt.name.lexeme
@@ -898,7 +898,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                         return
                     }
                     // check static consistency
-                    if method.isStatic != existingMethodSymbolInfo.methodStmt.isStatic {
+                    if method.isStatic != existingMethodSymbolInfo.isStatic {
                         error(message: "Static does not match for overriding method", token: (method.isStatic ? method.staticKeyword! : method.function.name))
                     }
                     // check return type consistency

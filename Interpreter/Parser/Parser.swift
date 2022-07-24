@@ -207,7 +207,7 @@ class Parser {
         let keyword = previous()
         let name = try consume(type: .IDENTIFIER, message: "Expect function name")
         try consume(type: .LEFT_PAREN, message: "Expect '(' after function declaration")
-        var parameters: [FunctionParam] = []
+        var parameters: [AstFunctionParam] = []
         var functionType: AstType? = nil
         if !check(type: .RIGHT_PAREN) {
             repeat {

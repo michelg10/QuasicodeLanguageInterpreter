@@ -6,7 +6,7 @@ protocol Symbol {
 protocol FunctionLikeSymbol: Symbol {
     var returnType: QsType { get set }
     var paramRange: ClosedRange<Int> { get }
-    func getUnderlyingFunctionStmt() -> FunctionStmt
+    var functionParams: [FunctionParam] { get set }
 }
 
 enum VariableStatus {
@@ -68,6 +68,10 @@ func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
     }
     return lowerBound...functionStmt.params.count
 }
+struct FunctionParam {
+    var name: String
+    var type: QsType
+}
 class FunctionSymbol: FunctionLikeSymbol {
     init(name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = -1
@@ -76,18 +80,26 @@ class FunctionSymbol: FunctionLikeSymbol {
         self.functionStmt = functionStmt
         self.returnType = returnType
         self.paramRange = getParamRangeForFunction(functionStmt: functionStmt)
+        self.functionParams = []
+    }
+    
+    init(name: String, functionParams: [FunctionParam], paramRange: ClosedRange<Int>, returnType: QsType) {
+        self.id = -1
+        self.belongsToTable = -1
+        self.name = name
+        self.functionParams = functionParams
+        self.paramRange = paramRange
+        self.returnType = returnType
+        self.functionStmt = nil
     }
     
     var id: Int
     var belongsToTable: Int
     let name: String
-    let functionStmt: FunctionStmt
+    let functionStmt: FunctionStmt?
+    var functionParams: [FunctionParam]
     let paramRange: ClosedRange<Int>
     var returnType: QsType
-    
-    func getUnderlyingFunctionStmt() -> FunctionStmt {
-        return functionStmt
-    }
 }
 class MethodSymbol: FunctionLikeSymbol {
     init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool, isConstructor: Bool) {
@@ -101,6 +113,25 @@ class MethodSymbol: FunctionLikeSymbol {
         self.returnType = returnType
         self.finishedInit = finishedInit
         self.isConstructor = isConstructor
+        self.isStatic = methodStmt.isStatic
+        self.visibility = methodStmt.visibilityModifier
+        self.functionParams = []
+    }
+    
+    init(name: String, withinClass: Int, overridedBy: [Int], isStatic: Bool, visibility: VisibilityModifier, functionParams: [FunctionParam], paramRange: ClosedRange<Int>, returnType: QsType, isConstructor: Bool) {
+        self.id = -1
+        self.belongsToTable = -1
+        self.name = name
+        self.withinClass = withinClass
+        self.overridedBy = overridedBy
+        self.methodStmt = nil
+        self.isStatic = isStatic
+        self.visibility = visibility
+        self.functionParams = functionParams
+        self.paramRange = paramRange
+        self.returnType = returnType
+        self.finishedInit = true
+        self.isConstructor = isConstructor
     }
     
     var id: Int
@@ -108,19 +139,14 @@ class MethodSymbol: FunctionLikeSymbol {
     let name: String
     let withinClass: Int
     var overridedBy: [Int]
-    let methodStmt: MethodStmt
+    let methodStmt: MethodStmt?
+    let isStatic: Bool
+    let visibility: VisibilityModifier
+    var functionParams: [FunctionParam]
     let paramRange: ClosedRange<Int>
     var returnType: QsType
     var finishedInit: Bool
     let isConstructor: Bool
-    
-    func getParamCount() -> Int {
-        return methodStmt.function.params.count
-    }
-    
-    func getUnderlyingFunctionStmt() -> FunctionStmt {
-        return methodStmt.function
-    }
 }
 class ClassChain {
     init(upperClass: Int?, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
@@ -140,6 +166,7 @@ class ClassSymbol: Symbol {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
+        self.nonSignatureName = classStmt.name.lexeme
         if classStmt.expandedTemplateParameters == nil || classStmt.expandedTemplateParameters!.count == 0 {
             displayName = classStmt.name.lexeme
         } else {
@@ -152,11 +179,15 @@ class ClassSymbol: Symbol {
     
     var id: Int
     var belongsToTable: Int
-    let name: String
+    let name: String // is actually its signature
     let displayName: String
+    let nonSignatureName: String
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt
+//    let instanceMethods: [] // idk what yet
+//    let classMethods: []
+    
 }
 class ClassNameSymbol: Symbol {
     init(name: String) {

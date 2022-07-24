@@ -37,11 +37,24 @@ func printVariableInfo(_ symbol: VariableSymbol) -> String {
 func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
     return "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
 }
+func debugClosedIntRangeToString(_ range: ClosedRange<Int>) -> String {
+    return "\(range.lowerBound)...\(range.upperBound)"
+}
+func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> String {
+    return "["+functionParams.reduce("") { partialResult, functionParam in
+        var nextResult = partialResult
+        if nextResult != "" {
+            nextResult += ", "
+        }
+        nextResult+="\(functionParam.name): \(printType(functionParam.type))"
+        return nextResult
+    }+"]"
+}
 func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
-    return "returnType: \(printType(symbol.returnType))"
+    return "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), returnType: \(printType(symbol.returnType))"
 }
 func printMethodInfo(_ symbol: MethodSymbol) -> String {
-    return "returnType: \(printType(symbol.returnType)),withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit), isConstructor: \(symbol.isConstructor)"
+    return "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), returnType: \(printType(symbol.returnType)), isStatic: \(symbol.isStatic), visibility: \(symbol.visibility), withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit), isConstructor: \(symbol.isConstructor)"
 }
 func printClassInfo(_ symbol: ClassSymbol) -> String {
     return "displayName: \(symbol.displayName), classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.classChain?.depth)), parentOf: \(stringifyOptionalIntArray(symbol.classChain?.parentOf)), upperClass: \(stringifyOptionalInt(symbol.classChain?.upperClass))"
