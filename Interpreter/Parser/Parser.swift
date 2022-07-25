@@ -112,7 +112,6 @@ class Parser {
         try consume(type: .EOL, message: "Expect end-of-line after class signature")
         
         var methods: [MethodStmt] = []
-        var staticMethods: [MethodStmt] = []
         var fields: [ClassField] = []
         var staticFields: [ClassField] = []
         var staticKeyword: Token? = nil
@@ -155,11 +154,7 @@ class Parser {
             if match(types: .FUNCTION) {
                 let function = try FunctionDeclaration()
                 let method = MethodStmt.init(isStatic: isStatic!, staticKeyword: staticKeyword, visibilityModifier: visibilityModifer!, function: function as! FunctionStmt)
-                if isStatic! {
-                    staticMethods.append(method)
-                } else {
-                    methods.append(method)
-                }
+                methods.append(method)
             } else if match(types: .IDENTIFIER) {
                 let fieldName = previous()
                 var typeAnnotation: AstType
@@ -177,11 +172,7 @@ class Parser {
                     }
                     let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
                     try consume(type: .EOL, message: "Expect end-of-line after field declaration")
-                    if isStatic! {
-                        staticFields.append(field)
-                    } else {
-                        fields.append(field)
-                    }
+                    fields.append(field)
                 } catch {
                     synchronize()
                 }
@@ -198,7 +189,7 @@ class Parser {
         
         currentClassName = nil
         currentClassTemplateParameters = []
-        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, instanceThisSymbolTableIndex: nil, staticThisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, staticMethods: staticMethods, fields: fields, staticFields: staticFields)
+        let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, instanceThisSymbolTableIndex: nil, staticThisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, fields: fields)
         classStmts.append(result)
         return result
     }

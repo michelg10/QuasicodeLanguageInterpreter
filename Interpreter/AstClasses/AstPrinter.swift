@@ -236,11 +236,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         })
         let classDesc = "{name: \(stmt.name.lexeme), id: \(stringifyOptionalInt(stmt.symbolTableIndex)), instanceThisId: \(stringifyOptionalInt(stmt.instanceThisSymbolTableIndex)), staticThisId: \(stringifyOptionalInt(stmt.staticThisSymbolTableIndex)), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription), expandedTemplateParameers: \(expandedTemplateParametersDescription)}"
         var result = "(Class\(classDesc) { (scopeIndex: \(stringifyOptionalInt(stmt.scopeIndex)))\n"
-        result += indentBlockStmts(blockStmts: stmt.staticMethods)
         result += indentBlockStmts(blockStmts: stmt.methods)
-        for field in stmt.staticFields {
-            result += "    "+classField(field: field)+"\n"
-        }
         for field in stmt.fields {
             result += "    "+classField(field: field)+"\n"
         }

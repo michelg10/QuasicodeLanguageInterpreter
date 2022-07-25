@@ -175,6 +175,8 @@ class ClassSymbol: Symbol {
         self.classId = classId
         self.classChain = classChain
         self.classStmt = classStmt
+        
+        methods = []
     }
     
     var id: Int
@@ -185,8 +187,7 @@ class ClassSymbol: Symbol {
     var classId: Int
     var classChain: ClassChain?
     var classStmt: ClassStmt
-//    let instanceMethods: [] // idk what yet
-//    let classMethods: []
+    var methods: [MethodSymbol]
     
 }
 class ClassNameSymbol: Symbol {

@@ -1035,9 +1035,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for field in stmt.fields {
             typeField(field)
         }
-        for field in stmt.staticFields {
-            typeField(field)
-        }
         let symbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! ClassSymbol
         if stmt.staticThisSymbolTableIndex != nil && stmt.instanceThisSymbolTableIndex != nil && stmt.symbolTableIndex != nil {
             let relatedInstanceThisSymbol = symbolTable.getSymbol(id: stmt.instanceThisSymbolTableIndex!) as! VariableSymbol
@@ -1049,9 +1046,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // type all of the methods
         for method in stmt.methods {
             processMethodStmt(stmt: method, isInitializer: method.function.name.lexeme == stmt.name.lexeme, accompanyingClassStmt: stmt)
-        }
-        for method in stmt.staticMethods {
-            processMethodStmt(stmt: method, isInitializer: false, accompanyingClassStmt: stmt)
         }
     }
     
@@ -1246,7 +1240,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for statement in statements {
             if statement is ClassStmt {
                 let statement = statement as! ClassStmt
-                typeFunctions(statements: statement.staticMethods)
                 typeFunctions(statements: statement.methods)
                 continue
             }
@@ -1271,9 +1264,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             symbol.type = typeCheck(classField.astType)
         }
         for field in classStmt.fields {
-            typeField(classField: field)
-        }
-        for field in classStmt.staticFields {
             typeField(classField: field)
         }
     }

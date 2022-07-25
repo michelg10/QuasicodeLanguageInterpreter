@@ -354,23 +354,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 }
             }
         }
-        for field in stmt.staticFields {
-            if field.initializer != nil {
-                catchErrorClosure {
-                    try resolve(field.initializer!)
-                }
-            }
-        }
         
         // set all the methods to available and all the fields to finishedInit
         for field in stmt.fields {
-            if field.symbolTableIndex == nil {
-                continue
-            }
-            let symbol = symbolTable.getSymbol(id: field.symbolTableIndex!) as! VariableSymbol
-            symbol.variableStatus = .finishedInit
-        }
-        for field in stmt.staticFields {
             if field.symbolTableIndex == nil {
                 continue
             }
@@ -384,18 +370,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
             symbol.finishedInit = true
         }
-        for method in stmt.staticMethods {
-            if method.function.symbolTableIndex == nil {
-                continue
-            }
-            let symbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as! MethodSymbol
-            symbol.finishedInit = true
-        }
         
         // resolve the methods now
-        for method in stmt.staticMethods {
-            resolve(method)
-        }
         for method in stmt.methods {
             resolve(method)
         }
@@ -669,11 +645,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.id)
             }
         }
-        for method in stmt.staticMethods {
-            catchErrorClosure {
-                try defineFunction(stmt: method.function, methodStmt: method, withinClass: classSymbol.id)
-            }
-        }
         
         func defineField(field: ClassField) {
             if symbolTable.queryAtScopeOnly(field.name.lexeme) != nil {
@@ -684,9 +655,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
         for field in stmt.fields {
-            defineField(field: field)
-        }
-        for field in stmt.staticFields {
             defineField(field: field)
         }
         
@@ -916,9 +884,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 }
             }
             for method in classStmt.methods {
-                handleMethod(method)
-            }
-            for method in classStmt.staticMethods {
                 handleMethod(method)
             }
             

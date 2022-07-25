@@ -63,11 +63,9 @@ class ClassStmt: Stmt {
     var expandedTemplateParameters: [AstType]?
     var superclass: AstClassType?
     var methods: [MethodStmt]
-    var staticMethods: [MethodStmt]
     var fields: [ClassField]
-    var staticFields: [ClassField]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], staticMethods: [MethodStmt], fields: [ClassField], staticFields: [ClassField]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [ClassField]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
@@ -78,9 +76,7 @@ class ClassStmt: Stmt {
         self.expandedTemplateParameters = expandedTemplateParameters
         self.superclass = superclass
         self.methods = methods
-        self.staticMethods = staticMethods
         self.fields = fields
-        self.staticFields = staticFields
     }
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
@@ -93,9 +89,7 @@ class ClassStmt: Stmt {
         self.expandedTemplateParameters = objectToCopy.expandedTemplateParameters
         self.superclass = objectToCopy.superclass
         self.methods = objectToCopy.methods
-        self.staticMethods = objectToCopy.staticMethods
         self.fields = objectToCopy.fields
-        self.staticFields = objectToCopy.staticFields
     }
 
     func accept(visitor: StmtVisitor) {

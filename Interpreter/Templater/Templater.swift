@@ -100,10 +100,8 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         templateParameterMappings.append(newMapping)
         
         resultingClass.fields = expandFields(fields: belongingClass.fields)
-        resultingClass.staticFields = expandFields(fields: belongingClass.staticFields)
         
         resultingClass.methods = expandMethods(methods: belongingClass.methods)
-        resultingClass.staticMethods = expandMethods(methods: belongingClass.staticMethods)
         
         statements.append(resultingClass)
         
@@ -550,15 +548,6 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         for classStmt in classStmts {
             var canAddEmptyInitializer = true
             for field in classStmt.fields {
-                if field.initializer == nil {
-                    canAddEmptyInitializer = false
-                    break
-                }
-            }
-            if !canAddEmptyInitializer {
-                continue
-            }
-            for field in classStmt.staticFields {
                 if field.initializer == nil {
                     canAddEmptyInitializer = false
                     break
