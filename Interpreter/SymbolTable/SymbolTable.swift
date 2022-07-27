@@ -92,10 +92,6 @@ class SymbolTables {
         return query(name)?.id ?? nil
     }
     
-    public func getClassChain(id: Int) -> ClassChain? {
-        return (getSymbol(id: id) as? ClassSymbol)?.classChain
-    }
-    
     public func addToSymbolTable(symbol: Symbol) -> Int {
         var newSymbol = symbol
         newSymbol.id = allSymbols.count

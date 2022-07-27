@@ -67,13 +67,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "'super' cannot be referenced outside of a method", token: expr.keyword)
         }
         let currentClassSymbol = symbolTable.getSymbol(id: currentClassStatus!.symbolTableIndex) as! ClassSymbol
-        guard let classChain = currentClassSymbol.classChain else {
+        if currentClassSymbol.upperClass == nil {
             return
         }
-        if classChain.upperClass == nil {
-            return
-        }
-        let upperClass = symbolTable.getSymbol(id: classChain.upperClass!) as! ClassSymbol
+        let upperClass = symbolTable.getSymbol(id: currentClassSymbol.upperClass!) as! ClassSymbol
         if upperClass.classScopeSymbolTableIndex == nil {
             return
         }
@@ -617,7 +614,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let classSymbol = ClassSymbol(name: classSignature, classId: classId, classChain: nil, classStmt: stmt)
+        let classSymbol = ClassSymbol(name: classSignature, classId: classId, classStmt: stmt, upperClass: nil, depth: nil, parentOf: [])
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: classSymbol)
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
@@ -657,7 +654,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     private func eagerDefineClassesAndFunctions(statements: [Stmt]) {
         // add all class and function names into the undefinables list
-        var classIdCounter = 0
+        var classIdCounter = BUILTIN_CLASSES_COUNT // leave class ids for the built-in classes
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
                 catchErrorClosure {
@@ -723,17 +720,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         // find the maximum class id to create a union-find disjoint set in order to find circular references
-        var classIdCount = 0
+        var classIdCount = BUILTIN_CLASSES_COUNT-1
         for classStmt in classStmts {
             if classStmt.symbolTableIndex == nil {
                 continue
             }
-            guard let classSymbolInfo = symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol else {
-                assertionFailure("Symbol table symbol is not a class symbol")
-                continue
-            }
-            let currentClassChain = ClassChain(upperClass: nil, depth: -1, classStmt: classStmt, parentOf: [])
-            classSymbolInfo.classChain = currentClassChain
             
             classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol)?.classId) ?? 0)
         }
@@ -750,13 +741,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
-            guard let classChain = classSymbol.classChain else {
-                assertionFailure("Class chain missing!")
-                continue
-            }
             if classStmt.superclass == nil {
                 classClusterer.unite(anyTypeClusterId, classSymbol.classId)
-                classChain.depth = 1
+                classSymbol.depth = 1
                 continue
             }
             guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(generateClassSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
@@ -767,28 +754,22 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assertionFailure("Expected class symbol info in symbol table")
                 continue
             }
-            guard let inheritedClassChainObject = inheritedClassSymbol.classChain else {
-                assertionFailure("Class chain for inherited class missing!")
-                continue
-            }
             
             // check if the two classes are already related.
             if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
                 error(message: "'\(classSymbol.displayName)' inherits from itself", token: classStmt.name)
                 continue
             }
-            inheritedClassChainObject.parentOf.append(classStmt.symbolTableIndex!)
+            inheritedClassSymbol.parentOf.append(classStmt.symbolTableIndex!)
             classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
-            classChain.upperClass = inheritedClassSymbol.id
+            classSymbol.upperClass = inheritedClassSymbol.id
         }
         
         // fills the depth information in for the child classes
         func fillDepth(_ symbolTableId: Int, depth: Int) {
-            guard let classChain = symbolTable.getClassChain(id: symbolTableId) else {
-                return
-            }
-            classChain.depth = depth
-            for children in classChain.parentOf {
+            let classSymbol = symbolTable.getSymbol(id: symbolTableId) as! ClassSymbol
+            classSymbol.depth = depth
+            for children in classSymbol.parentOf {
                 fillDepth(children, depth: depth+1)
             }
         }
@@ -812,10 +793,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             // record functions into the methods
             guard let classSymbol = symbolTable.getSymbol(id: classId) as? ClassSymbol else {
                 assertionFailure("Expected class symbol")
-                return [:]
-            }
-            guard let classChain = classSymbol.classChain else {
-                assertionFailure("Expected class chain")
                 return [:]
             }
             var newMethodChain: [String : Int] = [:]
@@ -882,7 +859,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             
             methodsChain.append(newMethodChain)
             
-            for childClass in classChain.parentOf {
+            for childClass in classSymbol.parentOf {
                 let childClassOverrides = computeOverrideMethods(classId: childClass)
                 for (childOverrideSignature, overridingIds) in childClassOverrides {
                     if let methodSymbolId = currentClassSignatureToSymbolIdDict[childOverrideSignature] {
@@ -903,15 +880,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             return overrides
         }
         for classStmt in classStmts {
-            guard let classId = classStmt.symbolTableIndex else {
+            guard let classSymbolTableId = classStmt.symbolTableIndex else {
                 continue
             }
-            guard let classChain = symbolTable.getClassChain(id: classId) else {
-                continue
-            }
-            if classChain.depth == 1 {
-                fillDepth(classId, depth: 1)
-                computeOverrideMethods(classId: classId)
+            let classSymbol = symbolTable.getSymbol(id: classSymbolTableId) as! ClassSymbol
+            if classSymbol.depth == 1 {
+                fillDepth(classSymbolTableId, depth: 1)
+                computeOverrideMethods(classId: classSymbolTableId)
             }
         }
     }

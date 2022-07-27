@@ -50,14 +50,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         struct JumpError: Error { }
-        func jumpUpChain(classChain: ClassChain) throws -> (Int, ClassChain) {
-            guard let newClassId = classChain.upperClass else {
+        func jumpUpHierarchy(classSymbol: ClassSymbol) throws -> ClassSymbol {
+            guard let newClassId = classSymbol.upperClass else {
                 throw JumpError()
             }
-            guard let newChain = symbolTable.getClassChain(id: newClassId) else {
-                throw JumpError()
-            }
-            return (newClassId, newChain)
+            let newClassSymbol = symbolTable.getSymbol(id: newClassId) as! ClassSymbol
+            return newClassSymbol
         }
         
         do {
@@ -66,39 +64,34 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     // one of them is a QsClass but another isn't
                     return QsAnyType()
                 }
-                var aClassId = (a as! QsClass).id
-                var bClassId = (b as! QsClass).id
                 // they're unequal, so jump up the chain
                 // let the depth of aClass is deeper than bClass
-                guard var aChain = symbolTable.getClassChain(id: aClassId) else {
+                var aClassSymbol = symbolTable.getSymbol(id: (a as! QsClass).id) as! ClassSymbol
+                var bClassSymbol = symbolTable.getSymbol(id: (b as! QsClass).id) as! ClassSymbol
+                if aClassSymbol.depth == nil || bClassSymbol.depth == nil {
                     return QsErrorType()
                 }
-                guard var bChain = symbolTable.getClassChain(id: bClassId) else {
-                    return QsErrorType()
+                if aClassSymbol.depth!<bClassSymbol.depth! {
+                    swap(&aClassSymbol, &bClassSymbol)
                 }
-                if aChain.depth<bChain.depth {
-                    swap(&aChain, &bChain)
-                    swap(&aClassId, &bClassId)
-                }
-                let depthDiff = abs(aChain.depth - bChain.depth)
+                let depthDiff = abs(aClassSymbol.depth! - bClassSymbol.depth!)
                 for _ in 0..<depthDiff {
-                    (aClassId, aChain) = try jumpUpChain(classChain: aChain)
+                    aClassSymbol = try jumpUpHierarchy(classSymbol: aClassSymbol)
                 }
                 
-                assert(aChain.depth == bChain.depth, "Depth of chains should be identical!")
+                assert(aClassSymbol.depth == bClassSymbol.depth, "Depth of chains should be identical!")
                 
                 // keep on jumping up for both until they are the same
-                while (aClassId != bClassId) {
-                    if aChain.upperClass == -1 {
+                while (aClassSymbol.id != bClassSymbol.id) {
+                    if aClassSymbol.upperClass == nil {
                         return QsAnyType()
                     }
                     
-                    (aClassId, aChain) = try jumpUpChain(classChain: aChain)
-                    (bClassId, bChain) = try jumpUpChain(classChain: bChain)
+                    aClassSymbol = try jumpUpHierarchy(classSymbol: aClassSymbol)
+                    bClassSymbol = try jumpUpHierarchy(classSymbol: bClassSymbol)
                 }
                 
-                let classSymbol = symbolTable.getSymbol(id: aClassId) as! ClassSymbol
-                return QsClass(name: classSymbol.displayName, id: aClassId)
+                return QsClass(name: aClassSymbol.displayName, id: aClassSymbol.id)
             }
         } catch {
             return QsErrorType()
@@ -295,14 +288,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         if expr.name.lexeme == "super" && currentClassIndex != nil {
             let currentClassSymbol = symbolTable.getSymbol(id: currentClassIndex!) as! ClassSymbol
-            if currentClassSymbol.classChain != nil {
-                let classChain = currentClassSymbol.classChain!
-                if classChain.upperClass != nil {
-                    let parentClass = classChain.upperClass!
-                    let parentClassSymbol = symbolTable.getSymbol(id: parentClass) as! ClassSymbol
-                    expr.type = QsClass(name: parentClassSymbol.displayName, id: parentClass, assignable: false)
-                    return
-                }
+            if currentClassSymbol.upperClass != nil {
+                let parentClass = currentClassSymbol.upperClass!
+                let parentClassSymbol = symbolTable.getSymbol(id: parentClass) as! ClassSymbol
+                expr.type = QsClass(name: parentClassSymbol.displayName, id: parentClass, assignable: false)
+                return
             }
         }
         if expr.symbolTableIndex == nil {

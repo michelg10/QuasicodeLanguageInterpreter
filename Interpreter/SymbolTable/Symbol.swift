@@ -160,7 +160,7 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(name: String, classId: Int, classChain: ClassChain?, classStmt: ClassStmt) {
+    init(name: String, classId: Int, classStmt: ClassStmt, upperClass: Int?, depth: Int?, parentOf: [Int]) {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
@@ -171,8 +171,10 @@ class ClassSymbol: Symbol {
             displayName = name
         }
         self.classId = classId
-        self.classChain = classChain
         self.classScopeSymbolTableIndex = classStmt.symbolTableIndex
+        self.depth = depth
+        self.parentOf = parentOf
+        self.upperClass = upperClass
     }
     
     var id: Int
@@ -181,8 +183,10 @@ class ClassSymbol: Symbol {
     let displayName: String
     let nonSignatureName: String
     var classId: Int
-    var classChain: ClassChain?
     var classScopeSymbolTableIndex: Int?
+    var upperClass: Int?
+    var depth: Int?
+    var parentOf: [Int]
     
     func getMethodSymbols(symbolTable: SymbolTables) -> [MethodSymbol] {
         if classScopeSymbolTableIndex == nil {
