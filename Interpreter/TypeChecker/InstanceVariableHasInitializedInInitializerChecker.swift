@@ -1,4 +1,4 @@
-class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisitor {
+class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
     private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
     private var symbolTable: SymbolTables
@@ -6,6 +6,11 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     private var reportErrorForExpression: ((_ expression: Expr, _ message: String) -> Void)
     private var reportEndingError: ((_ message: String) -> Void)
     private var withinClass: Int = 0
+    
+    private enum AnalysisInterrupts: Error {
+        case LoopExecutionFlowInterrupt // for break and continue
+        case ProgramExitInterrupt // for exit
+    }
     
     typealias State = ([Int : Bool], Int, Int)
     private func saveState() -> State {
@@ -62,12 +67,23 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     
     private var branchingInitializedSetsStack: [Set<Int>] = []
     
-    internal func visitIfStmt(stmt: IfStmt) {
+    internal func visitIfStmt(stmt: IfStmt) throws {
         markVariables(stmt.condition)
         let previousTrackedState = saveState()
         var runningState = previousTrackedState
         branchingInitializedSetsStack.append(Set<Int>())
-        markVariables(stmt.thenBranch)
+        let executionTerminatedSet = Set([-1])
+        func processBranch(_ stmt: BlockStmt) {
+            do {
+                try markVariables(stmt)
+            } catch AnalysisInterrupts.ProgramExitInterrupt {
+                branchingInitializedSetsStack.popLast()
+                branchingInitializedSetsStack.append(executionTerminatedSet)
+            } catch {
+                // do nothing
+            }
+        }
+        processBranch(stmt.thenBranch)
         // else if conditions MUST be executed in the else branch. thus, after some on-paper derivations, i came up with this algorithm:
         for elseIfBranch in stmt.elseIfBranches {
             // restore
@@ -79,32 +95,49 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
             runningState = saveState()
             // execute
             branchingInitializedSetsStack.append(Set<Int>())
-            markVariables(elseIfBranch.thenBranch)
+            processBranch(elseIfBranch.thenBranch)
         }
         // execute the else branch.
         restoreState(state: runningState)
         branchingInitializedSetsStack.append(Set<Int>())
-        if stmt.elseBranch != nil {
-            markVariables(stmt.elseBranch!)
-        }
+        processBranch(stmt.elseBranch!)
         
         // now union the last two
         var runningUnion = branchingInitializedSetsStack.popLast()!
         for _ in 0..<stmt.elseIfBranches.count {
-            runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
-            runningUnion = runningUnion.union(branchingInitializedSetsStack.popLast()!)
+            // intersect with the other branch, as only variables initialized by all branches must be initialized
+            if runningUnion == executionTerminatedSet {
+                runningUnion = branchingInitializedSetsStack.popLast()!
+            } else {
+                runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
+            }
+            // union with the condition, which both cases execute
+            if runningUnion != executionTerminatedSet {
+                // if both branches result in program termination, then the condition really doesn't matter. so only union the condition if there is no program termination
+                runningUnion = runningUnion.union(branchingInitializedSetsStack.popLast()!)
+            }
         }
-        runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
+        if runningUnion == executionTerminatedSet {
+            runningUnion = branchingInitializedSetsStack.popLast()!
+        } else {
+            runningUnion = runningUnion.intersection(branchingInitializedSetsStack.popLast()!)
+        }
         
         restoreState(state: previousTrackedState)
-        for remaining in runningUnion {
-            markAsInitialized(remaining)
+        if runningUnion == executionTerminatedSet {
+            throw AnalysisInterrupts.ProgramExitInterrupt
+        } else {
+            for remaining in runningUnion {
+                markAsInitialized(remaining)
+            }
         }
     }
     
-    private func processNonbranchingBlockStmt(_ stmt: BlockStmt) {
+    private func processLoopBlockStmt(_ stmt: BlockStmt) {
         let state = saveState()
-        markVariables(stmt)
+        catchErrorClosure {
+            try markVariables(stmt)
+        }
         restoreState(state: state)
     }
     
@@ -145,36 +178,38 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     internal func visitLoopFromStmt(stmt: LoopFromStmt) {
         markVariables(stmt.lRange)
         markVariables(stmt.rRange)
-        processNonbranchingBlockStmt(stmt.body)
+        processLoopBlockStmt(stmt.body)
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) {
         markVariables(stmt.expression)
-        processNonbranchingBlockStmt(stmt.body)
+        processLoopBlockStmt(stmt.body)
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) {
-        // TODO
-        // do nothing
+    internal func visitBreakStmt(stmt: BreakStmt) throws {
+        // do not analyze anything after this
+        throw AnalysisInterrupts.LoopExecutionFlowInterrupt
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) {
-        // do nothing
+    internal func visitContinueStmt(stmt: ContinueStmt) throws {
+        // like the break statement
+        throw AnalysisInterrupts.LoopExecutionFlowInterrupt
     }
     
-    internal func visitBlockStmt(stmt: BlockStmt) {
+    internal func visitBlockStmt(stmt: BlockStmt) throws {
         if stmt.scopeIndex != nil {
             let previousSymbolTablePosition = symbolTable.getCurrentTableId()
             symbolTable.gotoTable(stmt.scopeIndex!)
             defer {
                 symbolTable.gotoTable(previousSymbolTablePosition)
             }
-            markVariables(stmt.statements)
+            try markVariables(stmt.statements)
         }
     }
     
-    func visitExitStmt(stmt: ExitStmt) {
-        // TODO
+    func visitExitStmt(stmt: ExitStmt) throws {
+        // behavior when an exit statement is seen: just ignore this branch of code entirely. it doesn't matter if anything happens anyway
+        throw AnalysisInterrupts.ProgramExitInterrupt
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {
@@ -334,12 +369,12 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
             expr.accept(visitor: self)
         }
     }
-    private func markVariables(_ statement: Stmt) {
-        statement.accept(visitor: self)
+    private func markVariables(_ statement: Stmt) throws {
+        try statement.accept(visitor: self)
     }
-    private func markVariables(_ statements: [Stmt]) {
+    private func markVariables(_ statements: [Stmt]) throws {
         for statement in statements {
-            statement.accept(visitor: self)
+            try statement.accept(visitor: self)
         }
     }
     
@@ -363,11 +398,14 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     
     public func checkStatements(_ statements: [Stmt], withinClass: Int) {
         self.withinClass = withinClass
-        for statement in statements {
-            markVariables(statement)
-        }
-        if !finishedInitialization() {
-            reportEndingError(message: "Implicit return from initializer without initializing all stored properties")
+        // this is for exit statements
+        catchErrorClosure {
+            for statement in statements {
+                try markVariables(statement)
+            }
+            if !finishedInitialization() {
+                reportEndingError(message: "Implicit return from initializer without initializing all stored properties")
+            }
         }
     }
 }

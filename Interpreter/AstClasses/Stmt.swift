@@ -1,5 +1,6 @@
 protocol Stmt {
     func accept(visitor: StmtVisitor)
+    func accept(visitor: StmtThrowVisitor) throws
     func accept(visitor: StmtStmtVisitor) -> Stmt
     func accept(visitor: StmtStringVisitor) -> String
 }
@@ -19,6 +20,23 @@ protocol StmtVisitor {
     func visitContinueStmt(stmt: ContinueStmt) 
     func visitBlockStmt(stmt: BlockStmt) 
     func visitExitStmt(stmt: ExitStmt) 
+}
+
+protocol StmtThrowVisitor {
+    func visitClassStmt(stmt: ClassStmt) throws 
+    func visitMethodStmt(stmt: MethodStmt) throws 
+    func visitFunctionStmt(stmt: FunctionStmt) throws 
+    func visitExpressionStmt(stmt: ExpressionStmt) throws 
+    func visitIfStmt(stmt: IfStmt) throws 
+    func visitOutputStmt(stmt: OutputStmt) throws 
+    func visitInputStmt(stmt: InputStmt) throws 
+    func visitReturnStmt(stmt: ReturnStmt) throws 
+    func visitLoopFromStmt(stmt: LoopFromStmt) throws 
+    func visitWhileStmt(stmt: WhileStmt) throws 
+    func visitBreakStmt(stmt: BreakStmt) throws 
+    func visitContinueStmt(stmt: ContinueStmt) throws 
+    func visitBlockStmt(stmt: BlockStmt) throws 
+    func visitExitStmt(stmt: ExitStmt) throws 
 }
 
 protocol StmtStmtVisitor {
@@ -98,6 +116,9 @@ class ClassStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitClassStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitClassStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitClassStmtStmt(stmt: self)
     }
@@ -127,6 +148,9 @@ class MethodStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitMethodStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitMethodStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitMethodStmtStmt(stmt: self)
@@ -173,6 +197,9 @@ class FunctionStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitFunctionStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitFunctionStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitFunctionStmtStmt(stmt: self)
     }
@@ -193,6 +220,9 @@ class ExpressionStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitExpressionStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitExpressionStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitExpressionStmtStmt(stmt: self)
@@ -224,6 +254,9 @@ class IfStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitIfStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitIfStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitIfStmtStmt(stmt: self)
     }
@@ -245,6 +278,9 @@ class OutputStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitOutputStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitOutputStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitOutputStmtStmt(stmt: self)
     }
@@ -265,6 +301,9 @@ class InputStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitInputStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitInputStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitInputStmtStmt(stmt: self)
@@ -292,6 +331,9 @@ class ReturnStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitReturnStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitReturnStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitReturnStmtStmt(stmt: self)
@@ -323,6 +365,9 @@ class LoopFromStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitLoopFromStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitLoopFromStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitLoopFromStmtStmt(stmt: self)
     }
@@ -347,6 +392,9 @@ class WhileStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitWhileStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitWhileStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitWhileStmtStmt(stmt: self)
     }
@@ -368,6 +416,9 @@ class BreakStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitBreakStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitBreakStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitBreakStmtStmt(stmt: self)
     }
@@ -388,6 +439,9 @@ class ContinueStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitContinueStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitContinueStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitContinueStmtStmt(stmt: self)
@@ -413,6 +467,9 @@ class BlockStmt: Stmt {
     func accept(visitor: StmtVisitor) {
         visitor.visitBlockStmt(stmt: self)
     }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitBlockStmt(stmt: self)
+    }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitBlockStmtStmt(stmt: self)
     }
@@ -433,6 +490,9 @@ class ExitStmt: Stmt {
 
     func accept(visitor: StmtVisitor) {
         visitor.visitExitStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitExitStmt(stmt: self)
     }
     func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitExitStmtStmt(stmt: self)

@@ -1,11 +1,13 @@
 import Foundation
 
 let DEBUG = true
+let INCLUDE_BUILTINS = false
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
-let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test10.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
 
 let start = DispatchTime.now()
@@ -22,8 +24,10 @@ print(scanErrors)
 
 // initialize the symbol table and put in all the default classes
 var symbolTable: SymbolTables = .init()
-addStringClassToSymbolTable(symbolTable)
-let stringClassIndex = symbolTable.queryAtGlobalOnly("String<>")!.id
+if INCLUDE_BUILTINS {
+    addStringClassToSymbolTable(symbolTable)
+}
+let stringClassIndex = INCLUDE_BUILTINS ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
 
 print("----- Parser -----")
 let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex)
