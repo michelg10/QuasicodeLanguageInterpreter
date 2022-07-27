@@ -209,9 +209,9 @@ class Scanner {
     }
     
     private func blockComment() {
-        
+        let startingCommentLocation = InterpreterLocation.init(line: currentLocation.line, column: currentLocation.column-2)
         var blockCommentLevel = 1
-        while blockCommentLevel>0 {
+        while blockCommentLevel>0 && !isAtEnd() {
             let c = advance()
             if c == "*" {
                 if match(expected: "/") {
@@ -222,6 +222,11 @@ class Scanner {
                     blockCommentLevel+=1
                 }
             }
+        }
+        
+        if isAtEnd() {
+            problems.append(.init(message: "Unterminated '/*' comment", start: startingCommentLocation, end: startingCommentLocation))
+            return
         }
     }
     
