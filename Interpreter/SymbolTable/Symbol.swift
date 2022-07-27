@@ -160,6 +160,19 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
+    init(name: String, displayName: String, nonSignatureName: String, classId: Int, classScopeSymbolTableIndex: Int? = nil, upperClass: Int? = nil, depth: Int? = nil, parentOf: [Int]) {
+        self.id = -1
+        self.belongsToTable = -1
+        self.name = name
+        self.displayName = displayName
+        self.nonSignatureName = nonSignatureName
+        self.classId = classId
+        self.classScopeSymbolTableIndex = classScopeSymbolTableIndex
+        self.upperClass = upperClass
+        self.depth = depth
+        self.parentOf = parentOf
+    }
+    
     init(name: String, classId: Int, classStmt: ClassStmt, upperClass: Int?, depth: Int?, parentOf: [Int]) {
         self.id = -1
         self.belongsToTable = -1

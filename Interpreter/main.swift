@@ -19,8 +19,13 @@ if DEBUG {
 print("\nErrors")
 print(scanErrors)
 
+// initialize the symbol table and put in all the default classes
+var symbolTable: SymbolTables = .init()
+addStringClassToSymbolTable(symbolTable)
+let stringClassIndex = symbolTable.queryAtGlobalOnly("String<>")!.id
+
 print("----- Parser -----")
-let parser = Parser(tokens: tokens)
+let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex)
 let (stmts, classStmts, parseErrors) = parser.parse()
 var ast = stmts
 let astPrinter = AstPrinter()
@@ -43,7 +48,6 @@ print("\nErrors")
 print(templateErrors)
 
 print("----- Resolver -----")
-var symbolTable: SymbolTables = .init()
 let resolver = Resolver()
 let resolveErrors = resolver.resolveAST(statements: &ast, symbolTable: &symbolTable)
 if DEBUG {

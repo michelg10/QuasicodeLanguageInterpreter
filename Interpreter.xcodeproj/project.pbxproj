@@ -19,6 +19,7 @@
 		D0691C5F2877220500DA85F3 /* disassembler.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5E2877220500DA85F3 /* disassembler.c */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
+		D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */; };
 		D070FBC72877F82600EF0033 /* VMInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D070FBC62877F82600EF0033 /* VMInterface.swift */; };
 		D070FBDC2878301C00EF0033 /* ChunkInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D070FBDB2878301C00EF0033 /* ChunkInterface.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -84,6 +85,7 @@
 		D0691C5E2877220500DA85F3 /* disassembler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = disassembler.c; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
+		D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBuiltinClassesToSymbolTable.swift; sourceTree = "<group>"; };
 		D070FBC62877F82600EF0033 /* VMInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMInterface.swift; sourceTree = "<group>"; };
 		D070FBDB2878301C00EF0033 /* ChunkInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkInterface.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			isa = PBXGroup;
 			children = (
 				D0DD7C1C28179A1B00FBD20C /* main.swift */,
+				D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */,
 				D0AA392E2827B8C300CF94ED /* Util */,
 				D0DD7C312818392A00FBD20C /* Scanner */,
 				D0087E9E283550A400B28BF3 /* SymbolTable */,
@@ -389,6 +392,7 @@
 				D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */,
 				D0832F7B2876BA550003B625 /* chunk.c in Sources */,
 				D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */,
+				D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */,
 				D0A83C462864C298006C291E /* FunctionAstTypeSignature.swift in Sources */,
 				D0DD7C532819847E00FBD20C /* Stmt.swift in Sources */,
 				D0AA3918282422A600CF94ED /* TypeHasher.swift in Sources */,

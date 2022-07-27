@@ -12,9 +12,11 @@ class Parser {
     private var currentClassName: String?
     private var isInGlobalScope: Bool = true
     private var classStmts: [ClassStmt] = []
+    private var stringClassIndex: Int
     
-    init(tokens: [Token]) {
+    init(tokens: [Token], stringClassIndex: Int) {
         self.tokens = tokens
+        self.stringClassIndex = stringClassIndex
     }
     
     private func parseUserDefinedTypes() {
