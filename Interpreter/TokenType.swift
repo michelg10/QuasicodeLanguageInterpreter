@@ -16,7 +16,7 @@ enum TokenType {
     case TRUE, FALSE, NULL
     
     // Control flow
-    case LOOP, FROM, TO, WHILE, UNTIL, IF, THEN, ELSE, BREAK, CONTINUE
+    case LOOP, FROM, TO, WHILE, UNTIL, IF, THEN, ELSE, BREAK, CONTINUE, EXIT
     
     // Operations
     case MOD, DIV, AND, OR, NOT, IS

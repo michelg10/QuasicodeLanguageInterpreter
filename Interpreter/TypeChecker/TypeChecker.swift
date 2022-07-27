@@ -795,7 +795,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             symbolTable.gotoTable(previousSymbolTablePosition)
         }
         
-        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.displayName)
+        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.nonSignatureName)
         let noInitializerFoundErrorMessage = "No matches in call to initializer"
         guard let initializerFunctionNameSymbol = initializerFunctionNameSymbol as? FunctionNameSymbol else {
             error(message: noInitializerFoundErrorMessage, on: expr)
@@ -1183,6 +1183,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+    func visitExitStmt(stmt: ExitStmt) {
+        // nothing to do
+    }
+    
     private func typeCheck(_ stmt: Stmt) {
         stmt.accept(visitor: self)
     }
@@ -1222,7 +1226,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             functionParams.append(.init(name: param.name.lexeme, type: paramType))
         }
         functionSymbol.functionParams = functionParams
-        print("Set to", functionParams)
     }
     
     private func typeFunctions(statements: [Stmt]) {

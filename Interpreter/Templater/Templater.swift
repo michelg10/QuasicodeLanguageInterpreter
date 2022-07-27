@@ -311,6 +311,10 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return result
     }
     
+    func visitExitStmtStmt(stmt: ExitStmt) -> Stmt {
+        return stmt
+    }
+    
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr {
         let result = GroupingExpr.init(expr)
         result.expression = try expandClasses(expr.expression)

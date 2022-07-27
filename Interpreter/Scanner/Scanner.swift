@@ -61,6 +61,7 @@ class Scanner {
         "else"     : .ELSE,
         "break"    : .BREAK,
         "continue" : .CONTINUE,
+        "exit"     : .EXIT,
         
         "mod"      : .MOD,
         "div"      : .DIV,

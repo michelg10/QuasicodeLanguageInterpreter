@@ -252,6 +252,10 @@ class Compiler: ExprVisitor, StmtVisitor {
         
     }
     
+    internal func visitExitStmt(stmt: ExitStmt) {
+        
+    }
+    
     
     private func endCompiler() {
         Interpreter.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)

@@ -18,6 +18,7 @@ protocol StmtVisitor {
     func visitBreakStmt(stmt: BreakStmt) 
     func visitContinueStmt(stmt: ContinueStmt) 
     func visitBlockStmt(stmt: BlockStmt) 
+    func visitExitStmt(stmt: ExitStmt) 
 }
 
 protocol StmtStmtVisitor {
@@ -34,6 +35,7 @@ protocol StmtStmtVisitor {
     func visitBreakStmtStmt(stmt: BreakStmt) -> Stmt
     func visitContinueStmtStmt(stmt: ContinueStmt) -> Stmt
     func visitBlockStmtStmt(stmt: BlockStmt) -> Stmt
+    func visitExitStmtStmt(stmt: ExitStmt) -> Stmt
 }
 
 protocol StmtStringVisitor {
@@ -50,6 +52,7 @@ protocol StmtStringVisitor {
     func visitBreakStmtString(stmt: BreakStmt) -> String
     func visitContinueStmtString(stmt: ContinueStmt) -> String
     func visitBlockStmtString(stmt: BlockStmt) -> String
+    func visitExitStmtString(stmt: ExitStmt) -> String
 }
 
 class ClassStmt: Stmt {
@@ -415,6 +418,27 @@ class BlockStmt: Stmt {
     }
     func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitBlockStmtString(stmt: self)
+    }
+}
+
+class ExitStmt: Stmt {
+    var keyword: Token
+    
+    init(keyword: Token) {
+        self.keyword = keyword
+    }
+    init(_ objectToCopy: ExitStmt) {
+        self.keyword = objectToCopy.keyword
+    }
+
+    func accept(visitor: StmtVisitor) {
+        visitor.visitExitStmt(stmt: self)
+    }
+    func accept(visitor: StmtStmtVisitor) -> Stmt {
+        visitor.visitExitStmtStmt(stmt: self)
+    }
+    func accept(visitor: StmtStringVisitor) -> String {
+        visitor.visitExitStmtString(stmt: self)
     }
 }
 

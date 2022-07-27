@@ -585,6 +585,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.statements)
     }
     
+    func visitExitStmt(stmt: ExitStmt) {
+        // do nothing
+    }
+    
     private func error(message: String, token: Token) -> ResolverError {
         problems.append(.init(message: message, token: token))
         return ResolverError.error(message)

@@ -335,6 +335,10 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return encapsulateBlock(stmts: stmt.statements, scopeIndex: stmt.scopeIndex)
     }
     
+    func visitExitStmtString(stmt: ExitStmt) -> String {
+        return parenthesize(name: "Exit")
+    }
+    
     func printAst(_ astType: AstType) -> String {
         astTypeToStringSingleton.stringify(astType)
     }

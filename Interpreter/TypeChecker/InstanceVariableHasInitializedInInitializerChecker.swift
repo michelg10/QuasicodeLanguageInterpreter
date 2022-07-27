@@ -154,6 +154,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) {
+        // TODO
         // do nothing
     }
     
@@ -170,6 +171,10 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtVisitor, ExprVisit
             }
             markVariables(stmt.statements)
         }
+    }
+    
+    func visitExitStmt(stmt: ExitStmt) {
+        // TODO
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {

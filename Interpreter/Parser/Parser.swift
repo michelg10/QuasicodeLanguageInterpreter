@@ -254,6 +254,9 @@ class Parser {
         if match(types: .BREAK) {
             return BreakStatement()
         }
+        if match(types: .EXIT) {
+            return ExitStatement()
+        }
         
         return try expressionStatement()
     }
@@ -266,6 +269,11 @@ class Parser {
     private func ContinueStatement() -> Stmt {
         let keyword = previous()
         return ContinueStmt(keyword: keyword)
+    }
+    
+    private func ExitStatement() -> Stmt {
+        let keyword = previous()
+        return ExitStmt(keyword: keyword)
     }
     
     private func whileLoop() throws -> Stmt {
@@ -843,6 +851,8 @@ class Parser {
             case .CONTINUE:
                 return
             case .BREAK:
+                return
+            case .EXIT:
                 return
             default:
                 advance()
