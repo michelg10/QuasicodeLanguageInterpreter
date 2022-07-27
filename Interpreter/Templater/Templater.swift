@@ -565,10 +565,16 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         }
     }
     
-    func expandClasses(statements: [Stmt], classStmts: [ClassStmt]) -> ([Stmt], [InterpreterProblem]) {
+    func expandClasses(statements: [Stmt]) -> ([Stmt], [InterpreterProblem]) {
         self.statements = statements
         problems = []
         classes = [:]
+        var classStmts: [ClassStmt] = []
+        for statement in statements {
+            if statement is ClassStmt {
+                classStmts.append(statement as! ClassStmt)
+            }
+        }
         addEmptyInitializers(classStmts: classStmts)
         gatherClasses(classStmts: classStmts)
         

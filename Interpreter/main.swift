@@ -1,13 +1,13 @@
 import Foundation
 
 let DEBUG = true
-let INCLUDE_BUILTINS = false
+let INCLUDE_BUILTINS = true
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
-//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
-let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test10.qs")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test10.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
 
 let start = DispatchTime.now()
@@ -31,8 +31,11 @@ let stringClassIndex = INCLUDE_BUILTINS ? symbolTable.queryAtGlobalOnly("String<
 
 print("----- Parser -----")
 let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex)
-let (stmts, classStmts, parseErrors) = parser.parse()
+let (stmts, parseErrors) = parser.parse()
 var ast = stmts
+if INCLUDE_BUILTINS {
+    ast = addBuiltinClassesToAst(ast)
+}
 let astPrinter = AstPrinter()
 if DEBUG {
     print("Parsed AST")
@@ -43,7 +46,7 @@ print(parseErrors)
 
 print("----- Templater -----")
 let templater = Templater()
-let (templatedStmts, templateErrors) = templater.expandClasses(statements: ast, classStmts: classStmts)
+let (templatedStmts, templateErrors) = templater.expandClasses(statements: ast)
 ast = templatedStmts
 if DEBUG {
     print("Templated AST")

@@ -11,7 +11,6 @@ class Parser {
     private var functionNames: Set<String> = []
     private var currentClassName: String?
     private var isInGlobalScope: Bool = true
-    private var classStmts: [ClassStmt] = []
     private var stringClassIndex: Int
     
     init(tokens: [Token], stringClassIndex: Int) {
@@ -40,21 +39,20 @@ class Parser {
         }
     }
     
-    func parse() -> ([Stmt], [ClassStmt], [InterpreterProblem]) {
+    func parse() -> ([Stmt], [InterpreterProblem]) {
         current = 0
         classNames = []
         parseUserDefinedTypes()
         current = 0
         var statements: [Stmt] = []
         isInGlobalScope = true
-        classStmts = []
         while !isAtEnd() {
             if let newDeclaration = declaration() {
                 statements.append(newDeclaration)
             }
         }
         
-        return (statements, classStmts, problems)
+        return (statements, problems)
     }
     
     private func declaration() -> Stmt? {
@@ -192,7 +190,6 @@ class Parser {
         currentClassName = nil
         currentClassTemplateParameters = []
         let result = ClassStmt(keyword: keyword, name: name, symbolTableIndex: nil, instanceThisSymbolTableIndex: nil, staticThisSymbolTableIndex: nil, scopeIndex: nil, templateParameters: templateParameters, expandedTemplateParameters: nil, superclass: superclass, methods: methods, fields: fields)
-        classStmts.append(result)
         return result
     }
     
