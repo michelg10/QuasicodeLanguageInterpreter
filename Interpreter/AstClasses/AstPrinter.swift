@@ -264,19 +264,22 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     private func parenthesizeFunctionParam(functionParam: AstFunctionParam) -> String {
         let initializer = functionParam.initializer == nil ? "" : " = \(printAst(functionParam.initializer!))"
-        return "(\(functionParam.name.lexeme){index: \(stringifyOptionalInt(functionParam.symbolTableIndex)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
+        return "\(functionParam.name.lexeme){index: \(stringifyOptionalInt(functionParam.symbolTableIndex)), type: \(astTypeToString(astType: functionParam.astType))}\(initializer)"
     }
     
     private func parenthesizeFunctionParams(functionParams: [AstFunctionParam]) -> String {
         var result = ""
         for functionParam in functionParams {
-            result+=" "+parenthesizeFunctionParam(functionParam: functionParam)
+            if result != "" {
+                result += ", "
+            }
+            result+=parenthesizeFunctionParam(functionParam: functionParam)
         }
-        return result
+        return "("+result+")"
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{returns \(stmt.annotation == nil ? "Void" : astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex)))"
+        return "(Function{returns \(stmt.annotation == nil ? "Void" : astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))} \(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex)))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
