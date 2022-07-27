@@ -645,8 +645,7 @@ class Parser {
             return LiteralExpr(value: previous().value, type: QsDouble(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         if match(types: .STRING) {
-            // TODO: define the string class
-            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: 0, assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
+            return LiteralExpr(value: previous().value, type: QsClass(name: "String", id: stringClassIndex, assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
         let statePrior = current
         if match(types: .IDENTIFIER) {

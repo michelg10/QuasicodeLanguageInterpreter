@@ -6,6 +6,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     // current class the checker is currently in for public / private checks and super checks
     var currentFunctionIndex: Int?
     var currentClassIndex: Int?
+    var stringClassId: Int = -1
     
     private func isInMethod() -> Bool {
         return currentFunctionIndex != nil && currentClassIndex != nil
@@ -137,11 +138,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         case isAssignable
         case isNumeric
         case isArray
+        case isString
         case isType(QsType)
         case isSubTypeOf(QsType)
         case isSuperTypeOf(QsType)
     }
-    private func assertType(expr: Expr, errorMessage: String?, typeAssertions: TypeAssertion...) -> Bool {
+    
+    private func assertType(expr: Expr, errorMessage: String?, typeAssertions: [TypeAssertion]) -> Bool {
         if expr.type is QsErrorType || expr.type == nil {
             return false
         }
@@ -166,6 +169,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
+                    return false
+                }
+            case .isString:
+                if !isStringType(expr.type!) {
                     return false
                 }
             case .isType(let qsType):
@@ -203,6 +210,24 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         }
         return true
+    }
+    
+    private func assertType(expr: Expr, errorMessage: String?, typeAssertions: TypeAssertion...) -> Bool {
+        return assertType(expr: expr, errorMessage: errorMessage, typeAssertions: typeAssertions)
+    }
+    
+    private func isStringType(_ type: QsType) -> Bool {
+        guard let type = type as? QsClass else {
+            return false
+        }
+        if type.id == stringClassId {
+            return true
+        }
+        return false
+    }
+    
+    private func getStringType() -> QsType {
+        return QsClass(name: "String", id: stringClassId)
     }
     
     internal func visitGroupingExpr(expr: GroupingExpr) {
@@ -815,12 +840,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitBinaryExpr(expr: BinaryExpr) {
-        // TODO: Implement cast to double
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
         }
-        // TODO
         typeCheck(expr.left)
         typeCheck(expr.right)
         
@@ -842,7 +865,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 promoteToDoubleIfNecessary()
                 return
             }
-            // TODO: Strings
+            
+            if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
+                return
+            }
         case .EQUAL_EQUAL, .BANG_EQUAL:
             expr.type = QsBoolean()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
@@ -852,9 +878,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if typesIsEqual(expr.left.type!, QsBoolean()) && typesIsEqual(expr.right.type!, QsBoolean()) {
                 return
             }
-            // TODO: Strings
+            if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
+                return
+            }
         case .MINUS, .SLASH, .STAR, .DIV:
-            expr.type = QsErrorType()
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
                 promoteToDoubleIfNecessary()
                 if expr.opr.tokenType == .DIV {
@@ -875,7 +902,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 expr.type = expr.left.type!
                 return
             }
-            // TODO: Strings
+            if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
+                expr.type = expr.left.type!
+                return
+            }
+            if isStringType(expr.left.type!) || isStringType(expr.right.type!) {
+                let typesThatCanConcatWithString: [TypeAssertion] = [.isNumeric, .isType(QsBoolean())]
+                if assertType(expr: expr.left, errorMessage: nil, typeAssertions: typesThatCanConcatWithString) || assertType(expr: expr.right, errorMessage: nil, typeAssertions: typesThatCanConcatWithString) {
+                    if isStringType(expr.left.type!) {
+                        expr.type = expr.left.type
+                        expr.right = ImplicitCastExpr(expression: expr.right, type: getStringType(), startLocation: expr.right.startLocation, endLocation: expr.right.endLocation)
+                    } else {
+                        expr.type = expr.right.type
+                        expr.left = ImplicitCastExpr(expression: expr.left, type: getStringType(), startLocation: expr.left.startLocation, endLocation: expr.left.endLocation)
+                    }
+                }
+            }
         default:
             expr.type = QsErrorType()
         }
@@ -1116,12 +1158,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     internal func visitInputStmt(stmt: InputStmt) {
-        // TODO
-        
         for expression in stmt.expressions {
             typeCheck(expression)
             assertType(expr: expression, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
-            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt()), .isType(QsAnyType()), .isType(QsDouble())) // TODO: include string
+            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt()), .isType(QsAnyType()), .isType(QsDouble()), .isString)
         }
     }
     
@@ -1292,6 +1332,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTables
+        stringClassId = symbolTable.queryAtGlobalOnly("String<>")!.id
         
         typeFunctions(statements: statements)
         typeClassFields(statements: statements)
