@@ -28,21 +28,25 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     private func indentBlockStmts(blockStmts: [Stmt]) -> String {
         var result = ""
         for blockStmt in blockStmts {
+            if result != "" {
+                result+="\n"
+            }
             let newRow = printAst(blockStmt)
-            let newRowLines = newRow.split(separator: "\n")
+            let newRowLines = newRow.split(separator: "\n", omittingEmptySubsequences: false)
             for newRowLine in newRowLines {
                 result+="    "+newRowLine+"\n"
             }
-            result+="\n"
         }
         return result
     }
     
     private func encapsulateBlock(stmts: [Stmt], scopeIndex: Int?) -> String {
         var result=""
-        result += "{ (scopeIndex: \(stringifyOptionalInt(scopeIndex)))\n\(indentBlockStmts(blockStmts: stmts))"
+        result += "{ (scopeIndex: \(stringifyOptionalInt(scopeIndex)))\n"
         
-        result+="}"
+        result += (stmts.count == 0 ? "\n" : indentBlockStmts(blockStmts: stmts))
+        
+        result += "}"
         
         return result
     }
@@ -237,10 +241,16 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         let classDesc = "{name: \(stmt.name.lexeme), id: \(stringifyOptionalInt(stmt.symbolTableIndex)), instanceThisId: \(stringifyOptionalInt(stmt.instanceThisSymbolTableIndex)), staticThisId: \(stringifyOptionalInt(stmt.staticThisSymbolTableIndex)), superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), templateParameters: \(templateParametersDescription), expandedTemplateParameers: \(expandedTemplateParametersDescription)}"
         var result = "(Class\(classDesc) { (scopeIndex: \(stringifyOptionalInt(stmt.scopeIndex)))\n"
         result += indentBlockStmts(blockStmts: stmt.methods)
+        if stmt.fields.count != 0 && stmt.methods.count != 0 {
+            result += "\n"
+        }
         for field in stmt.fields {
             result += "    "+classField(field: field)+"\n"
         }
-        result += "}"
+        if stmt.fields.count == 0 && stmt.methods.count == 0 {
+            result += "\n"
+        }
+        result += "})"
         return result
     }
     
@@ -266,7 +276,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     }
     
     internal func visitFunctionStmtString(stmt: FunctionStmt) -> String {
-        return "(Function{\(astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex))"
+        return "(Function{returns \(stmt.annotation == nil ? "Void" : astTypeToString(astType: stmt.annotation))}{name: \(stmt.name.lexeme), nameIndex: \(stringifyOptionalInt(stmt.nameSymbolTableIndex)), index: \(stringifyOptionalInt(stmt.symbolTableIndex))}\(parenthesizeFunctionParams(functionParams: stmt.params)) \(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex)))"
     }
     
     internal func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
