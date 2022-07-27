@@ -32,9 +32,9 @@
 		D0832F7B2876BA550003B625 /* chunk.c in Sources */ = {isa = PBXBuildFile; fileRef = D0832F7A2876BA550003B625 /* chunk.c */; };
 		D083CCA7285481E00029BF33 /* AstTypeToString.swift in Sources */ = {isa = PBXBuildFile; fileRef = D083CCA6285481E00029BF33 /* AstTypeToString.swift */; };
 		D09DE7CC282B9080007AFAFA /* CatchErrorClosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */; };
-		D0A83C462864C298006C291E /* MethodAstTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A83C452864C298006C291E /* MethodAstTypeSignature.swift */; };
+		D0A83C462864C298006C291E /* FunctionAstTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A83C452864C298006C291E /* FunctionAstTypeSignature.swift */; };
 		D0A83C482864C2AC006C291E /* MethodQsTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A83C472864C2AC006C291E /* MethodQsTypeSignature.swift */; };
-		D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* ClassField.swift */; };
+		D0AA38D7281E80F300CF94ED /* AstClassField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA38D6281E80F300CF94ED /* AstClassField.swift */; };
 		D0AA390928215DB200CF94ED /* Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390828215DB200CF94ED /* Resolver.swift */; };
 		D0AA390B282166ED00CF94ED /* Symbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390A282166ED00CF94ED /* Symbol.swift */; };
 		D0AA391028217F6400CF94ED /* Templater.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AA390F28217F6400CF94ED /* Templater.swift */; };
@@ -101,9 +101,9 @@
 		D0832F7C2876BBF60003B625 /* OpCode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpCode.h; sourceTree = "<group>"; };
 		D083CCA6285481E00029BF33 /* AstTypeToString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstTypeToString.swift; sourceTree = "<group>"; };
 		D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchErrorClosure.swift; sourceTree = "<group>"; };
-		D0A83C452864C298006C291E /* MethodAstTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodAstTypeSignature.swift; sourceTree = "<group>"; };
+		D0A83C452864C298006C291E /* FunctionAstTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionAstTypeSignature.swift; sourceTree = "<group>"; };
 		D0A83C472864C2AC006C291E /* MethodQsTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodQsTypeSignature.swift; sourceTree = "<group>"; };
-		D0AA38D6281E80F300CF94ED /* ClassField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassField.swift; sourceTree = "<group>"; };
+		D0AA38D6281E80F300CF94ED /* AstClassField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassField.swift; sourceTree = "<group>"; };
 		D0AA390828215DB200CF94ED /* Resolver.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Resolver.swift; sourceTree = "<group>"; };
 		D0AA390A282166ED00CF94ED /* Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Symbol.swift; sourceTree = "<group>"; };
 		D0AA390F28217F6400CF94ED /* Templater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Templater.swift; sourceTree = "<group>"; };
@@ -291,11 +291,11 @@
 				D0AA39112823BB1900CF94ED /* AstTypeEquality.swift */,
 				D0AA39132823C88500CF94ED /* AstTypeHasher.swift */,
 				D07B710C281D0B9D003A672F /* AstFunctionParam.swift */,
-				D0AA38D6281E80F300CF94ED /* ClassField.swift */,
+				D0AA38D6281E80F300CF94ED /* AstClassField.swift */,
 				D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */,
 				D07B7110281D6920003A672F /* AstPrinter.swift */,
 				D083CCA6285481E00029BF33 /* AstTypeToString.swift */,
-				D0A83C452864C298006C291E /* MethodAstTypeSignature.swift */,
+				D0A83C452864C298006C291E /* FunctionAstTypeSignature.swift */,
 			);
 			path = AstClasses;
 			sourceTree = "<group>";
@@ -370,7 +370,7 @@
 				D0AA390B282166ED00CF94ED /* Symbol.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
 				D0DD7C2C2817E89F00FBD20C /* InterpreterProblem.swift in Sources */,
-				D0AA38D7281E80F300CF94ED /* ClassField.swift in Sources */,
+				D0AA38D7281E80F300CF94ED /* AstClassField.swift in Sources */,
 				D06A4932283001F5005DE578 /* UnionFind.swift in Sources */,
 				D07B70F6281A7EB4003A672F /* Types.swift in Sources */,
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
@@ -389,7 +389,7 @@
 				D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */,
 				D0832F7B2876BA550003B625 /* chunk.c in Sources */,
 				D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */,
-				D0A83C462864C298006C291E /* MethodAstTypeSignature.swift in Sources */,
+				D0A83C462864C298006C291E /* FunctionAstTypeSignature.swift in Sources */,
 				D0DD7C532819847E00FBD20C /* Stmt.swift in Sources */,
 				D0AA3918282422A600CF94ED /* TypeHasher.swift in Sources */,
 				D052DEF0283B321300C060FE /* stringifyOptional.swift in Sources */,

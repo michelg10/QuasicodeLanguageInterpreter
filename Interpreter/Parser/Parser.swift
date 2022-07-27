@@ -112,8 +112,8 @@ class Parser {
         try consume(type: .EOL, message: "Expect end-of-line after class signature")
         
         var methods: [MethodStmt] = []
-        var fields: [ClassField] = []
-        var staticFields: [ClassField] = []
+        var fields: [AstClassField] = []
+        var staticFields: [AstClassField] = []
         var staticKeyword: Token? = nil
         
         while !check(type: .END) && !isAtEnd() {
@@ -170,7 +170,7 @@ class Parser {
                     if isStatic! && initializer == nil {
                         error(message: "Static field requires an initial value", token: fieldName)
                     }
-                    let field = ClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
+                    let field = AstClassField(isStatic: isStatic!, visibilityModifier: visibilityModifer!, name: fieldName, astType: typeAnnotation, initializer: initializer, symbolTableIndex: nil)
                     try consume(type: .EOL, message: "Expect end-of-line after field declaration")
                     fields.append(field)
                 } catch {

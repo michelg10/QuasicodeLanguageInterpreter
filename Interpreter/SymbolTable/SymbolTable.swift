@@ -4,6 +4,7 @@ class SymbolTables {
         var parent: SymbolTable?
         var childTables: [SymbolTable] = []
         private var table: [String : Symbol] = [:]
+        private var allSymbolsCache: [Symbol]? = nil
         init(parent: SymbolTable?, id: Int) {
             self.parent = parent
             self.id = id
@@ -13,10 +14,22 @@ class SymbolTables {
             return table[name]
         }
         public func addToTable(symbol: Symbol) {
+            if allSymbolsCache != nil {
+                allSymbolsCache!.append(symbol)
+            }
             table[symbol.name] = symbol
         }
         public func linkTableToParent(_ parent: SymbolTable) {
             self.parent = parent
+        }
+        public func getAllSymbolsInTable() -> [Symbol] {
+            if allSymbolsCache == nil {
+                allSymbolsCache = []
+                for symbol in table.values {
+                    allSymbolsCache!.append(symbol)
+                }
+            }
+            return allSymbolsCache!
         }
     }
     private var allSymbols: [Symbol] = []
@@ -25,6 +38,10 @@ class SymbolTables {
     init() {
         current = .init(parent: nil, id: 0)
         tables.append(current)
+    }
+    
+    public func getAllSymbolsAtCurrentTable() -> [Symbol] {
+        return current.getAllSymbolsInTable()
     }
     
     public func resetScope() {

@@ -216,7 +216,7 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         ], exprs: expr.expression)
     }
     
-    private func classField(field: ClassField) -> String {
+    private func classField(field: AstClassField) -> String {
         return "(Field \(field.isStatic ? "static" : "nostatic") \(field.name.lexeme){index: \(stringifyOptionalInt(field.symbolTableIndex)), type: \(astTypeToString(astType: field.astType))} = \(field.initializer == nil ? "NoInit" : printAst(field.initializer!))"
     }
     

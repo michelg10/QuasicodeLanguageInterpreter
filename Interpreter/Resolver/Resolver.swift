@@ -74,7 +74,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             return
         }
         let upperClass = symbolTable.getSymbol(id: classChain.upperClass!) as! ClassSymbol
-        if upperClass.classStmt.scopeIndex == nil {
+        if upperClass.classScopeSymbolTableIndex == nil {
             return
         }
         
@@ -82,7 +82,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         defer {
             symbolTable.gotoTable(previousSymbolTablePosition)
         }
-        symbolTable.gotoTable(upperClass.classStmt.scopeIndex!)
+        symbolTable.gotoTable(upperClass.classScopeSymbolTableIndex!)
         
         let findVariable = symbolTable.query(expr.property.lexeme)
         let errorString = "Superclass '\(upperClass.displayName)' has no member '\(expr.property.lexeme)'"
@@ -321,8 +321,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             guard let superclassSymbol = superclassSymbol as? ClassSymbol else {
                 break linkSymbolTableToSuperclass
             }
-            if superclassSymbol.classStmt.scopeIndex != nil {
-                symbolTable.linkCurrentTableToParent(superclassSymbol.classStmt.scopeIndex!)
+            if superclassSymbol.classScopeSymbolTableIndex != nil {
+                symbolTable.linkCurrentTableToParent(superclassSymbol.classScopeSymbolTableIndex!)
             }
         }
         stmt.instanceThisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "$Instance$this", variableStatus: .finishedInit, variableType: .instance))
@@ -438,14 +438,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     private func defineFunction(stmt: FunctionStmt, methodStmt: MethodStmt?, withinClass: Int?) throws -> Int {
-        var paramsName = ""
-        for param in stmt.params {
-            if paramsName != "" {
-                paramsName = paramsName+", "
-            }
-            paramsName+=astTypeToStringSingleton.stringify(param.astType ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))
-        }
-        let functionSignature = "\(stmt.name.lexeme)(\(paramsName))"
+        let functionSignature = createFunctionAstTypeSignature(functionStmt: stmt)
         if symbolTable.queryAtScopeOnly(functionSignature) != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
@@ -637,6 +630,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
+        classSymbol.classScopeSymbolTableIndex = stmt.scopeIndex!
         defer {
             symbolTable.gotoTable(previousSymbolTableIndex)
         }
@@ -646,7 +640,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
         }
         
-        func defineField(field: ClassField) {
+        func defineField(field: AstClassField) {
             if symbolTable.queryAtScopeOnly(field.name.lexeme) != nil {
                 error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
                 return
@@ -798,8 +792,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 fillDepth(children, depth: depth+1)
             }
         }
-        var methodsChain: [[MethodAstTypeSignature : Int]] = []
-        func findMethodInChain(signature: MethodAstTypeSignature) -> Int? {
+        var methodsChain: [[String : Int]] = []
+        func findMethodInChain(signature: String) -> Int? {
             for i in 0..<methodsChain.count {
                 let methodChain = methodsChain[methodsChain.count-i-1]
                 if let resultingId = methodChain[signature] {
@@ -808,7 +802,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
             return nil
         }
-        func computeOverrideMethods(classId: Int) -> [MethodAstTypeSignature : [Int]] {
+        func computeOverrideMethods(classId: Int) -> [String : [Int]] {
             // within the class specified by classId:
             // record functions into the methods in chain (if they're new)
             // report errors if return types and static is inconsistent
@@ -824,19 +818,18 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assertionFailure("Expected class chain")
                 return [:]
             }
-            let classStmt = classChain.classStmt
-            var newMethodChain: [MethodAstTypeSignature : Int] = [:]
-            var overrides: [MethodAstTypeSignature : [Int]] = [:]
-            var currentClassSignatureToSymbolIdDict: [MethodAstTypeSignature : Int] = [:]
+            var newMethodChain: [String : Int] = [:]
+            var overrides: [String : [Int]] = [:]
+            var currentClassSignatureToSymbolIdDict: [String : Int] = [:]
             
-            func addOverride(methodSignature: MethodAstTypeSignature, functionId: Int) {
+            func addOverride(methodSignature: String, functionId: Int) {
                 if overrides[methodSignature] == nil {
                     overrides[methodSignature] = [functionId]
                     return
                 }
                 overrides[methodSignature]!.append(functionId)
             }
-            func addOverride(methodSignature: MethodAstTypeSignature, functionIds: [Int]) {
+            func addOverride(methodSignature: String, functionIds: [Int]) {
                 if overrides[methodSignature] == nil {
                     overrides[methodSignature] = functionIds
                     return
@@ -845,45 +838,45 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
             
             
-            func handleMethod(_ method: MethodStmt) {
-                if method.function.symbolTableIndex == nil || method.function.nameSymbolTableIndex == nil {
-                    // an error probably occured, dont process it
-                    return
-                }
-                let signature = MethodAstTypeSignature.init(functionStmt: method.function)
+            func handleMethod(_ methodSymbol: MethodSymbol) {
+                let signature = methodSymbol.name
                 let existingMethod = findMethodInChain(signature: signature)
-                currentClassSignatureToSymbolIdDict[signature] = method.function.symbolTableIndex!
-                guard let currentMethodSymbol = symbolTable.getSymbol(id: method.function.symbolTableIndex!) as? MethodSymbol else {
-                    assertionFailure("Expected method symbol info!")
-                    return
-                }
+                currentClassSignatureToSymbolIdDict[signature] = methodSymbol.belongsToTable
                 if existingMethod == nil {
                     // record function into the chain
-                    newMethodChain[.init(functionStmt: method.function)] = method.function.symbolTableIndex!
+                    newMethodChain[methodSymbol.name] = methodSymbol.id
                 } else {
                     // check consistency with the function currently in the chain
                     guard let existingMethodSymbolInfo = (symbolTable.getSymbol(id: existingMethod!) as? MethodSymbol) else {
                         return
                     }
                     // check static consistency
-                    if method.isStatic != existingMethodSymbolInfo.isStatic {
-                        error(message: "Static does not match for overriding method", token: (method.isStatic ? method.staticKeyword! : method.function.name))
+                    if methodSymbol.isStatic != existingMethodSymbolInfo.isStatic {
+                        if methodSymbol.methodStmt == nil {
+                            assertionFailure("An internal language error occurred")
+                        } else {
+                            error(message: "Static does not match for overriding method", token: (methodSymbol.isStatic ? methodSymbol.methodStmt!.staticKeyword! : methodSymbol.methodStmt!.function.name))
+                        }
                     }
                     // check return type consistency
-                    if !typesIsEqual(existingMethodSymbolInfo.returnType, currentMethodSymbol.returnType) {
-                        let annotation = method.function.annotation
-                        if annotation == nil {
-                            error(message: "Return type does not match for overriding method", token: method.function.keyword)
+                    if !typesIsEqual(existingMethodSymbolInfo.returnType, methodSymbol.returnType) {
+                        if methodSymbol.methodStmt == nil {
+                            assertionFailure("An internal language error occurred")
                         } else {
-                            error(message: "Return type does not match for overriding method", start: annotation!.startLocation, end: annotation!.endLocation)
+                            let annotation = methodSymbol.methodStmt!.function.annotation
+                            if annotation == nil {
+                                error(message: "Return type does not match for overriding method", token: methodSymbol.methodStmt!.function.keyword)
+                            } else {
+                                error(message: "Return type does not match for overriding method", start: annotation!.startLocation, end: annotation!.endLocation)
+                            }
                         }
                     }
                     
                     // log this override
-                    addOverride(methodSignature: signature, functionId: method.function.symbolTableIndex!)
+                    addOverride(methodSignature: signature, functionId: methodSymbol.id)
                 }
             }
-            for method in classStmt.methods {
+            for method in classSymbol.getMethodSymbols(symbolTable: symbolTable) {
                 handleMethod(method)
             }
             

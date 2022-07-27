@@ -151,14 +151,12 @@ class MethodSymbol: FunctionLikeSymbol {
 class ClassChain {
     init(upperClass: Int?, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
         self.upperClass = upperClass
-        self.classStmt = classStmt
         self.parentOf = parentOf
         self.depth = depth
     }
     
     var upperClass: Int?
     var depth: Int
-    var classStmt: ClassStmt
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
@@ -174,9 +172,7 @@ class ClassSymbol: Symbol {
         }
         self.classId = classId
         self.classChain = classChain
-        self.classStmt = classStmt
-        
-        methods = []
+        self.classScopeSymbolTableIndex = classStmt.symbolTableIndex
     }
     
     var id: Int
@@ -186,8 +182,26 @@ class ClassSymbol: Symbol {
     let nonSignatureName: String
     var classId: Int
     var classChain: ClassChain?
-    var classStmt: ClassStmt
-    var methods: [MethodSymbol]
+    var classScopeSymbolTableIndex: Int?
+    
+    func getMethodSymbols(symbolTable: SymbolTables) -> [MethodSymbol] {
+        if classScopeSymbolTableIndex == nil {
+            return []
+        }
+        let currentSymbolTablePosition = symbolTable.getCurrentTableId()
+        defer {
+            symbolTable.gotoTable(currentSymbolTablePosition)
+        }
+        symbolTable.gotoTable(classScopeSymbolTableIndex!)
+        let allSymbols = symbolTable.getAllSymbols()
+        var result: [MethodSymbol] = []
+        for symbol in allSymbols {
+            if symbol is MethodSymbol {
+                result.append(symbol as! MethodSymbol)
+            }
+        }
+        return result
+    }
     
 }
 class ClassNameSymbol: Symbol {

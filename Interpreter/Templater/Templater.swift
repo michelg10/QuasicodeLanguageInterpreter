@@ -43,8 +43,8 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     private var templatedClasses: Set<ClassSignature> = [] // keeps track of all the classes that have already been templated
     private var templateParameterMappings: [[String : AstType]] = [] // maps a template parameter to a concrete type
     
-    private func expandFields(fields: [ClassField]) -> [ClassField] {
-        var expandedFields: [ClassField] = []
+    private func expandFields(fields: [AstClassField]) -> [AstClassField] {
+        var expandedFields: [AstClassField] = []
         expandedFields.reserveCapacity(fields.count)
         for field in fields {
             var newField = field

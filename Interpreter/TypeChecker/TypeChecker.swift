@@ -509,7 +509,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if expr.object!.type is QsClass {
                 let objectClassType = expr.object!.type! as! QsClass
                 let classSymbol = symbolTable.getSymbol(id: objectClassType.id) as! ClassSymbol
-                symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+                symbolTable.gotoTable(classSymbol.classScopeSymbolTableIndex!)
                 potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
                 if expr.object is VariableExpr && (expr.object as! VariableExpr).name.lexeme == "super" {
                     filterPotentialFunctions(functionsFilter: .removeConstructors, .leaveConstructorsOfClass(objectClassType.id))
@@ -543,7 +543,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             let object = expr.object as! StaticClassExpr
             if object.classId != nil {
                 let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
-                symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+                symbolTable.gotoTable(classSymbol.classScopeSymbolTableIndex!)
                 potentialFunctions = symbolTable.getAllMethods(methodName: expr.property.lexeme)
                 // filter through and get only the class methods
                 filterPotentialFunctions(functionsFilter: .removeConstructors)
@@ -666,7 +666,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         func getPropertyForObject(property: Token, className: String, classId: Int, staticLimit: StaticLimit) {
             let symbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
-            getPropertyForObject(property: property, className: className, classSymbolScopeIndex: symbol.classStmt.scopeIndex!, staticLimit: staticLimit)
+            getPropertyForObject(property: property, className: className, classSymbolScopeIndex: symbol.classScopeSymbolTableIndex!, staticLimit: staticLimit)
         }
         
         // static getters
@@ -677,7 +677,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
-            getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classStmt.scopeIndex!, staticLimit: .limitToStatic)
+            getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classScopeSymbolTableIndex!, staticLimit: .limitToStatic)
             return
         } else if expr.object is ThisExpr {
             let object = expr.object as! ThisExpr
@@ -797,15 +797,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         
         let previousSymbolTablePosition = symbolTable.getCurrentTableId()
-        if classSymbol.classStmt.scopeIndex == nil {
+        if classSymbol.classScopeSymbolTableIndex == nil {
             return
         }
-        symbolTable.gotoTable(classSymbol.classStmt.scopeIndex!)
+        symbolTable.gotoTable(classSymbol.classScopeSymbolTableIndex!)
         defer {
             symbolTable.gotoTable(previousSymbolTablePosition)
         }
         
-        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.classStmt.name.lexeme)
+        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.displayName)
         let noInitializerFoundErrorMessage = "No matches in call to initializer"
         guard let initializerFunctionNameSymbol = initializerFunctionNameSymbol as? FunctionNameSymbol else {
             error(message: noInitializerFoundErrorMessage, on: expr)
@@ -1019,7 +1019,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             currentClassIndex = previousClassIndex
         }
         // type all of the fields
-        func typeField(_ field: ClassField) {
+        func typeField(_ field: AstClassField) {
             if field.symbolTableIndex == nil {
                 return
             }
@@ -1256,7 +1256,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func typeClassFields(classStmt: ClassStmt) {
-        func typeField(classField: ClassField) {
+        func typeField(classField: AstClassField) {
             guard let symbolTableIndex = classField.symbolTableIndex else {
                 return
             }
@@ -1268,12 +1268,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    private func typeClassFields() {
-        for symbol in symbolTable.getAllSymbols() {
-            guard var classSymbol = symbol as? ClassSymbol else {
-                continue
+    private func typeClassFields(statements: [Stmt]) {
+        for statement in statements {
+            if statement is ClassStmt {
+                typeClassFields(classStmt: statement as! ClassStmt)
             }
-            typeClassFields(classStmt: classSymbol.classStmt)
         }
     }
     
@@ -1302,7 +1301,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         self.symbolTable = symbolTables
         
         typeFunctions(statements: statements)
-        typeClassFields()
+        typeClassFields(statements: statements)
         typeGlobals(statements: statements)
         
         for statement in statements {

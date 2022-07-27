@@ -63,9 +63,9 @@ class ClassStmt: Stmt {
     var expandedTemplateParameters: [AstType]?
     var superclass: AstClassType?
     var methods: [MethodStmt]
-    var fields: [ClassField]
+    var fields: [AstClassField]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [ClassField]) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField]) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
