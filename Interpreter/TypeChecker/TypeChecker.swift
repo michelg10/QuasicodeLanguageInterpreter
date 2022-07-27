@@ -907,14 +907,25 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return
             }
             if isStringType(expr.left.type!) || isStringType(expr.right.type!) {
-                let typesThatCanConcatWithString: [TypeAssertion] = [.isNumeric, .isType(QsBoolean())]
-                if assertType(expr: expr.left, errorMessage: nil, typeAssertions: typesThatCanConcatWithString) || assertType(expr: expr.right, errorMessage: nil, typeAssertions: typesThatCanConcatWithString) {
+                func canConcatenateWithString(_ expr: Expr) -> Bool {
+                    let type = expr.type!
+                    if isNumericType(type) {
+                        return true
+                    }
+                    if type is QsBoolean {
+                        return true
+                    }
+                    return false
+                }
+                if canConcatenateWithString(expr.left) || canConcatenateWithString(expr.right) {
                     if isStringType(expr.left.type!) {
                         expr.type = expr.left.type
                         expr.right = ImplicitCastExpr(expression: expr.right, type: getStringType(), startLocation: expr.right.startLocation, endLocation: expr.right.endLocation)
+                        return
                     } else {
                         expr.type = expr.right.type
                         expr.left = ImplicitCastExpr(expression: expr.left, type: getStringType(), startLocation: expr.left.startLocation, endLocation: expr.left.endLocation)
+                        return
                     }
                 }
             }

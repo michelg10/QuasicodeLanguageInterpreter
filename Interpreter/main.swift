@@ -1,13 +1,14 @@
 import Foundation
 
 let DEBUG = true
-let INCLUDE_BUILTINS = true
+let INCLUDE_STRING = true
+let INCLUDE_BUILTIN_CLASSES = false
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
-let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
-//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test10.qs")
+//let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test10.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
 
 let start = DispatchTime.now()
@@ -24,16 +25,16 @@ print(scanErrors)
 
 // initialize the symbol table and put in all the default classes
 var symbolTable: SymbolTables = .init()
-if INCLUDE_BUILTINS {
+if INCLUDE_STRING {
     addStringClassToSymbolTable(symbolTable)
 }
-let stringClassIndex = INCLUDE_BUILTINS ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
+let stringClassIndex = INCLUDE_STRING ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
 
 print("----- Parser -----")
 let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex)
 let (stmts, parseErrors) = parser.parse()
 var ast = stmts
-if INCLUDE_BUILTINS {
+if INCLUDE_BUILTIN_CLASSES {
     ast = addBuiltinClassesToAst(ast)
 }
 let astPrinter = AstPrinter()
