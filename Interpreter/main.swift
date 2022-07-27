@@ -1,8 +1,8 @@
 import Foundation
 
 let DEBUG = true
-let INCLUDE_STRING = true
-let INCLUDE_BUILTIN_CLASSES = true
+let INCLUDE_STRING = false
+let INCLUDE_BUILTIN_CLASSES = false
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")

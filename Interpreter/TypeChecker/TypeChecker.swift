@@ -1343,7 +1343,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
         self.symbolTable = symbolTables
-        stringClassId = symbolTable.queryAtGlobalOnly("String<>")!.id
+        stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         
         typeFunctions(statements: statements)
         typeClassFields(statements: statements)
