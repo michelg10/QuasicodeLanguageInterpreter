@@ -120,14 +120,19 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         
         let belongingClassTemplateParameterCount = belongingClass.templateParameters?.count ?? 0
         let givenArguments = asttype.templateArguments?.count ?? 0
-        if belongingClassTemplateParameterCount != givenArguments {
-            throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", start: asttype.startLocation, end: asttype.endLocation) // underline the entire ast class
-        }
         
         let templateArguments = asttype.templateArguments ?? []
         var computedTemplateArguments: [AstType] = []
-        for templateArgument in templateArguments {
-            computedTemplateArguments.append(try expandClasses(templateArgument))
+        if belongingClassTemplateParameterCount == 1 && givenArguments == 0 && builtinClassNames.contains(asttype.name.lexeme) {
+            computedTemplateArguments = [AstAnyType(startLocation: .dub(), endLocation: .dub())]
+        } else {
+            if belongingClassTemplateParameterCount != givenArguments {
+                throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", start: asttype.startLocation, end: asttype.endLocation) // underline the entire ast class
+            }
+            
+            for templateArgument in templateArguments {
+                computedTemplateArguments.append(try expandClasses(templateArgument))
+            }
         }
         
         // compute and expand the class

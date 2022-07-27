@@ -2,7 +2,7 @@ import Foundation
 
 let DEBUG = true
 let INCLUDE_STRING = true
-let INCLUDE_BUILTIN_CLASSES = false
+let INCLUDE_BUILTIN_CLASSES = true
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
@@ -31,7 +31,7 @@ if INCLUDE_STRING {
 let stringClassIndex = INCLUDE_STRING ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
 
 print("----- Parser -----")
-let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex)
+let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex, builtinClasses: INCLUDE_BUILTIN_CLASSES ? builtinClassNames : [])
 let (stmts, parseErrors) = parser.parse()
 var ast = stmts
 if INCLUDE_BUILTIN_CLASSES {

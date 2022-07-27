@@ -12,10 +12,12 @@ class Parser {
     private var currentClassName: String?
     private var isInGlobalScope: Bool = true
     private var stringClassIndex: Int
+    private var builtinClasses: [String]
     
-    init(tokens: [Token], stringClassIndex: Int) {
+    init(tokens: [Token], stringClassIndex: Int, builtinClasses: [String]) {
         self.tokens = tokens
         self.stringClassIndex = stringClassIndex
+        self.builtinClasses = builtinClasses
     }
     
     private func parseUserDefinedTypes() {
@@ -41,7 +43,7 @@ class Parser {
     
     func parse() -> ([Stmt], [InterpreterProblem]) {
         current = 0
-        classNames = []
+        classNames = Set(builtinClasses)
         parseUserDefinedTypes()
         current = 0
         var statements: [Stmt] = []
