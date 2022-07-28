@@ -230,6 +230,31 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return QsClass(name: "String", id: stringClassId)
     }
     
+    private func implicitlyCastExprOfSubTypeToType(expr: inout Expr, toType: QsType, reportError: Bool) -> Bool {
+        // attempted implicit casts may fail for casting to and from array types
+        // the rules for implicitly casting arrays are: casting single elements are OK, just not arrays
+        
+        if let toType = toType as? QsArray {
+            if let expr = expr as? ArrayLiteralExpr {
+                var canCast = true
+                for i in 0..<expr.values.count {
+                    canCast = canCast && implicitlyCastExprOfSubTypeToType(expr: &expr.values[i], toType: toType.contains, reportError: reportError)
+                }
+                return canCast
+            } else {
+                if reportError {
+                    error(message: "Cannot convert value of type '\(printType(expr.type))' to expected element type '\(printType(toType))'", on: expr)
+                }
+                return false
+            }
+        } else {
+            if !typesIsEqual(expr.type!, toType) {
+                expr = ImplicitCastExpr(expression: expr, type: toType, startLocation: expr.startLocation, endLocation: expr.endLocation)
+            }
+            return true
+        }
+    }
+    
     internal func visitGroupingExpr(expr: GroupingExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
@@ -261,9 +286,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         // add in the implicit type conversions
         for i in 0..<expr.values.count {
-            if !typesIsEqual(inferredType, expr.values[i].type!) {
-                expr.values[i] = ImplicitCastExpr(expression: expr.values[i], type: inferredType, startLocation: expr.startLocation, endLocation: expr.endLocation)
-            }
+            implicitlyCastExprOfSubTypeToType(expr: &expr.values[i], toType: inferredType, reportError: true)
         }
         
         if inferredType is QsErrorType {
@@ -587,9 +610,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for i in 0..<expr.arguments.count {
             let givenType = expr.arguments[i].type!
             let expectedType = functionSymbolEntry.functionParams[i].type
-            if !typesIsEqual(givenType, expectedType) {
-                expr.arguments[i] = ImplicitCastExpr(expression: expr.arguments[i], type: expectedType, startLocation: expr.startLocation, endLocation: expr.endLocation)
-            }
+            implicitlyCastExprOfSubTypeToType(expr: &expr.arguments[i], toType: expectedType, reportError: true)
         }
         let resolvedFunctionSymbol = symbolTable.getSymbol(id: bestMatches[0])
         if let typedResolvedFunctionSymbol = resolvedFunctionSymbol as? FunctionSymbol {
@@ -849,12 +870,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         func promoteToDoubleIfNecessary() {
             if expr.left.type! is QsDouble || expr.right.type! is QsDouble {
-                if expr.left.type! is QsInt {
-                    expr.left = ImplicitCastExpr(expression: expr.left, type: QsDouble(assignable: false), startLocation: expr.left.startLocation, endLocation: expr.left.endLocation)
-                }
-                if expr.right.type! is QsInt {
-                    expr.right = ImplicitCastExpr(expression: expr.right, type: QsDouble(assignable: false), startLocation: expr.right.startLocation, endLocation: expr.right.endLocation)
-                }
+                implicitlyCastExprOfSubTypeToType(expr: &expr.left, toType: QsDouble(), reportError: true)
+                implicitlyCastExprOfSubTypeToType(expr: &expr.right, toType: QsDouble(), reportError: true)
             }
         }
         
@@ -918,15 +935,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 if canConcatenateWithString(expr.left) || canConcatenateWithString(expr.right) {
-                    if isStringType(expr.left.type!) {
-                        expr.type = expr.left.type
-                        expr.right = ImplicitCastExpr(expression: expr.right, type: getStringType(), startLocation: expr.right.startLocation, endLocation: expr.right.endLocation)
-                        return
-                    } else {
-                        expr.type = expr.right.type
-                        expr.left = ImplicitCastExpr(expression: expr.left, type: getStringType(), startLocation: expr.left.startLocation, endLocation: expr.left.endLocation)
-                        return
-                    }
+                    expr.type = getStringType()
+                    implicitlyCastExprOfSubTypeToType(expr: &expr.left, toType: getStringType(), reportError: true)
+                    implicitlyCastExprOfSubTypeToType(expr: &expr.right, toType: getStringType(), reportError: true)
+                    return
                 }
             }
         default:
@@ -989,7 +1001,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         // assignment can be to: fields within classes
-        assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!))
+        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
+            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
+        }
         expr.type = expr.to.type!
     }
     
@@ -1013,9 +1027,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if expr.annotation != nil {
                 let variableType = typeCheck(expr.annotation!)
                 typeVariable(variable: expr.to, type: variableType)
-                assertType(expr: expr.to, errorMessage: "Type '\(printType(expr.to.type))' cannot be cast to '\(printType(variableType))'", typeAssertions: .isSubTypeOf(variableType))
-                expr.type = variableType
-                return
             } else {
                 // infer type
                 // do not allow void to be assigned to a variable!
@@ -1029,9 +1040,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 }
                 return
             }
-        } else {
-            assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!))
-            expr.type = expr.to.type!
+        }
+        
+        expr.type = expr.to.type!
+        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
+            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
         }
     }
     
@@ -1072,7 +1085,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             let fieldType = fieldSymbol.type!
             if field.initializer != nil {
-                assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType))
+                if assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType)) {
+                    implicitlyCastExprOfSubTypeToType(expr: &field.initializer!, toType: fieldType, reportError: true)
+                }
+                
             }
         }
         for field in stmt.fields {
@@ -1191,7 +1207,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if stmt.value == nil {
                     error(message: "Non-void function should return a value", on: stmt.keyword)
                 } else {
-                    assertType(expr: stmt.value!, errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'", typeAssertions: .isSubTypeOf(returnType))
+                    if assertType(expr: stmt.value!, errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'", typeAssertions: .isSubTypeOf(returnType)) {
+                        implicitlyCastExprOfSubTypeToType(expr: &stmt.value!, toType: returnType, reportError: true)
+                    }
                 }
             }
         }

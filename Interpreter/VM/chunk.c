@@ -12,7 +12,6 @@ void resetChunk(Chunk* chunk) {
     chunk->code = NULL;
     chunk->constants = NULL;
     chunk->lineInformation = NULL;
-    chunk->constantsDebugType = NULL;
     chunk->maxDepth = 0;
 }
 
@@ -26,9 +25,6 @@ void freeChunk(Chunk* chunk) {
     NOVM_FREE_ARRAY(uint8_t, chunk->code);
     NOVM_FREE_ARRAY(uint8_t, chunk->constants);
     NOVM_FREE_ARRAY(LineInformation, chunk->lineInformation);
-    if (chunk->constantsDebugType != NULL) {
-        NOVM_FREE_ARRAY(Type, chunk->constantsDebugType);
-    }
     resetChunk(chunk);
     chunk = novm_reallocate(chunk, 0);
 }
@@ -74,7 +70,7 @@ int getChunkCodeCount(Chunk* chunk) {
     return chunk->codeCount;
 }
 
-int addConstant(Chunk* chunk, uint8_t* bytes, int len, Type type) {
+int addConstant(Chunk* chunk, uint8_t* bytes, int len) {
     if (chunk->constantsCount+len>chunk->constantsCapacity) {
         int newConstantsCapacity = GROW_CAPACITY(chunk->constantsCount);
         while (newConstantsCapacity<chunk->codeCount+len) {

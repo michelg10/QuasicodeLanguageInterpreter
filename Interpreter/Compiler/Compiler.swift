@@ -1,5 +1,7 @@
 class Compiler: ExprVisitor, StmtVisitor {
     var compilingChunk: UnsafeMutablePointer<Chunk>!
+    var symbolTable: SymbolTables = .init()
+    var stringClass: QsType = QsVoidType()
     
     internal func currentChunk() -> UnsafeMutablePointer<Chunk>! {
         return compilingChunk
@@ -33,6 +35,8 @@ class Compiler: ExprVisitor, StmtVisitor {
             } else {
                 writeInstructionToChunk(op: .OP_false, expr: expr)
             }
+        case is QsClass:
+            print("ohnoe")
         default:
             assertionFailure("Unexpected literal type \(printType(expr.type))")
         }
@@ -269,8 +273,12 @@ class Compiler: ExprVisitor, StmtVisitor {
         expr.accept(visitor: self)
     }
     
-    public func compileAst(stmts: [Stmt]) -> UnsafeMutablePointer<Chunk>! {
+    public func compileAst(stmts: [Stmt], symbolTable: SymbolTables) -> UnsafeMutablePointer<Chunk>! {
         compilingChunk = initChunk()
+        if let stringSymbol = symbolTable.queryAtGlobalOnly("String<>") {
+            stringClass = QsClass(name: "String", id: (stringSymbol as! ClassSymbol).id)
+        }
+        self.symbolTable = symbolTable
         
         for stmt in stmts {
             compile(stmt)

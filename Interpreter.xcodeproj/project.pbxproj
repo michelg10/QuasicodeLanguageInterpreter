@@ -79,7 +79,6 @@
 		D0691C552876D52000DA85F3 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		D0691C562876E2DF00DA85F3 /* VMType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VMType.h; sourceTree = "<group>"; };
 		D0691C572876E2EC00DA85F3 /* VMType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VMType.swift; sourceTree = "<group>"; };
-		D0691C592876E32000DA85F3 /* Type.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Type.h; sourceTree = "<group>"; };
 		D0691C5A28770CD600DA85F3 /* memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
 		D0691C5B28770CD600DA85F3 /* memory.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
 		D0691C5D2877220500DA85F3 /* disassembler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = disassembler.h; sourceTree = "<group>"; };
@@ -197,7 +196,6 @@
 				D0832F752876B65E0003B625 /* Interpreter-Bridging-Header.h */,
 				D0832F7C2876BBF60003B625 /* OpCode.h */,
 				D0691C562876E2DF00DA85F3 /* VMType.h */,
-				D0691C592876E32000DA85F3 /* Type.h */,
 				D070FBC62877F82600EF0033 /* VMInterface.swift */,
 			);
 			path = VM;

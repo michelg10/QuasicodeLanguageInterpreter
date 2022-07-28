@@ -3,7 +3,6 @@
 
 #include "OpCode.h"
 #include "common.h"
-#include "Type.h"
 #include "memory.h"
 typedef struct {
     int line;
@@ -20,9 +19,6 @@ typedef struct {
     uint8_t* code;
     LineDebugInformation* lineInformation;
     uint8_t* constants;
-#ifdef DEBUG_INCLUDE_TYPES
-    Type* constantsDebugType;
-#endif
     int maxDepth;
 } Chunk;
 
@@ -31,7 +27,7 @@ void freeChunk(Chunk* chunk);
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
 void writeChunkLong(Chunk* chunk, uint64_t val, int line);
 int getChunkCodeCount(Chunk* chunk);
-int addConstant(Chunk* chunk, uint8_t *bytes, int len, Type type);
+int addConstant(Chunk* chunk, uint8_t *bytes, int len);
 void setMaxDepth(Chunk* chunk, int maxDepth);
 
 #endif

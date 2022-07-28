@@ -1,7 +1,7 @@
 import Foundation
 
 let DEBUG = true
-let INCLUDE_STRING = false
+let INCLUDE_STRING = true
 let INCLUDE_BUILTIN_CLASSES = false
 
 //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
@@ -80,9 +80,10 @@ if DEBUG {
 print("\nErrors")
 print(typeCheckerErrors)
 
+exit(0)
 print("----- Compiler -----")
 let compiler = Compiler()
-let chunk = compiler.compileAst(stmts: ast)
+let chunk = compiler.compileAst(stmts: ast, symbolTable: symbolTable)
 if DEBUG {
     disassembleChunk(chunk, "main")
 }

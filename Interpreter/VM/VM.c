@@ -63,7 +63,7 @@ inline uint64_t readLong(VM* vm) {
 }
 
 static void run(VM* vm) {
-#define READ_BYTE() (*(vm->ip++))
+#define READ_INSTRUCTION_BYTE() (*(vm->ip++))
 #define READ_LONG() (*(long*)popByReference(vm))
 #define READ_DOUBLE() (*(double*)popByReference(vm))
 #define READ_BOOL() (READ_DOUBLE() != 0)
@@ -114,7 +114,7 @@ do { \
     push(vm, &result); \
 } while (false)
         uint8_t instruction;
-        switch (instruction = READ_BYTE()) {
+        switch (instruction = READ_INSTRUCTION_BYTE()) {
             case OP_return: {
                 return;
             }
@@ -133,7 +133,7 @@ do { \
                 break;
             }
             case OP_pop_n: {
-                uint8_t count = READ_BYTE();
+                uint8_t count = READ_INSTRUCTION_BYTE();
                 popCount(vm, count);
                 break;
             }
@@ -328,7 +328,7 @@ do { \
     }
     
 #undef INT_BINARY_OP
-#undef READ_BYTE
+#undef READ_INSTRUCTION_BYTE
 #undef READ_LONG
 #undef READ_DOUBLE
 #undef READ_BOOL
