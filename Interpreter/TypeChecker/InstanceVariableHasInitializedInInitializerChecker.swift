@@ -100,7 +100,9 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         // execute the else branch.
         restoreState(state: runningState)
         branchingInitializedSetsStack.append(Set<Int>())
-        processBranch(stmt.elseBranch!)
+        if stmt.elseBranch != nil {
+            processBranch(stmt.elseBranch!)
+        }
         
         // now union the last two
         var runningUnion = branchingInitializedSetsStack.popLast()!

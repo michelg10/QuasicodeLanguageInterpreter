@@ -1160,6 +1160,16 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for stmt in stmt.body {
             typeCheck(stmt)
         }
+        
+        let functionSymbol = symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! FunctionLikeSymbol
+        if !(functionSymbol.returnType is QsVoidType) {
+            // gaurentee a return
+            var gaurenteeReturnChecker = GaurenteeReturnChecker {
+                let functionSymbol = self.symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! FunctionLikeSymbol
+                self.error(message: "Missing return in function expected to return '\(printType(functionSymbol.returnType))'", on: stmt.endOfFunction)
+            }
+            gaurenteeReturnChecker.checkStatements(stmt.body)
+        }
     }
     
     internal func visitExpressionStmt(stmt: ExpressionStmt) {
