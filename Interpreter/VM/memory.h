@@ -12,6 +12,8 @@
 
 #define COMPILER_MEM_ALLOCATE(type, count) (type*)compilerReallocate(NULL, sizeof(type)*(count))
 
+#define COMPILER_ALLOCATE_OBJ(type) (type*)compilerReallocate(NULL, sizeof(type))
+
 #define COMPILER_MEM_FREE(type, pointer) compilerReallocate(pointer, 0)
 
 #define GROW_CAPACITY(capacity) ((capacity<16) ? 16 : (capacity*2))

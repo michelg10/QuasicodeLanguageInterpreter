@@ -28,6 +28,5 @@ void popCount(VM* vm, uint8_t count);
 void* topByReference(VM* vm);
 uint64_t top(VM* vm);
 void modifyTopInPlace(VM* vm, void* val);
-uint64_t readLong(VM* vm);
 
 #endif /* VM_h */

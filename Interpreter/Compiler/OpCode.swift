@@ -4,7 +4,9 @@ enum OpCode: Int {
     case OP_false
     case OP_pop
     case OP_pop_n
+    case OP_loadEmbeddedByteConstant
     case OP_loadEmbeddedLongConstant
+    case OP_loadEmbeddedExplicitlyTypedConstant
     case OP_loadConstantFromTable
     case OP_LONG_loadConstantFromTable
     case OP_negateInt

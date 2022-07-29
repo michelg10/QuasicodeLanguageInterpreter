@@ -46,11 +46,10 @@ static int instructionWithByte(const char* name, Chunk* chunk, int offset) {
     return offset+2;
 }
 
-static int instructionWith3Byte(const char* name, Chunk* chunk, int offset) {
-    int value = *(int*)&chunk->code[offset];
-    value = value>>4;
-    printf("%-32s %d", name, value);
-    return offset+4;
+static int instructionWith4Byte(const char* name, Chunk* chunk, int offset) {
+    unsigned int value = *(unsigned int*)&chunk->code[offset+1];
+    printf("%-32s %d\n", name, value);
+    return offset+5;
 }
 
 int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLineNumber) {
@@ -71,12 +70,14 @@ int disassembleInstruction(Chunk* chunk, int offset, int lineNumber, bool showLi
         SIMPLE_INSTRUCTION(OP_pop)
         case OP_pop_n:
             return instructionWithByte("OP_pop_n", chunk, offset);
+        case OP_loadEmbeddedByteConstant:
+            return instructionWithByte("OP_loadEmbeddedByteConstant", chunk, offset);
         case OP_loadEmbeddedLongConstant:
             return instructionWithLong("OP_loadEmbeddedLongConstant", chunk, offset);
         case OP_loadConstantFromTable:
             return instructionWithByte("OP_loadConstantFromTable", chunk, offset);
         case OP_LONG_loadConstantFromTable:
-            return instructionWith3Byte("OP_LONG_loadConstantFromTable", chunk, offset);
+            return instructionWith4Byte("OP_LONG_loadConstantFromTable", chunk, offset);
         SIMPLE_INSTRUCTION(OP_negateInt)
         SIMPLE_INSTRUCTION(OP_negateDouble)
         SIMPLE_INSTRUCTION(OP_notBool)

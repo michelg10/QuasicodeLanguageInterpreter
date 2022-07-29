@@ -2,6 +2,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     var compilingChunk: UnsafeMutablePointer<Chunk>!
     var symbolTable: SymbolTables = .init()
     var stringClass: QsType = QsVoidType()
+    let useEmbeddedConstants = true // don't know why not, but just feels like that there's a reason that Java and Lox used a constants table.
     
     internal func currentChunk() -> UnsafeMutablePointer<Chunk>! {
         return compilingChunk
@@ -12,22 +13,60 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     private func writeInstructionToChunk(op: OpCode, expr: Expr) {
-        Interpreter.writeInstructionToChunk(chunk: currentChunk(), op: op, line: expr.startLocation.line)
+        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: op, line: expr.startLocation.line)
     }
     
     private func writeLongToChunk(data: UInt64, expr: Expr) {
-        Interpreter.writeLongToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
+        ChunkInterface.writeLongToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
+    }
+    
+    private func writeByteToChunk(data: UInt8, expr: Expr) {
+        ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
+    }
+    
+    private func addConstantToChunk(data: UInt64) -> Int {
+        return ChunkInterface.addConstantToChunk(chunk: currentChunk(), data: data)
+    }
+    
+    private func writeLoadConstantFromTableInstruction(constantIndex: Int, expr: Expr) {
+        let alwaysUseLongOperations = false // debug option
+        if !alwaysUseLongOperations && constantIndex <= UInt8.max {
+            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_loadConstantFromTable, line: expr.startLocation.line)
+            ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: UInt8(constantIndex), line: expr.startLocation.line)
+        } else if constantIndex <= ((1<<32) - 1) {
+            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_LONG_loadConstantFromTable, line: expr.startLocation.line)
+            ChunkInterface.writeUIntToChunk(chunk: currentChunk(), data: UInt32(constantIndex), line: expr.startLocation.line)
+        } else {
+            // TODO: Error handling
+            assertionFailure("Compiler internal failure (too many constants)")
+        }
     }
     
     internal func visitLiteralExpr(expr: LiteralExpr) {
         // TODO: Strings
         switch expr.type! {
         case is QsInt:
-            writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
-            writeLongToChunk(data: UInt64(expr.value as! Int), expr: expr)
+            let value = expr.value as! Int
+            if value >= Int8.min && value <= Int8.max {
+                writeInstructionToChunk(op: .OP_loadEmbeddedByteConstant, expr: expr)
+                writeByteToChunk(data: UInt8(bitPattern: Int8(value)), expr: expr)
+            } else {
+                if useEmbeddedConstants {
+                    writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
+                    writeLongToChunk(data: UInt64(bitPattern: Int64(expr.value as! Int)), expr: expr)
+                } else {
+                    let constantIndex = addConstantToChunk(data: .init(bitPattern: Int64(value)))
+                    writeLoadConstantFromTableInstruction(constantIndex: constantIndex, expr: expr)
+                }
+            }
         case is QsDouble:
-            writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
-            writeLongToChunk(data: (expr.value as! Double).bitPattern, expr: expr)
+            if useEmbeddedConstants {
+                writeInstructionToChunk(op: .OP_loadEmbeddedLongConstant, expr: expr)
+                writeLongToChunk(data: (expr.value as! Double).bitPattern, expr: expr)
+            } else {
+                let constantIndex = addConstantToChunk(data: (expr.value as! Double).bitPattern)
+                writeLoadConstantFromTableInstruction(constantIndex: constantIndex, expr: expr)
+            }
         case is QsBoolean:
             let value = expr.value as! Bool
             if value {
@@ -264,7 +303,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     
     
     private func endCompiler() {
-        Interpreter.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)
+        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)
     }
     
     private func compile(_ stmt: Stmt) {

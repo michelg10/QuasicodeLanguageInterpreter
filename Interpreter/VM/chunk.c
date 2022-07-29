@@ -4,13 +4,19 @@
 
 void resetChunk(Chunk* chunk) {
     chunk->codeCapacity = 0;
+#ifdef USE_EXTERNAL_CONSTANTS
     chunk->constantsCapacity = 0;
+#endif
     chunk->lineInformationCapacity = 0;
     chunk->codeCount = 0;
+#ifdef USE_EXTERNAL_CONSTANTS
     chunk->constantsCount = 0;
+#endif
     chunk->lineInformationCount = 0;
     chunk->code = NULL;
+#ifdef USE_EXTERNAL_CONSTANTS
     chunk->constants = NULL;
+#endif
     chunk->lineInformation = NULL;
     chunk->maxDepth = 0;
 }
@@ -23,7 +29,9 @@ Chunk* initChunk() {
 
 void freeChunk(Chunk* chunk) {
     COMPILER_FREE_ARRAY(uint8_t, chunk->code);
-    COMPILER_FREE_ARRAY(uint8_t, chunk->constants);
+#ifdef USE_EXTERNAL_CONSTANTS
+    COMPILER_FREE_ARRAY(uint64_t, chunk->constants);
+#endif
     COMPILER_FREE_ARRAY(LineInformation, chunk->lineInformation);
     resetChunk(chunk);
     chunk = compilerReallocate(chunk, 0);
@@ -66,23 +74,35 @@ void writeChunkLong(Chunk* chunk, uint64_t val, int line) {
     }
 }
 
+void writeChunkUInt(Chunk* chunk, uint32_t val, int line) {
+    for (int i=0;i<4;i++) {
+        uint8_t byte;
+        memcpy(&byte, ((uint8_t*)(&val))+i, 1);
+        writeChunk(chunk, byte, line);
+    }
+}
+
 int getChunkCodeCount(Chunk* chunk) {
     return chunk->codeCount;
 }
 
-int addConstant(Chunk* chunk, uint8_t* bytes, int len) {
-    if (chunk->constantsCount+len>chunk->constantsCapacity) {
+int addConstant(Chunk* chunk, uint64_t data) {
+#ifdef USE_EXTERNAL_CONSTANTS
+    if (chunk->constantsCount+1>chunk->constantsCapacity) {
         int newConstantsCapacity = GROW_CAPACITY(chunk->constantsCount);
-        while (newConstantsCapacity<chunk->codeCount+len) {
+        while (newConstantsCapacity<chunk->codeCount+1) {
             newConstantsCapacity = GROW_CAPACITY(newConstantsCapacity);
         }
-        chunk->constants = COMPILER_GROW_ARRAY(uint8_t, chunk->constants, newConstantsCapacity);
+        chunk->constants = COMPILER_GROW_ARRAY(uint64_t, chunk->constants, newConstantsCapacity);
         chunk->constantsCapacity = newConstantsCapacity;
     }
     const int index = chunk->constantsCount;
-    memcpy(chunk->constants+chunk->constantsCount, bytes, len);
-    chunk->constantsCount+=len;
+    chunk->constants[chunk->constantsCount] = data;
+    chunk->constantsCount+=1;
     return index;
+#else
+    return -1;
+#endif
 }
 
 void setMaxDepth(Chunk* chunk, int maxDepth) {

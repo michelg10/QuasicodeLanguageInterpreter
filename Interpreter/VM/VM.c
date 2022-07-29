@@ -57,9 +57,15 @@ inline void modifyTopInPlace(VM* vm, void* val) {
     *(vm->stackTop-1)=*(uint64_t*)val;
 }
 
-inline uint64_t readLong(VM* vm) {
+inline static uint64_t readLong(VM* vm) {
     uint64_t val = *(uint64_t*)(vm->ip);
     vm->ip+=8;
+    return val;
+}
+
+inline static uint32_t read4Byte(VM* vm) {
+    uint32_t val = *(uint32_t*)(vm->ip);
+    vm->ip+=4;
     return val;
 }
 
@@ -68,6 +74,8 @@ static void run(VM* vm) {
 #define READ_LONG() (*(long*)popByReference(vm))
 #define READ_DOUBLE() (*(double*)popByReference(vm))
 #define READ_BOOL() (READ_DOUBLE() != 0)
+#define READ_CONSTANT() (&(vm->chunk->constants[READ_INSTRUCTION_BYTE()]))
+#define READ_LONG_CONSTANT() (&(vm->chunk->constants[read4Byte(vm)]))
     
 #ifdef DEBUG_TRACE_EXECUTION
     int lineInformationIndex = 0;
@@ -138,17 +146,26 @@ do { \
                 popCount(vm, count);
                 break;
             }
+            case OP_loadEmbeddedByteConstant: {
+                uint64_t value = *(char*)&READ_INSTRUCTION_BYTE();
+                push(vm, &value);
+                break;
+            }
             case OP_loadEmbeddedLongConstant: {
                 uint64_t value = readLong(vm);
                 push(vm, &value);
                 break;
             }
+#ifdef USE_EXTERNAL_CONSTANTS
             case OP_loadConstantFromTable: {
-                // TODO
+                push(vm, READ_CONSTANT());
+                break;
             }
             case OP_LONG_loadConstantFromTable: {
-                // TODO
+                push(vm, READ_LONG_CONSTANT());
+                break;
             }
+#endif
             case OP_negateInt: {
                 long val = -(*((long *)topByReference(vm)));
                 modifyTopInPlace(vm, &val);
@@ -298,17 +315,17 @@ do { \
             }
             case OP_outputInt: {
                 long val = READ_LONG();
-                printf("%li\n", val);
+//                printf("%li\n", val);
                 break;
             }
             case OP_outputDouble: {
                 double val = READ_DOUBLE();
-                printf("%f\n", val);
+//                printf("%f\n", val);
                 break;
             }
             case OP_outputBoolean: {
                 bool val = READ_BOOL();
-                printf("%s\n", val ? "true" : "false");
+//                printf("%s\n", val ? "true" : "false");
             }
             case OP_outputString: {
                 
@@ -329,6 +346,7 @@ do { \
     }
     
 #undef INT_BINARY_OP
+#undef READ_CONSTANT
 #undef READ_INSTRUCTION_BYTE
 #undef READ_LONG
 #undef READ_DOUBLE
