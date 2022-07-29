@@ -35,6 +35,28 @@ class SymbolTables {
     private var allSymbols: [Symbol] = []
     private var tables: [SymbolTable] = []
     private var current: SymbolTable
+    private var classRuntimeIdCount = 0
+    private var classSymbolTableIndexToRuntimeIdDict: [Int : Int] = [:]
+    public func getClassRuntimeIdCount() -> Int {
+        return classRuntimeIdCount
+    }
+    public func getClassRuntimeId(symbolTableIndex: Int) -> Int {
+        return classSymbolTableIndexToRuntimeIdDict[symbolTableIndex]!
+    }
+    
+    public func getClassSymbolTableIndexToRuntimeIdDict() -> [Int : Int] {
+        return classSymbolTableIndexToRuntimeIdDict
+    }
+    
+    public func getClassesRuntimeIdToClassNameArray() -> [String] {
+        var result = Array(repeating: "", count: getClassRuntimeIdCount()+1)
+        classSymbolTableIndexToRuntimeIdDict.forEach { (key, value) in
+            let symbol = getSymbol(id: key) as! ClassSymbol
+            result[value] = symbol.displayName
+        }
+        return result
+    }
+    
     init() {
         current = .init(parent: nil, id: 0)
         tables.append(current)
@@ -96,6 +118,11 @@ class SymbolTables {
         var newSymbol = symbol
         newSymbol.id = allSymbols.count
         newSymbol.belongsToTable = current.id
+        if newSymbol is ClassSymbol {
+            classRuntimeIdCount+=1
+            classSymbolTableIndexToRuntimeIdDict[newSymbol.id] = classRuntimeIdCount
+            (newSymbol as! ClassSymbol).runtimeId = classRuntimeIdCount
+        }
         allSymbols.append(symbol)
         current.addToTable(symbol: newSymbol)
         return newSymbol.id

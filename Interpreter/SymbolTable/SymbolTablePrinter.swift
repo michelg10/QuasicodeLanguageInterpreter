@@ -57,7 +57,7 @@ func printMethodInfo(_ symbol: MethodSymbol) -> String {
     return "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), returnType: \(printType(symbol.returnType)), isStatic: \(symbol.isStatic), visibility: \(symbol.visibility), withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit), isConstructor: \(symbol.isConstructor)"
 }
 func printClassInfo(_ symbol: ClassSymbol) -> String {
-    return "displayName: \(symbol.displayName), nonSignatureName: \(symbol.nonSignatureName), classId: \(symbol.classId), depth: \(stringifyOptionalInt(symbol.depth)), parentOf: \(symbol.parentOf)), upperClass: \(stringifyOptionalInt(symbol.upperClass)), classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
+    return "displayName: \(symbol.displayName), nonSignatureName: \(symbol.nonSignatureName), runtimeId: \(symbol.runtimeId), depth: \(stringifyOptionalInt(symbol.depth)), parentOf: \(symbol.parentOf)), upperClass: \(stringifyOptionalInt(symbol.upperClass)), classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
 }
 func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
     return ""

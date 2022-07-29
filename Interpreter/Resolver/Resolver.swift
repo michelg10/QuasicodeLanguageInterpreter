@@ -612,13 +612,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    private func defineClass(stmt: ClassStmt, classId: Int) throws -> Int {
+    private func defineClass(stmt: ClassStmt) throws -> Int {
         let classSignature = generateClassSignature(className: stmt.name.lexeme, templateAstTypes: stmt.expandedTemplateParameters)
         if symbolTable.queryAtScopeOnly(classSignature) != nil {
             throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
         }
         
-        let classSymbol = ClassSymbol(name: classSignature, classId: classId, classStmt: stmt, upperClass: nil, depth: nil, parentOf: [])
+        let classSymbol = ClassSymbol(name: classSignature, classStmt: stmt, upperClass: nil, depth: nil, parentOf: [])
         let symbolTableIndex = symbolTable.addToSymbolTable(symbol: classSymbol)
         stmt.symbolTableIndex = symbolTableIndex
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(stmt.name.lexeme) {
@@ -658,13 +658,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     private func eagerDefineClassesAndFunctions(statements: [Stmt]) {
         // add all class and function names into the undefinables list
-        var classIdCounter = BUILTIN_CLASSES_COUNT // leave class ids for the built-in classes
         for statement in statements {
             if let classStmt = statement as? ClassStmt {
                 catchErrorClosure {
-                    try defineClass(stmt: classStmt, classId: classIdCounter)
+                    try defineClass(stmt: classStmt)
                 }
-                classIdCounter+=1
             }
             
             if let functionStmt = statement as? FunctionStmt {
@@ -724,17 +722,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         // find the maximum class id to create a union-find disjoint set in order to find circular references
-        var classIdCount = BUILTIN_CLASSES_COUNT-1
-        for classStmt in classStmts {
-            if classStmt.symbolTableIndex == nil {
-                continue
-            }
-            
-            classIdCount = max(classIdCount, ((symbolTable.getSymbol(id: classStmt.symbolTableIndex!) as? ClassSymbol)?.classId) ?? 0)
-        }
+        var classRuntimeIdCount = symbolTable.getClassRuntimeIdCount()
         
-        let classClusterer = UnionFind(size: classIdCount+1+1)
-        let anyTypeClusterId = classIdCount+1
+        let classClusterer = UnionFind(size: classRuntimeIdCount+1+1)
+        let anyTypeClusterId = classRuntimeIdCount+1
         
         // create the class chains by initializing every class without a superclass with a depth of 1 and linking child classes classes with their superclasses
         for classStmt in classStmts {
@@ -746,7 +737,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 continue
             }
             if classStmt.superclass == nil {
-                classClusterer.unite(anyTypeClusterId, classSymbol.classId)
+                classClusterer.unite(anyTypeClusterId, classSymbol.runtimeId)
                 classSymbol.depth = 1
                 continue
             }
@@ -760,12 +751,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
             
             // check if the two classes are already related.
-            if classClusterer.findParent(inheritedClassSymbol.classId) == classClusterer.findParent(classSymbol.classId) {
+            if classClusterer.findParent(inheritedClassSymbol.runtimeId) == classClusterer.findParent(classSymbol.runtimeId) {
                 error(message: "'\(classSymbol.displayName)' inherits from itself", token: classStmt.name)
                 continue
             }
             inheritedClassSymbol.parentOf.append(classStmt.symbolTableIndex!)
-            classClusterer.unite(inheritedClassSymbol.classId, classSymbol.classId)
+            classClusterer.unite(inheritedClassSymbol.runtimeId, classSymbol.runtimeId)
             classSymbol.upperClass = inheritedClassSymbol.id
         }
         

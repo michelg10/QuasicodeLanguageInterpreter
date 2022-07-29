@@ -160,22 +160,23 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(name: String, displayName: String, nonSignatureName: String, classId: Int, classScopeSymbolTableIndex: Int? = nil, upperClass: Int? = nil, depth: Int? = nil, parentOf: [Int]) {
+    init(name: String, displayName: String, nonSignatureName: String, classScopeSymbolTableIndex: Int? = nil, upperClass: Int? = nil, depth: Int? = nil, parentOf: [Int]) {
         self.id = -1
         self.belongsToTable = -1
+        self.runtimeId = -1
         self.name = name
         self.displayName = displayName
         self.nonSignatureName = nonSignatureName
-        self.classId = classId
         self.classScopeSymbolTableIndex = classScopeSymbolTableIndex
         self.upperClass = upperClass
         self.depth = depth
         self.parentOf = parentOf
     }
     
-    init(name: String, classId: Int, classStmt: ClassStmt, upperClass: Int?, depth: Int?, parentOf: [Int]) {
+    init(name: String, classStmt: ClassStmt, upperClass: Int?, depth: Int?, parentOf: [Int]) {
         self.id = -1
         self.belongsToTable = -1
+        self.runtimeId = -1
         self.name = name
         self.nonSignatureName = classStmt.name.lexeme
         if classStmt.expandedTemplateParameters == nil || classStmt.expandedTemplateParameters!.count == 0 {
@@ -183,7 +184,6 @@ class ClassSymbol: Symbol {
         } else {
             displayName = name
         }
-        self.classId = classId
         self.classScopeSymbolTableIndex = classStmt.symbolTableIndex
         self.depth = depth
         self.parentOf = parentOf
@@ -193,9 +193,9 @@ class ClassSymbol: Symbol {
     var id: Int
     var belongsToTable: Int
     let name: String // is actually its signature
+    var runtimeId: Int
     let displayName: String
     let nonSignatureName: String
-    var classId: Int
     var classScopeSymbolTableIndex: Int?
     var upperClass: Int?
     var depth: Int?
