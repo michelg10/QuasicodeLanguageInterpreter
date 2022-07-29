@@ -13,7 +13,7 @@ struct MethodQsTypeSignature: Hashable {
         }
         
         for i in 0..<lhs.parameters.count {
-            if !typesIsEqual(lhs.parameters[i], rhs.parameters[i]) {
+            if !typesEqual(lhs.parameters[i], rhs.parameters[i]) {
                 return false
             }
         }

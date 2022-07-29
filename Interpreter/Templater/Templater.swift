@@ -18,7 +18,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             }
             
             for i in 0..<lhs.templateParameters.count {
-                if !typesIsEqual(lhs.templateParameters[i], rhs.templateParameters[i]) {
+                if !typesEqual(lhs.templateParameters[i], rhs.templateParameters[i]) {
                     return false
                 }
             }

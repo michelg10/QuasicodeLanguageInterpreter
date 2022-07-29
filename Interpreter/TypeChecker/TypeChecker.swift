@@ -19,7 +19,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if a is QsVoidType || b is QsVoidType {
             return QsVoidType()
         }
-        if typesIsEqual(a, b) {
+        if typesEqual(a, b) {
             return a
         }
         if a is QsAnyType || b is QsAnyType {
@@ -179,7 +179,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if qsType is QsErrorType {
                     return false
                 }
-                if !typesIsEqual(expr.type!, qsType) {
+                if !typesEqual(expr.type!, qsType) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -190,7 +190,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesIsEqual(qsType, commonType) {
+                if !typesEqual(qsType, commonType) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -201,7 +201,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesIsEqual(expr.type!, qsType) {
+                if !typesEqual(expr.type!, qsType) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -248,7 +248,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return false
             }
         } else {
-            if !typesIsEqual(expr.type!, toType) {
+            if !typesEqual(expr.type!, toType) {
                 expr = ImplicitCastExpr(expression: expr, type: toType, startLocation: expr.startLocation, endLocation: expr.endLocation)
             }
             return true
@@ -419,12 +419,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             for i in 0..<withParameters.count {
                 let givenType = withParameters[i]
                 let expectedType = functionSymbolEntry.functionParams[i].type
-                if typesIsEqual(givenType, expectedType) {
+                if typesEqual(givenType, expectedType) {
                     matchLevel = max(matchLevel, 1)
                     continue
                 }
                 let commonType = findCommonType(givenType, expectedType)
-                if typesIsEqual(commonType, expectedType) {
+                if typesEqual(commonType, expectedType) {
                     if expectedType is QsAnyType {
                         // the given type is being casted to an any
                         matchLevel = max(matchLevel, 3)
@@ -775,7 +775,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         let castTo = typeCheck(expr.toType)
         expr.type = castTo
-        if typesIsEqual(castTo, expr.value.type!) {
+        if typesEqual(castTo, expr.value.type!) {
             return
         }
         // allowed type casts: [any type] -> any, any -> [any type], int -> double, double -> int
@@ -789,11 +789,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return // allow int -> double and double -> int
         }
         let commonType = findCommonType(expr.value.type!, castTo)
-        if typesIsEqual(commonType, expr.value.type!) {
+        if typesEqual(commonType, expr.value.type!) {
             // casting to a subclass
             return
         }
-        if typesIsEqual(commonType, castTo) {
+        if typesEqual(commonType, castTo) {
             // casting to a superclass
             return
         }
@@ -892,7 +892,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 promoteToDoubleIfNecessary()
                 return
             }
-            if typesIsEqual(expr.left.type!, QsBoolean()) && typesIsEqual(expr.right.type!, QsBoolean()) {
+            if typesEqual(expr.left.type!, QsBoolean()) && typesEqual(expr.right.type!, QsBoolean()) {
                 return
             }
             if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
@@ -910,7 +910,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         case .MOD:
             expr.type = QsInt()
-            if typesIsEqual(expr.left.type!, QsInt()) && typesIsEqual(expr.right.type!, QsInt()) {
+            if typesEqual(expr.left.type!, QsInt()) && typesEqual(expr.right.type!, QsInt()) {
                 return
             }
         case .PLUS:
