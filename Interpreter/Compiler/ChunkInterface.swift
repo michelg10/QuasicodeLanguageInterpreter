@@ -15,6 +15,22 @@ class ChunkInterface {
         writeChunkLong(chunk, data, Int32(line))
     }
     
+    static func writeExplicitlyTypedValueObjectToChunk(chunk: UnsafeMutablePointer<Chunk>!, object: UnsafeMutableRawPointer!, classId: Int, line: Int) {
+        writeChunkExplicitlyTypedValueObject(chunk, object, Int32(classId), Int32(line))
+    }
+    
+    static func writeExplicitlyTypedInt(chunk: UnsafeMutablePointer<Chunk>!, value: Int, line: Int) {
+        writeChunkExplicitlyTypedInt(chunk, value, Int32(line))
+    }
+    
+    static func writeExplicitlyTypedDouble(chunk: UnsafeMutablePointer<Chunk>!, value: Double, line: Int) {
+        writeChunkExplicitlyTypedDouble(chunk, value, Int32(line))
+    }
+    
+    static func writeExplicitlyTypedBoolean(chunk: UnsafeMutablePointer<Chunk>!, value: Bool, line: Int) {
+        writeChunkExplicitlyTypedBoolean(chunk, value, Int32(line))
+    }
+    
     static func addConstantToChunk(chunk: UnsafeMutablePointer<Chunk>!, data: UInt64) -> Int {
         return Int(addConstant(chunk, data))
     }

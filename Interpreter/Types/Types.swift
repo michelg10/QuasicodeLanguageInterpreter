@@ -66,7 +66,6 @@ class QsAnyType: QsType {
     var assignable: Bool
 }
 
-let BUILTIN_CLASSES_COUNT = 4
 let builtinClassNames = ["Collection", "Stack", "Queue"]
 class QsClass: QsType {
     init(name: String, id: Int, assignable: Bool) {

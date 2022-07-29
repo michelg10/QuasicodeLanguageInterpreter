@@ -1,4 +1,5 @@
 #include "chunk.h"
+#include "ExplicitlyTypedValue.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,6 +83,30 @@ void writeChunkUInt(Chunk* chunk, uint32_t val, int line) {
     }
 }
 
+static void writeChunkExplicitlyTypedValue(Chunk* chunk, ExplicitlyTypedValue value, int line) {
+    for (int i=0;i<16;i++) {
+        uint8_t byte;
+        memcpy(&byte, ((uint8_t*)(&value))+i, 1);
+        writeChunk(chunk, byte, line);
+    }
+}
+
+void writeChunkExplicitlyTypedValueObject(Chunk* chunk, void* object, int classId, int line) {
+    writeChunkExplicitlyTypedValue(chunk, TYPED_VAL_FROM_OBJECT_SCALAR(classId, object), line);
+}
+
+void writeChunkExplicitlyTypedInt(Chunk* chunk, long value, int line) {
+    writeChunkExplicitlyTypedValue(chunk, TYPED_VAL_FROM_INT_SCALAR(value), line);
+}
+
+void writeChunkExplicitlyTypedDouble(Chunk* chunk, double value, int line) {
+    writeChunkExplicitlyTypedValue(chunk, TYPED_VAL_FROM_DOUBLE_SCALAR(value), line);
+}
+
+void writeChunkExplicitlyTypedBoolean(Chunk* chunk, bool value, int line) {
+    writeChunkExplicitlyTypedValue(chunk, TYPED_VAL_FROM_BOOLEAN_SCALAR(value), line);
+}
+
 int getChunkCodeCount(Chunk* chunk) {
     return chunk->codeCount;
 }
@@ -89,7 +114,7 @@ int getChunkCodeCount(Chunk* chunk) {
 int addConstant(Chunk* chunk, uint64_t data) {
 #ifdef USE_EXTERNAL_CONSTANTS
     if (chunk->constantsCount+1>chunk->constantsCapacity) {
-        int newConstantsCapacity = GROW_CAPACITY(chunk->constantsCount);
+        int newConstantsCapacity = GROW_CAPACITY(chunk->constantsCapacity);
         while (newConstantsCapacity<chunk->codeCount+1) {
             newConstantsCapacity = GROW_CAPACITY(newConstantsCapacity);
         }

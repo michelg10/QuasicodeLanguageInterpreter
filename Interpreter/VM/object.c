@@ -14,9 +14,9 @@ static ObjString* allocateString(unsigned char* chars, long length) {
     return string;
 }
 
-ObjString* compilerCopyString(const unsigned char* chars, long length) {
+ObjString* compilerCopyString(const char* chars, long length) {
     char* heapAllocatedChars = COMPILER_MEM_ALLOCATE(char, length);
     memcpy(heapAllocatedChars, chars, length);
     
-    return NULL;
+    return allocateString(heapAllocatedChars, length);
 }

@@ -12,12 +12,18 @@
 typedef struct {
     uint64_t stack[STACK_MAX];
     uint64_t* stackTop;
+    uint32_t* potentialObjectsOnStackList; // for the GC
+    uint32_t potentialObjectsOnStackListCount;
+    uint32_t potentialObjectsOnStackListCapacity;
+    char** classNamesArray;
+    int* classNamesLength;
+    int classesCount;
     Chunk* chunk;
     uint8_t* ip; // this is getting moved to a call frame soon
 } VM;
 
 void resetVM(VM* vm);
-VM* initVM(void);
+VM* initVM(const char** classNames, const int* classNamesLength, int classesCount);
 void freeVM(VM* vm);
 void interpret(VM* vm, Chunk* chunk);
 

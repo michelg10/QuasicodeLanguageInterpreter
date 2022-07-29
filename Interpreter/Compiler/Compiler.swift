@@ -3,6 +3,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     var symbolTable: SymbolTables = .init()
     var stringClass: QsType = QsVoidType()
     let useEmbeddedConstants = true // don't know why not, but just feels like that there's a reason that Java and Lox used a constants table.
+    var classSymbolTableIndexToClassRuntimeIdMap: [Int : Int] = [:]
     
     internal func currentChunk() -> UnsafeMutablePointer<Chunk>! {
         return compilingChunk
@@ -42,6 +43,17 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
+    private func writeExplicitlyTypedValueObjectToChunk(object: UnsafeMutableRawPointer, type: QsClass, expr: Expr) {
+        ChunkInterface.writeExplicitlyTypedValueObjectToChunk(chunk: currentChunk(), object: object, classId: symbolTable.getClassRuntimeId(symbolTableIndex: type.id), line: expr.startLocation.line)
+    }
+    
+    private func writeStringToChunk(_ string: String, expr: Expr) {
+        let objString = string.utf8CString.withUnsafeBufferPointer { pointer in
+            compilerCopyString(pointer.baseAddress!, pointer.count)
+        }
+        writeExplicitlyTypedValueObjectToChunk(object: objString!, type: stringClass as! QsClass, expr: expr)
+    }
+    
     internal func visitLiteralExpr(expr: LiteralExpr) {
         // TODO: Strings
         switch expr.type! {
@@ -75,7 +87,18 @@ class Compiler: ExprVisitor, StmtVisitor {
                 writeInstructionToChunk(op: .OP_false, expr: expr)
             }
         case is QsClass:
-            print("ohnoe")
+            if typesIsEqual(expr.type!, stringClass) {
+                let value = expr.value as! String
+                if useEmbeddedConstants {
+                    writeInstructionToChunk(op: .OP_loadEmbeddedExplicitlyTypedConstant, expr: expr)
+                    
+                    writeStringToChunk(value, expr: expr)
+                } else {
+                    // no implementation yet
+                }
+            } else {
+                assertionFailure("Classes as literals should only be strings!")
+            }
         default:
             assertionFailure("Unexpected literal type \(printType(expr.type))")
         }

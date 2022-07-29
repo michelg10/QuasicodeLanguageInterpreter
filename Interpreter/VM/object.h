@@ -15,6 +15,6 @@ struct ObjInstance {
     long* fields;
 };
 
-struct ObjString* copyString(const char* chars, int length);
+struct ObjString* compilerCopyString(const char* chars, long length);
 
 #endif /* object_h */

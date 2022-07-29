@@ -17,13 +17,26 @@ void resetVM(VM* vm) {
     resetStack(vm);
 }
 
-VM* initVM() {
+VM* initVM(const char** classNames, const int* classNamesLength, int classesCount) {
     VM* vm = malloc(sizeof *vm);
+    vm->classNamesLength = COMPILER_MEM_ALLOCATE(int, classesCount);
+    vm->classesCount = classesCount;
+    vm->classNamesArray = COMPILER_MEM_ALLOCATE(char*, classesCount);
+    for (int i=0;i<vm->classesCount;i++) {
+        vm->classNamesLength[i] = classNamesLength[i];
+        vm->classNamesArray[i] = COMPILER_MEM_ALLOCATE(char, classNamesLength[i]);
+        memcpy(vm->classNamesArray[i], classNames[i], classNamesLength[i]);
+    }
     resetVM(vm);
     return vm;
 }
 
 void freeVM(VM* vm) {
+    COMPILER_MEM_FREE(int, vm->classNamesLength);
+    for (int i=0;i<vm->classesCount;i++) {
+        COMPILER_MEM_FREE(char, vm->classNamesArray[i]);
+    }
+    COMPILER_MEM_FREE(char*, vm->classNamesArray);
     vm = realloc(vm, 0);
 }
 
@@ -67,6 +80,22 @@ inline static uint32_t read4Byte(VM* vm) {
     uint32_t val = *(uint32_t*)(vm->ip);
     vm->ip+=4;
     return val;
+}
+
+inline static void willAddPotentialObjectOnStack(VM* vm) {
+    const uint32_t index = vm->stackTop - vm->stack;
+    if (vm->potentialObjectsOnStackListCount+1>vm->potentialObjectsOnStackListCapacity) {
+        int newPotentialObjectsOnStackListCapacity = GROW_CAPACITY(vm->potentialObjectsOnStackListCapacity);
+        vm->potentialObjectsOnStackList = COMPILER_GROW_ARRAY(uint32_t, vm->potentialObjectsOnStackList, newPotentialObjectsOnStackListCapacity);
+        vm->potentialObjectsOnStackListCapacity = newPotentialObjectsOnStackListCapacity;
+    }
+    vm->potentialObjectsOnStackList[vm->potentialObjectsOnStackListCount] = index;
+    vm->potentialObjectsOnStackListCount++;
+}
+
+inline static void popPotentialObjectOnStack(VM* vm) {
+    popCount(vm, 2);
+    vm->potentialObjectsOnStackListCount--;
 }
 
 static void run(VM* vm) {
@@ -146,6 +175,10 @@ do { \
                 popCount(vm, count);
                 break;
             }
+            case OP_popExplicitlyTypedValue: {
+                popPotentialObjectOnStack(vm);
+                break;
+            }
             case OP_loadEmbeddedByteConstant: {
                 uint64_t value = *(char*)&READ_INSTRUCTION_BYTE();
                 push(vm, &value);
@@ -153,6 +186,14 @@ do { \
             }
             case OP_loadEmbeddedLongConstant: {
                 uint64_t value = readLong(vm);
+                push(vm, &value);
+                break;
+            }
+            case OP_loadEmbeddedExplicitlyTypedConstant: {
+                willAddPotentialObjectOnStack(vm);
+                uint64_t value = readLong(vm);
+                push(vm, &value);
+                value = readLong(vm);
                 push(vm, &value);
                 break;
             }

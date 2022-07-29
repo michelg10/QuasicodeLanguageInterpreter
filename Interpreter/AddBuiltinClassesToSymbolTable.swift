@@ -2,7 +2,7 @@ import Foundation
 
 func addStringClassToSymbolTable(_ symbolTable: SymbolTables) {
     let stringClassScopeSymbol = symbolTable.createTableAtScope()
-    let stringClassSymbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(name: "String<>", displayName: "String", nonSignatureName: "String", classId: 0, classScopeSymbolTableIndex: stringClassScopeSymbol, upperClass: nil, depth: 1, parentOf: []))
+    let stringClassSymbolTableIndex = symbolTable.addToSymbolTable(symbol: ClassSymbol(name: "String<>", displayName: "String", nonSignatureName: "String", classScopeSymbolTableIndex: stringClassScopeSymbol, upperClass: nil, depth: 1, parentOf: []))
     let stringClassType = QsClass(name: "String", id: stringClassSymbolTableIndex)
     symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: "String"))
     symbolTable.gotoTable(stringClassScopeSymbol)
