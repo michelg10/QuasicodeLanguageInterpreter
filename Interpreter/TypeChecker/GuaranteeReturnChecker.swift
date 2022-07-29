@@ -51,11 +51,8 @@ class GaurenteeReturnChecker: StmtThrowVisitor {
         
         var allPathsReturn = true
         for _ in 0..<stmt.elseIfBranches.count+2 {
-            print(hasReturnedStack.last!)
             allPathsReturn = allPathsReturn && hasReturnedStack.popLast()!
         }
-        
-        print(allPathsReturn)
         
         if allPathsReturn {
             hasReturnedStack.popLast()

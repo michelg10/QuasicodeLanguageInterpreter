@@ -1,7 +1,7 @@
 #ifndef vmtype_h
 #define vmtype_h
 
-enum VMType {
+typedef enum VMType {
     Int=0,
     Double=1,
     Boolean=2,

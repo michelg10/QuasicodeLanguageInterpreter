@@ -118,6 +118,8 @@ class Compiler: ExprVisitor, StmtVisitor {
                 writeInstructionToChunk(op: doubleInstruction, expr: expr)
             } else if leftType is QsBoolean && boolInstruction != nil {
                 writeInstructionToChunk(op: boolInstruction!, expr: expr)
+            } else if typesIsEqual(leftType, stringClass) {
+                writeInstructionToChunk(op: stringInstruction!, expr: expr)
             } else {
                 assertionFailure("Unexpected binary operand type \(printType(leftType))")
             }

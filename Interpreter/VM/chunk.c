@@ -22,17 +22,17 @@ Chunk* initChunk() {
 }
 
 void freeChunk(Chunk* chunk) {
-    NOVM_FREE_ARRAY(uint8_t, chunk->code);
-    NOVM_FREE_ARRAY(uint8_t, chunk->constants);
-    NOVM_FREE_ARRAY(LineInformation, chunk->lineInformation);
+    COMPILER_FREE_ARRAY(uint8_t, chunk->code);
+    COMPILER_FREE_ARRAY(uint8_t, chunk->constants);
+    COMPILER_FREE_ARRAY(LineInformation, chunk->lineInformation);
     resetChunk(chunk);
-    chunk = novm_reallocate(chunk, 0);
+    chunk = compilerReallocate(chunk, 0);
 }
 
 void writeChunk(Chunk* chunk, uint8_t byte, int line) {
     if (chunk->codeCount+1>chunk->codeCapacity) {
         const int newCodeCapacity = GROW_CAPACITY(chunk->codeCapacity);
-        chunk->code = NOVM_GROW_ARRAY(uint8_t, chunk->code, newCodeCapacity);
+        chunk->code = COMPILER_GROW_ARRAY(uint8_t, chunk->code, newCodeCapacity);
         chunk->codeCapacity = newCodeCapacity;
     }
     
@@ -49,7 +49,7 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
     if (shouldEncodeLineInformation) {
         if (chunk->lineInformationCount+1>chunk->lineInformationCapacity) {
             const int newLineInformationCapacity = GROW_CAPACITY(chunk->lineInformationCapacity);
-            chunk->lineInformation = NOVM_GROW_ARRAY(LineDebugInformation, chunk->lineInformation, newLineInformationCapacity);
+            chunk->lineInformation = COMPILER_GROW_ARRAY(LineDebugInformation, chunk->lineInformation, newLineInformationCapacity);
             chunk->lineInformationCapacity = newLineInformationCapacity;
         }
         
@@ -76,7 +76,7 @@ int addConstant(Chunk* chunk, uint8_t* bytes, int len) {
         while (newConstantsCapacity<chunk->codeCount+len) {
             newConstantsCapacity = GROW_CAPACITY(newConstantsCapacity);
         }
-        chunk->constants = NOVM_GROW_ARRAY(uint8_t, chunk->constants, newConstantsCapacity);
+        chunk->constants = COMPILER_GROW_ARRAY(uint8_t, chunk->constants, newConstantsCapacity);
         chunk->constantsCapacity = newConstantsCapacity;
     }
     const int index = chunk->constantsCount;

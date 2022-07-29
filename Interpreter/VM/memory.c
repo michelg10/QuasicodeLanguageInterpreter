@@ -1,6 +1,6 @@
 #include "memory.h"
 
-void* novm_reallocate(void* pointer, size_t newSize) {
+void* compilerReallocate(void* pointer, size_t newSize) {
     if (newSize == 0) {
         free(pointer);
         return NULL;

@@ -3,6 +3,7 @@
 #include "OpCode.h"
 #include "string.h"
 #include "disassembler.h"
+#include "ExplicitlyTypedValue.h"
 #ifdef TIME_EXECUTION
 #include <time.h>
 #endif

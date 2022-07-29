@@ -22,6 +22,7 @@
 		D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */; };
 		D06E655C289181F600442105 /* AddBuiltinClassesToAst.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */; };
 		D06E65712892691100442105 /* GuaranteeReturnChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E65702892691100442105 /* GuaranteeReturnChecker.swift */; };
+		D06E657528939C4000442105 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = D06E657428939C4000442105 /* object.c */; };
 		D070FBC72877F82600EF0033 /* VMInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D070FBC62877F82600EF0033 /* VMInterface.swift */; };
 		D070FBDC2878301C00EF0033 /* ChunkInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D070FBDB2878301C00EF0033 /* ChunkInterface.swift */; };
 		D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */; };
@@ -89,6 +90,9 @@
 		D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBuiltinClassesToSymbolTable.swift; sourceTree = "<group>"; };
 		D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBuiltinClassesToAst.swift; sourceTree = "<group>"; };
 		D06E65702892691100442105 /* GuaranteeReturnChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuaranteeReturnChecker.swift; sourceTree = "<group>"; };
+		D06E6572289285B700442105 /* ExplicitlyTypedValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExplicitlyTypedValue.h; sourceTree = "<group>"; };
+		D06E6573289386A500442105 /* object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = object.h; sourceTree = "<group>"; };
+		D06E657428939C4000442105 /* object.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = object.c; sourceTree = "<group>"; };
 		D070FBC62877F82600EF0033 /* VMInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMInterface.swift; sourceTree = "<group>"; };
 		D070FBDB2878301C00EF0033 /* ChunkInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkInterface.swift; sourceTree = "<group>"; };
 		D07B70EE281A2A9A003A672F /* VisibilityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisibilityModifier.swift; sourceTree = "<group>"; };
@@ -196,6 +200,9 @@
 				D0691C5A28770CD600DA85F3 /* memory.h */,
 				D0691C5B28770CD600DA85F3 /* memory.c */,
 				D0691C552876D52000DA85F3 /* common.h */,
+				D06E6572289285B700442105 /* ExplicitlyTypedValue.h */,
+				D06E6573289386A500442105 /* object.h */,
+				D06E657428939C4000442105 /* object.c */,
 				D0832F752876B65E0003B625 /* Interpreter-Bridging-Header.h */,
 				D0832F7C2876BBF60003B625 /* OpCode.h */,
 				D0691C562876E2DF00DA85F3 /* VMType.h */,
@@ -395,6 +402,7 @@
 				D0691C582876E2EC00DA85F3 /* VMType.swift in Sources */,
 				D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */,
 				D0832F7B2876BA550003B625 /* chunk.c in Sources */,
+				D06E657528939C4000442105 /* object.c in Sources */,
 				D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */,
 				D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */,
 				D0A83C462864C298006C291E /* FunctionAstTypeSignature.swift in Sources */,
