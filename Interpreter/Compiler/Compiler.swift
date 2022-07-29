@@ -91,7 +91,6 @@ class Compiler: ExprVisitor, StmtVisitor {
                 let value = expr.value as! String
                 if useEmbeddedConstants {
                     writeInstructionToChunk(op: .OP_loadEmbeddedExplicitlyTypedConstant, expr: expr)
-                    
                     writeStringToChunk(value, expr: expr)
                 } else {
                     // no implementation yet
@@ -173,7 +172,6 @@ class Compiler: ExprVisitor, StmtVisitor {
         
         // convenience function
         func writeInstruction(_ intInstruction: OpCode, _ doubleInstruction: OpCode, stringInstruction: OpCode? = nil, boolInstruction: OpCode? = nil) {
-            // TODO: Strings
             if leftType is QsInt {
                 writeInstructionToChunk(op: intInstruction, expr: expr)
             } else if leftType is QsDouble {
@@ -278,8 +276,11 @@ class Compiler: ExprVisitor, StmtVisitor {
             case is QsBoolean:
                 writeInstructionToChunk(op: .OP_outputBoolean, expr: expr)
             case is QsClass:
-                // TODO: String
-                writeInstructionToChunk(op: .OP_outputClass, expr: expr)
+                if typesIsEqual(type, stringClass) {
+                    writeInstructionToChunk(op: .OP_outputString, expr: expr)
+                } else {
+                    writeInstructionToChunk(op: .OP_outputClass, expr: expr)
+                }
             case is QsArray:
                 writeInstructionToChunk(op: .OP_outputArray, expr: expr)
             case is QsAnyType:

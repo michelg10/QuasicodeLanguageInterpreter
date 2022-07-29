@@ -4,10 +4,12 @@
 #include "string.h"
 #include "disassembler.h"
 #include "ExplicitlyTypedValue.h"
+#include "object.h"
 #ifdef TIME_EXECUTION
 #include <time.h>
 #endif
 
+typedef struct ObjString ObjString;
 
 static void resetStack(VM* vm) {
     vm->stackTop = vm->stack;
@@ -93,9 +95,21 @@ inline static void willAddPotentialObjectOnStack(VM* vm) {
     vm->potentialObjectsOnStackListCount++;
 }
 
-inline static void popPotentialObjectOnStack(VM* vm) {
+inline static void popExplicitlyTypedValueOnStack(VM* vm) {
     popCount(vm, 2);
     vm->potentialObjectsOnStackListCount--;
+}
+
+inline static ExplicitlyTypedValue peekExplicitlyTypedValueOnStack(VM* vm, int longsDown) {
+    ExplicitlyTypedValue result;
+    memcpy(&result, vm->stackTop-2-longsDown, 16);
+    
+    return result;
+}
+
+inline static ObjString peekStringOnStack(VM* vm, int longsDown) {
+    ExplicitlyTypedValue explicitlyTypedValue = peekExplicitlyTypedValueOnStack(vm, longsDown);
+    return *((ObjString*)explicitlyTypedValue.as.object);
 }
 
 static void run(VM* vm) {
@@ -129,7 +143,7 @@ static void run(VM* vm) {
             lineInformationIndex++;
         }
         
-        disassembleInstruction(vm->chunk, (int)(vm->ip-vm->chunk->code), lineNumber, showLineNumber);
+        disassembleInstruction(vm->classNamesArray, vm->chunk, (int)(vm->ip-vm->chunk->code), lineNumber, showLineNumber);
 #endif
         
 #define INT_BINARY_OP(op) \
@@ -176,7 +190,7 @@ do { \
                 break;
             }
             case OP_popExplicitlyTypedValue: {
-                popPotentialObjectOnStack(vm);
+                popExplicitlyTypedValueOnStack(vm);
                 break;
             }
             case OP_loadEmbeddedByteConstant: {
@@ -356,20 +370,24 @@ do { \
             }
             case OP_outputInt: {
                 long val = READ_LONG();
-//                printf("%li\n", val);
+                printf("%li\n", val);
                 break;
             }
             case OP_outputDouble: {
                 double val = READ_DOUBLE();
-//                printf("%f\n", val);
+                printf("%f\n", val);
                 break;
             }
             case OP_outputBoolean: {
                 bool val = READ_BOOL();
-//                printf("%s\n", val ? "true" : "false");
+                printf("%s\n", val ? "true" : "false");
+                break;
             }
             case OP_outputString: {
-                
+                ObjString str = peekStringOnStack(vm, 0);
+                printf("%s\n", str.data);
+                popExplicitlyTypedValueOnStack(vm);
+                break;
             }
             case OP_outputArray: {
                 
