@@ -49,7 +49,6 @@ class Scanner {
         
         "true"     : .TRUE,
         "false"    : .FALSE,
-        "null"     : .NULL,
         
         "loop"     : .LOOP,
         "from"     : .FROM,

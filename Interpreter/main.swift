@@ -4,7 +4,7 @@ let DEBUG = true
 let INCLUDE_STRING = true
 let INCLUDE_BUILTIN_CLASSES = false
 
-var s = "😀"
+var s = ""
 s.utf8CString.withUnsafeBufferPointer { test in
     var s = String.init(cString: test.baseAddress!)
     print(s)

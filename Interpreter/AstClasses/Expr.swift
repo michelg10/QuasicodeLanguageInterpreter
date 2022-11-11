@@ -4,6 +4,7 @@ protocol Expr {
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any?
     func fallbackToErrorType(assignable: Bool)
     var type: QsType? { get set }
     var startLocation: InterpreterLocation { get set }
@@ -125,6 +126,29 @@ protocol ExprStringVisitor {
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
+protocol ExprOptionalAnyThrowVisitor {
+    func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any?
+    func visitLiteralExprOptionalAny(expr: LiteralExpr) throws -> Any?
+    func visitArrayLiteralExprOptionalAny(expr: ArrayLiteralExpr) throws -> Any?
+    func visitStaticClassExprOptionalAny(expr: StaticClassExpr) throws -> Any?
+    func visitThisExprOptionalAny(expr: ThisExpr) throws -> Any?
+    func visitSuperExprOptionalAny(expr: SuperExpr) throws -> Any?
+    func visitVariableExprOptionalAny(expr: VariableExpr) throws -> Any?
+    func visitSubscriptExprOptionalAny(expr: SubscriptExpr) throws -> Any?
+    func visitCallExprOptionalAny(expr: CallExpr) throws -> Any?
+    func visitGetExprOptionalAny(expr: GetExpr) throws -> Any?
+    func visitUnaryExprOptionalAny(expr: UnaryExpr) throws -> Any?
+    func visitCastExprOptionalAny(expr: CastExpr) throws -> Any?
+    func visitArrayAllocationExprOptionalAny(expr: ArrayAllocationExpr) throws -> Any?
+    func visitClassAllocationExprOptionalAny(expr: ClassAllocationExpr) throws -> Any?
+    func visitBinaryExprOptionalAny(expr: BinaryExpr) throws -> Any?
+    func visitLogicalExprOptionalAny(expr: LogicalExpr) throws -> Any?
+    func visitSetExprOptionalAny(expr: SetExpr) throws -> Any?
+    func visitAssignExprOptionalAny(expr: AssignExpr) throws -> Any?
+    func visitIsTypeExprOptionalAny(expr: IsTypeExpr) throws -> Any?
+    func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
+}
+
 class GroupingExpr: Expr {
     var expression: Expr
     var type: QsType?
@@ -164,6 +188,9 @@ class GroupingExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGroupingExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitGroupingExprOptionalAny(expr: self)
     }
 }
 
@@ -207,6 +234,9 @@ class LiteralExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLiteralExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitLiteralExprOptionalAny(expr: self)
+    }
 }
 
 class ArrayLiteralExpr: Expr {
@@ -248,6 +278,9 @@ class ArrayLiteralExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayLiteralExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitArrayLiteralExprOptionalAny(expr: self)
     }
 }
 
@@ -294,6 +327,9 @@ class StaticClassExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitStaticClassExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitStaticClassExprOptionalAny(expr: self)
+    }
 }
 
 class ThisExpr: Expr {
@@ -338,6 +374,9 @@ class ThisExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitThisExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitThisExprOptionalAny(expr: self)
     }
 }
 
@@ -387,6 +426,9 @@ class SuperExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSuperExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitSuperExprOptionalAny(expr: self)
+    }
 }
 
 class VariableExpr: Expr {
@@ -432,6 +474,9 @@ class VariableExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitVariableExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitVariableExprOptionalAny(expr: self)
+    }
 }
 
 class SubscriptExpr: Expr {
@@ -476,6 +521,9 @@ class SubscriptExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSubscriptExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitSubscriptExprOptionalAny(expr: self)
     }
 }
 
@@ -534,6 +582,9 @@ class CallExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCallExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitCallExprOptionalAny(expr: self)
+    }
 }
 
 class GetExpr: Expr {
@@ -582,6 +633,9 @@ class GetExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGetExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitGetExprOptionalAny(expr: self)
+    }
 }
 
 class UnaryExpr: Expr {
@@ -626,6 +680,9 @@ class UnaryExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitUnaryExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitUnaryExprOptionalAny(expr: self)
     }
 }
 
@@ -672,6 +729,9 @@ class CastExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCastExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitCastExprOptionalAny(expr: self)
+    }
 }
 
 class ArrayAllocationExpr: Expr {
@@ -716,6 +776,9 @@ class ArrayAllocationExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayAllocationExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitArrayAllocationExprOptionalAny(expr: self)
     }
 }
 
@@ -765,6 +828,9 @@ class ClassAllocationExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitClassAllocationExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitClassAllocationExprOptionalAny(expr: self)
+    }
 }
 
 class BinaryExpr: Expr {
@@ -812,6 +878,9 @@ class BinaryExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitBinaryExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitBinaryExprOptionalAny(expr: self)
     }
 }
 
@@ -861,6 +930,9 @@ class LogicalExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLogicalExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitLogicalExprOptionalAny(expr: self)
+    }
 }
 
 class SetExpr: Expr {
@@ -905,6 +977,9 @@ class SetExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSetExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitSetExprOptionalAny(expr: self)
     }
 }
 
@@ -960,6 +1035,9 @@ class AssignExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitAssignExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitAssignExprOptionalAny(expr: self)
+    }
 }
 
 class IsTypeExpr: Expr {
@@ -1011,6 +1089,9 @@ class IsTypeExpr: Expr {
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitIsTypeExprString(expr: self)
     }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitIsTypeExprOptionalAny(expr: self)
+    }
 }
 
 class ImplicitCastExpr: Expr {
@@ -1052,6 +1133,9 @@ class ImplicitCastExpr: Expr {
     }
     func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitImplicitCastExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitImplicitCastExprOptionalAny(expr: self)
     }
 }
 

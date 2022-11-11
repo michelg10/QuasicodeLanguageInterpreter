@@ -634,9 +634,6 @@ class Parser {
         if match(types: .FALSE) {
             return LiteralExpr(value: false, type: QsBoolean(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
-        if match(types: .NULL) {
-            return LiteralExpr(value: nil, type: QsAnyType(assignable: false), startLocation: .init(start: previous()), endLocation: .init(end: previous()))
-        }
         if match(types: .THIS) {
             return ThisExpr(keyword: previous(), symbolTableIndex: nil, type: nil, startLocation: .init(start: previous()), endLocation: .init(end: previous()))
         }
