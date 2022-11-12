@@ -19,7 +19,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if a is QsVoidType || b is QsVoidType {
             return QsVoidType()
         }
-        if typesEqual(a, b) {
+        if typesEqual(a, b, anyEqAny: true) {
             return a
         }
         if a is QsAnyType || b is QsAnyType {
@@ -179,7 +179,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if qsType is QsErrorType {
                     return false
                 }
-                if !typesEqual(expr.type!, qsType) {
+                if !typesEqual(expr.type!, qsType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -190,7 +190,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesEqual(qsType, commonType) {
+                if !typesEqual(qsType, commonType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -201,7 +201,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesEqual(expr.type!, qsType) {
+                if !typesEqual(expr.type!, qsType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -248,7 +248,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return false
             }
         } else {
-            if !typesEqual(expr.type!, toType) {
+            if !typesEqual(expr.type!, toType, anyEqAny: true) {
                 expr = ImplicitCastExpr(expression: expr, type: toType, startLocation: expr.startLocation, endLocation: expr.endLocation)
             }
             return true
@@ -419,12 +419,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             for i in 0..<withParameters.count {
                 let givenType = withParameters[i]
                 let expectedType = functionSymbolEntry.functionParams[i].type
-                if typesEqual(givenType, expectedType) {
+                if typesEqual(givenType, expectedType, anyEqAny: true) {
                     matchLevel = max(matchLevel, 1)
                     continue
                 }
                 let commonType = findCommonType(givenType, expectedType)
-                if typesEqual(commonType, expectedType) {
+                if typesEqual(commonType, expectedType, anyEqAny: true) {
                     if expectedType is QsAnyType {
                         // the given type is being casted to an any
                         matchLevel = max(matchLevel, 3)
@@ -775,7 +775,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         let castTo = typeCheck(expr.toType)
         expr.type = castTo
-        if typesEqual(castTo, expr.value.type!) {
+        if typesEqual(castTo, expr.value.type!, anyEqAny: true) {
             return
         }
         // allowed type casts: [any type] -> any, any -> [any type], int -> double, double -> int
@@ -789,11 +789,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return // allow int -> double and double -> int
         }
         let commonType = findCommonType(expr.value.type!, castTo)
-        if typesEqual(commonType, expr.value.type!) {
+        if typesEqual(commonType, expr.value.type!, anyEqAny: true) {
             // casting to a subclass
             return
         }
-        if typesEqual(commonType, castTo) {
+        if typesEqual(commonType, castTo, anyEqAny: true) {
             // casting to a superclass
             return
         }
@@ -892,11 +892,16 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 promoteToDoubleIfNecessary()
                 return
             }
-            if typesEqual(expr.left.type!, QsBoolean()) && typesEqual(expr.right.type!, QsBoolean()) {
+            if typesEqual(expr.left.type!, QsBoolean(), anyEqAny: false) && typesEqual(expr.right.type!, QsBoolean(), anyEqAny: false) {
                 return
             }
             if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
                 return
+            }
+            if expr.left.type is QsArray && expr.right.type is QsArray {
+                if typesEqual(expr.left.type!, expr.right.type!, anyEqAny: false) {
+                    return
+                }
             }
         case .MINUS, .SLASH, .STAR, .DIV:
             if isNumericType(expr.left.type!) && isNumericType(expr.right.type!) {
@@ -910,7 +915,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         case .MOD:
             expr.type = QsInt()
-            if typesEqual(expr.left.type!, QsInt()) && typesEqual(expr.right.type!, QsInt()) {
+            if typesEqual(expr.left.type!, QsInt(), anyEqAny: false) && typesEqual(expr.right.type!, QsInt(), anyEqAny: false) {
                 return
             }
         case .PLUS:

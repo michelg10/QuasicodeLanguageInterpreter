@@ -1,4 +1,4 @@
-func typesEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
+func typesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
     if lhs is QsErrorType || rhs is QsErrorType {
         return false
     }
@@ -16,6 +16,9 @@ func typesEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
     }
     
     if lhs is QsAnyType {
+        if !anyEqAny {
+            return false
+        }
         if rhs is QsAnyType {
             return true
         }
@@ -24,7 +27,7 @@ func typesEqual(_ lhs: QsType, _ rhs: QsType) -> Bool {
     
     if lhs is QsArray {
         if rhs is QsArray {
-            return typesEqual((lhs as! QsArray).contains, (rhs as! QsArray).contains)
+            return typesEqual((lhs as! QsArray).contains, (rhs as! QsArray).contains, anyEqAny: anyEqAny)
         } else {
             return false
         }

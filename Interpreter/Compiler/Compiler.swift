@@ -87,7 +87,7 @@ class Compiler: ExprVisitor, StmtVisitor {
                 writeInstructionToChunk(op: .OP_false, expr: expr)
             }
         case is QsClass:
-            if typesEqual(expr.type!, stringClass) {
+            if typesEqual(expr.type!, stringClass, anyEqAny: true) {
                 let value = expr.value as! String
                 if useEmbeddedConstants {
                     writeInstructionToChunk(op: .OP_loadEmbeddedExplicitlyTypedConstant, expr: expr)
@@ -178,7 +178,7 @@ class Compiler: ExprVisitor, StmtVisitor {
                 writeInstructionToChunk(op: doubleInstruction, expr: expr)
             } else if leftType is QsBoolean && boolInstruction != nil {
                 writeInstructionToChunk(op: boolInstruction!, expr: expr)
-            } else if typesEqual(leftType, stringClass) {
+            } else if typesEqual(leftType, stringClass, anyEqAny: true) {
                 writeInstructionToChunk(op: stringInstruction!, expr: expr)
             } else {
                 assertionFailure("Unexpected binary operand type \(printType(leftType))")
@@ -276,7 +276,7 @@ class Compiler: ExprVisitor, StmtVisitor {
             case is QsBoolean:
                 writeInstructionToChunk(op: .OP_outputBoolean, expr: expr)
             case is QsClass:
-                if typesEqual(type, stringClass) {
+                if typesEqual(type, stringClass, anyEqAny: true) {
                     writeInstructionToChunk(op: .OP_outputString, expr: expr)
                 } else {
                     writeInstructionToChunk(op: .OP_outputClass, expr: expr)
