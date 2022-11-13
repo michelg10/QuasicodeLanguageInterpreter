@@ -1,5 +1,5 @@
 // a very slow, but (hopefully) guaranteed correct tree-walk interpreter for debugging purposes
-class Interpreter: ExprOptionalAnyThrowVisitor {
+class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
     
     private enum InterpreterRuntimeError: Error {
@@ -346,7 +346,63 @@ class Interpreter: ExprOptionalAnyThrowVisitor {
         return nil
     }
     
-    func interpret(_ expr: Expr) throws -> Any? {
+    internal func visitClassStmt(stmt: ClassStmt) throws {
+        // TODO
+    }
+    
+    internal func visitMethodStmt(stmt: MethodStmt) throws {
+        // TODO
+    }
+    
+    internal func visitFunctionStmt(stmt: FunctionStmt) throws {
+        // TODO
+    }
+    
+    internal func visitExpressionStmt(stmt: ExpressionStmt) throws {
+        try interpret(stmt.expression)
+    }
+    
+    internal func visitIfStmt(stmt: IfStmt) throws {
+        // TODO
+    }
+    
+    internal func visitOutputStmt(stmt: OutputStmt) throws {
+        // TODO
+    }
+    
+    internal func visitInputStmt(stmt: InputStmt) throws {
+        // TODO
+    }
+    
+    internal func visitReturnStmt(stmt: ReturnStmt) throws {
+        // TODO
+    }
+    
+    internal func visitLoopFromStmt(stmt: LoopFromStmt) throws {
+        // TODO
+    }
+    
+    internal func visitWhileStmt(stmt: WhileStmt) throws {
+        // TODO
+    }
+    
+    internal func visitBreakStmt(stmt: BreakStmt) throws {
+        // TODO
+    }
+    
+    internal func visitContinueStmt(stmt: ContinueStmt) throws {
+        // TODO
+    }
+    
+    internal func visitBlockStmt(stmt: BlockStmt) throws {
+        // TODO
+    }
+    
+    internal func visitExitStmt(stmt: ExitStmt) throws {
+        // TODO
+    }
+    
+    private func interpret(_ expr: Expr) throws -> Any? {
         let result = try expr.accept(visitor: self)
         if verifyTypeCheck {
             let verificationResult = verifyIsType(result, type: expr.type!)
@@ -356,5 +412,18 @@ class Interpreter: ExprOptionalAnyThrowVisitor {
             }
         }
         return result
+    }
+    
+    private func interpret(_ stmt: Stmt) throws {
+        try stmt.accept(visitor: self)
+    }
+    
+    func interpret(_ stmts: [Stmt]) {
+        for stmt in stmts {
+            // TODO: error handling, user i/o
+            catchErrorClosure {
+                try interpret(stmt)
+            }
+        }
     }
 }

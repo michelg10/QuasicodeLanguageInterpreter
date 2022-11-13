@@ -3,6 +3,11 @@ import Foundation
 let DEBUG = true
 let INCLUDE_STRING = true
 let INCLUDE_BUILTIN_CLASSES = false
+enum ExecutionMode {
+    case CompilerAndVM
+    case Interpreter
+}
+let executionMode = ExecutionMode.Interpreter
 
 var s = ""
 s.utf8CString.withUnsafeBufferPointer { test in
@@ -89,29 +94,35 @@ if (true) {
     print("\nErrors")
     print(typeCheckerErrors)
     
-    print("----- Compiler -----")
-    let compiler = Compiler()
-    let chunk = compiler.compileAst(stmts: ast, symbolTable: symbolTable)
-    if DEBUG {
-        var classNamesArray = symbolTable.getClassesRuntimeIdToClassNameArray().map {
-            UnsafePointer<Int8>(strdup($0))
+    if executionMode == .CompilerAndVM {
+        print("----- Compiler -----")
+        let compiler = Compiler()
+        let chunk = compiler.compileAst(stmts: ast, symbolTable: symbolTable)
+        if DEBUG {
+            var classNamesArray = symbolTable.getClassesRuntimeIdToClassNameArray().map {
+                UnsafePointer<Int8>(strdup($0))
+            }
+            classNamesArray.withUnsafeMutableBufferPointer { unsafePointer in
+                disassembleChunk(unsafePointer.baseAddress, chunk, "main")
+            }
+            for ptr in classNamesArray {
+                free(UnsafeMutablePointer(mutating: ptr))
+            }
         }
-        classNamesArray.withUnsafeMutableBufferPointer { unsafePointer in
-            disassembleChunk(unsafePointer.baseAddress, chunk, "main")
-        }
-        for ptr in classNamesArray {
-            free(UnsafeMutablePointer(mutating: ptr))
-        }
+        
+        print("----- VM -----")
+        let vmInterface = VMInterface()
+        vmInterface.run(chunk: chunk, classesRuntimeIdToClassNameArray: symbolTable.getClassesRuntimeIdToClassNameArray())
+        
+        
+        let end = DispatchTime.now()
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000
+        
+        //print("Execution time \(timeInterval) ms")
+    } else {
+        print("----- Interpreter -----")
+        let interpreter = Interpreter()
+        interpreter.interpret(ast)
     }
-    
-    print("----- VM -----")
-    let vmInterface = VMInterface()
-    vmInterface.run(chunk: chunk, classesRuntimeIdToClassNameArray: symbolTable.getClassesRuntimeIdToClassNameArray())
-    
-    
-    let end = DispatchTime.now()
-    let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-    let timeInterval = Double(nanoTime) / 1_000_000
-    
-    //print("Execution time \(timeInterval) ms")
 }
