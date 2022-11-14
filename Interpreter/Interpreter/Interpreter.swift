@@ -1,6 +1,7 @@
 // a very slow, but (hopefully) guaranteed correct tree-walk interpreter for debugging purposes
 class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
+    private var environment = Environment()
     
     private func printToStdout(_ str: String) {
         print(str, terminator: "")
@@ -56,9 +57,14 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return nil
     }
     
-    internal func visitVariableExprOptionalAny(expr: VariableExpr) -> Any? {
-        // TODO
-        return nil
+    internal func visitVariableExprOptionalAny(expr: VariableExpr) throws -> Any? {
+        let fetch = environment.fetch(symbolTableId: expr.symbolTableIndex!)
+        
+        guard let fetch = fetch else {
+            throw InterpreterRuntimeError.error("Use of variable '\(expr.name.lexeme)' before initialization", expr.startLocation, expr.endLocation)
+        }
+        
+        return fetch.value
     }
     
     internal func visitSubscriptExprOptionalAny(expr: SubscriptExpr) throws -> Any? {
@@ -331,9 +337,10 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return nil
     }
     
-    internal func visitAssignExprOptionalAny(expr: AssignExpr) -> Any? {
-        // TODO
-        return nil
+    internal func visitAssignExprOptionalAny(expr: AssignExpr) throws -> Any? {
+        let value = try interpret(expr.value)
+        environment.add(symbolTableId: expr.to.symbolTableIndex!, name: expr.to.name.lexeme, value: value)
+        return value
     }
     
     internal func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
@@ -363,7 +370,21 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitIfStmt(stmt: IfStmt) throws {
-        // TODO
+        let condition = try interpret(stmt.condition) as! Bool
+        if condition {
+            try interpret(stmt.thenBranch)
+        } else {
+            for branch in stmt.elseIfBranches {
+                let condition = try interpret(branch.condition) as! Bool
+                if condition {
+                    try interpret(branch.thenBranch)
+                    return
+                }
+            }
+            if stmt.elseBranch != nil {
+                try interpret(stmt.elseBranch!)
+            }
+        }
     }
     
     private func stringify(_ val: Any?) -> String {
@@ -399,6 +420,10 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             return res
         }
         
+        if let val = val as? String {
+            return val
+        }
+        
         preconditionFailure("Unrecognized type for stringify \(type(of: val))")
     }
     
@@ -423,7 +448,14 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitLoopFromStmt(stmt: LoopFromStmt) throws {
-        // TODO
+        let lrange = try interpret(stmt.lRange) as! Int
+        let rrange = try interpret(stmt.rRange) as! Int
+        
+        for i in lrange...rrange {
+            environment.add(symbolTableId: stmt.variable.symbolTableIndex!, name: stmt.variable.name.lexeme, value: i)
+            
+            try interpret(stmt.body)
+        }
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) throws {
@@ -445,7 +477,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitBlockStmt(stmt: BlockStmt) throws {
-        execute(stmt.statements)
+        try interpret(stmt.statements)
     }
     
     internal func visitExitStmt(stmt: ExitStmt) throws {
@@ -475,11 +507,10 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     func execute(_ stmts: [Stmt]) {
+        self.environment = Environment()
         for stmt in stmts {
             // TODO: error handling, user i/o
-            catchErrorClosure {
-                try interpret(stmt)
-            }
+            try! interpret(stmt)
         }
     }
 }

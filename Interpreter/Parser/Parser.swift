@@ -376,6 +376,7 @@ class Parser {
         while match(types: .ELSE) {
             if match(types: .IF) {
                 let condition = try expression()
+                try consume(type: .THEN, message: "Expect 'then' after if condition")
                 try consume(type: .EOL, message: "Expect end-of-line after if condition")
                 let thisElseIfBranch = block(additionalEndMarkers: [.ELSE])
                 elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil))

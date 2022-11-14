@@ -11,14 +11,10 @@ class Environment {
     }
     
     func add(symbolTableId: Int, variable: StoredVariable) {
-        // TODO: check if it exists in the previous environments
-        
         variables[symbolTableId] = variable
     }
     
     func fetch(symbolTableId: Int) -> StoredVariable? {
-        // TODO: check if it exists in previous environments
-        
         return variables[symbolTableId]
     }
 }
