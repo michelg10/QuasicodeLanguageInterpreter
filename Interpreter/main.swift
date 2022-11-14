@@ -123,6 +123,6 @@ if (true) {
     } else {
         print("----- Interpreter -----")
         let interpreter = Interpreter()
-        interpreter.interpret(ast)
+        interpreter.execute(ast)
     }
 }

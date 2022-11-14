@@ -2,8 +2,16 @@
 class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
     
+    private func printToStdout(_ str: String) {
+        print(str, terminator: "")
+    }
+    
     private enum InterpreterRuntimeError: Error {
         case error(String, InterpreterLocation, InterpreterLocation)
+    }
+    
+    private enum InterpreterExitSignal: Error {
+        case signal
     }
     
     enum TypeVerificationResult {
@@ -119,7 +127,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     private func compareNumbers(_ lhs: Any?, _ rhs: Any?) -> ComparisonResult {
-        if lhs is Int && rhs is Int {
+        if lhs is Int {
             let lhs = lhs as! Int
             let rhs = rhs as! Int
             if lhs == rhs {
@@ -130,22 +138,14 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
                 return .less
             }
         }
-        var comparisonLeft: Double
-        var comparisonRight: Double
-        if lhs is Int && rhs is Double {
-            comparisonLeft = Double(lhs as! Int)
-            comparisonRight = rhs as! Double
-        } else if lhs is Double && rhs is Int {
-            comparisonLeft = lhs as! Double
-            comparisonRight = Double(rhs as! Int)
-        } else {
-            comparisonLeft = lhs as! Double
-            comparisonRight = rhs as! Double
-        }
         
-        if comparisonLeft == comparisonRight {
+        // the type checker should use implicit cast expressions to promote the value to a double if necessary, so checking for combinations is unnecessary. it must be a double.
+        let lhs = lhs as! Double
+        let rhs = rhs as! Double
+        
+        if lhs == rhs {
             return .equal
-        } else if comparisonLeft > comparisonRight {
+        } else if lhs > rhs {
             return .greater
         } else {
             return .less
@@ -337,7 +337,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
-        // TODO
+        // TODO: since type information is erased in the compiler / VM, "is type" expressions need to be computed at compile-time for every type *except* for anys and potentially polymorphic classes
         return nil
     }
     
@@ -366,8 +366,52 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         // TODO
     }
     
+    private func stringify(_ val: Any?) -> String {
+        if val == nil {
+            return "nil"
+        }
+        
+        if let val = val as? Int {
+            return val.description
+        }
+        
+        if let val = val as? Double {
+            return val.description
+        }
+        
+        if let val = val as? Bool {
+            if val {
+                return "true"
+            } else {
+                return "false"
+            }
+        }
+        
+        if let val = val as? [Any?] {
+            var res = "{"
+            for i in 0..<val.count {
+                res += stringify(val[i])
+                if i != val.count - 1 {
+                    res += ", "
+                }
+            }
+            res += "}"
+            return res
+        }
+        
+        preconditionFailure("Unrecognized type for stringify \(type(of: val))")
+    }
+    
     internal func visitOutputStmt(stmt: OutputStmt) throws {
-        // TODO
+        for i in 0..<stmt.expressions.count {
+            let result = try interpret(stmt.expressions[i])
+            printToStdout(stringify(result))
+            
+            if i != stmt.expressions.count-1 {
+                printToStdout(" ")
+            }
+        }
+        printToStdout("\n")
     }
     
     internal func visitInputStmt(stmt: InputStmt) throws {
@@ -383,7 +427,13 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitWhileStmt(stmt: WhileStmt) throws {
-        // TODO
+        while (true) {
+            let condition = try interpret(stmt.expression)
+            if (condition as! Bool) == false {
+                break
+            }
+            try interpret(stmt.body)
+        }
     }
     
     internal func visitBreakStmt(stmt: BreakStmt) throws {
@@ -395,11 +445,11 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitBlockStmt(stmt: BlockStmt) throws {
-        // TODO
+        execute(stmt.statements)
     }
     
     internal func visitExitStmt(stmt: ExitStmt) throws {
-        // TODO
+        throw InterpreterExitSignal.signal
     }
     
     private func interpret(_ expr: Expr) throws -> Any? {
@@ -418,7 +468,13 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         try stmt.accept(visitor: self)
     }
     
-    func interpret(_ stmts: [Stmt]) {
+    private func interpret(_ stmts: [Stmt]) throws {
+        for stmt in stmts {
+            try interpret(stmt)
+        }
+    }
+    
+    func execute(_ stmts: [Stmt]) {
         for stmt in stmts {
             // TODO: error handling, user i/o
             catchErrorClosure {

@@ -10,6 +10,7 @@
 		D001B9F22871CA1700293B8C /* Compiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D001B9F12871CA1700293B8C /* Compiler.swift */; };
 		D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087E9F283551F300B28BF3 /* SymbolTable.swift */; };
 		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
+		D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBC829221A0C00C9B247 /* Environment.swift */; };
 		D047BE4528688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */; };
 		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
 		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
@@ -75,6 +76,7 @@
 		D001B9F12871CA1700293B8C /* Compiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compiler.swift; sourceTree = "<group>"; };
 		D0087E9F283551F300B28BF3 /* SymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTable.swift; sourceTree = "<group>"; };
 		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
+		D00DBBC829221A0C00C9B247 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableHasInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				D062D66F291E640100920A3E /* Interpreter.swift */,
+				D00DBBC829221A0C00C9B247 /* Environment.swift */,
 			);
 			path = Interpreter;
 			sourceTree = "<group>";
@@ -400,6 +403,7 @@
 				D07B70F6281A7EB4003A672F /* Types.swift in Sources */,
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
 				D0AA391A2824231B00CF94ED /* TypeEquality.swift in Sources */,
+				D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */,
 				D0AA39162824229600CF94ED /* TypeHashValues.swift in Sources */,
 				D083CCA7285481E00029BF33 /* AstTypeToString.swift in Sources */,
 				D0A83C482864C2AC006C291E /* MethodQsTypeSignature.swift in Sources */,
