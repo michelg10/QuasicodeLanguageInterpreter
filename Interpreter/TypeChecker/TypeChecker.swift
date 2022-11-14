@@ -812,7 +812,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         for capacity in expr.capacity {
             typeCheck(capacity)
             assertType(expr: capacity, errorMessage: "Expect type 'int' for array capacity", typeAssertions: .isType(QsInt()))
-            expressionType = QsArray(contains: expressionType)
         }
         expr.type = expressionType
     }
