@@ -21,8 +21,72 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         case fail
     }
     
+    // Arrays are value types in Swift but are reference types in Quasicode, so they need to be boxed
+    class QsArrayReference {
+        init(data: [Any?]) {
+            self.data = data
+        }
+        
+        private var data: [Any?]
+        
+        subscript(index: Int) -> Any? {
+            get {
+                // returns a data type or, in the case of a multi-dimensional array, another QsArrayReference
+                return data[index]
+            }
+            set {
+                data[index] = newValue
+            }
+        }
+        
+        var count: Int {
+            get {
+                return data.count
+            }
+        }
+    }
+    
     private func verifyIsType(_ value: Any?, type: QsType) -> TypeVerificationResult {
-        return .pass
+        defer {
+            debugPrint(purpose: "Type checker verification", "Verifying \(String(describing: value)) as \(printType(type))")
+        }
+        
+        if type is QsErrorType {
+            return .verificationWithQsErrorType
+        }
+        if type is QsAnyType {
+            return .pass
+        }
+        if value is Double {
+            return (type is QsDouble ? .pass : .fail)
+        }
+        if value is Int {
+            return (type is QsInt ? .pass : .fail)
+        }
+        if value is Bool {
+            return (type is QsBoolean ? .pass : .fail)
+        }
+        if value is String {
+            guard let type = type as? QsClass else {
+                return .fail
+            }
+            
+            return (type.name == "String" ? .pass : .fail)
+        }
+        if let value = value as? QsArrayReference {
+            guard let type = type as? QsArray else {
+                return .fail
+            }
+            if value.count == 0 {
+                return .pass
+            }
+            return verifyIsType(value[0], type: type.contains)
+        }
+        if value == nil && type is QsVoidType {
+            return .pass
+        }
+        // TODO: verify classes
+        preconditionFailure("Unrecognized type \(Swift.type(of: value))")
     }
     
     internal func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any? {
@@ -39,7 +103,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             result.append(try interpret(value))
         }
         
-        return result
+        return QsArrayReference(data: result)
     }
     
     internal func visitStaticClassExprOptionalAny(expr: StaticClassExpr) -> Any? {
@@ -68,7 +132,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     internal func visitSubscriptExprOptionalAny(expr: SubscriptExpr) throws -> Any? {
-        let indexedArray = try interpret(expr.expression) as! [Any?]
+        let indexedArray = try interpret(expr.expression) as! QsArrayReference
         let index = try interpret(expr.index) as! Int;
         
         if index < 0 || index >= indexedArray.count {
@@ -116,9 +180,44 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return nil
     }
     
-    internal func visitArrayAllocationExprOptionalAny(expr: ArrayAllocationExpr) -> Any? {
-        // TODO
-        return nil
+    /// Gets the default value of a requested type for array initialization.
+    /// Halts execution with a preconditionFailure when the requested type is invalid.
+    /// - Parameter type: The requested type. This function does not support array types.
+    /// - Returns: The default value for the requested type
+    private func getDefaultValue(ofType type: QsType) -> Any? {
+        if let type = type as? QsArray {
+            preconditionFailure("getDefaultValue called with QsArray type!")
+        }
+        if type is QsBoolean {
+            return false
+        }
+        if type is QsInt {
+            return 0
+        }
+        if type is QsDouble {
+            return 0.0
+        }
+        if type is QsAnyType {
+            return nil
+        }
+        // TODO: QsClassTypes
+        preconditionFailure("Unrecognized type for default value fetching")
+    }
+    
+    private func allocateArray(ofType type: QsType, ofLengths lengths: [Int], lengthsOffset: Int = 0) -> Any? {
+        if let type = type as? QsArray {
+            return QsArrayReference(data: Array.init(repeating: allocateArray(ofType: type.contains, ofLengths: lengths, lengthsOffset: lengthsOffset+1), count: lengths[lengthsOffset]))
+        }
+        return getDefaultValue(ofType: type)
+    }
+    
+    internal func visitArrayAllocationExprOptionalAny(expr: ArrayAllocationExpr) throws -> Any? {
+        var lengths: [Int] = []
+        for lengthExpr in expr.capacity {
+            let length = try interpret(lengthExpr) as! Int
+            lengths.append(length)
+        }
+        return allocateArray(ofType: expr.type!, ofLengths: lengths)
     }
     
     internal func visitClassAllocationExprOptionalAny(expr: ClassAllocationExpr) -> Any? {
@@ -173,9 +272,13 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
         
         // arrays
-        if lhs is [Any?] {
-            let lhs = lhs as! [Any?]
-            let rhs = rhs as! [Any?]
+        if lhs is QsArrayReference {
+            let lhs = lhs as! QsArrayReference
+            let rhs = rhs as! QsArrayReference
+            if lhs === rhs {
+                // one small optimization: if they refer to the same object in memory (i.e. lhs and rhs are aliases of one another, then they must be equal)
+                return true
+            }
             if lhs.count != rhs.count {
                 return false
             }
@@ -408,7 +511,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             }
         }
         
-        if let val = val as? [Any?] {
+        if let val = val as? QsArrayReference {
             var res = "{"
             for i in 0..<val.count {
                 res += stringify(val[i])
@@ -489,7 +592,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         if verifyTypeCheck {
             let verificationResult = verifyIsType(result, type: expr.type!)
             if verificationResult != .pass {
-                print("Type verification failure!")
+                debugPrint(purpose: "Type checker verification", "Type verification failure")
                 preconditionFailure()
             }
         }

@@ -11,6 +11,7 @@
 		D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087E9F283551F300B28BF3 /* SymbolTable.swift */; };
 		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
 		D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBC829221A0C00C9B247 /* Environment.swift */; };
+		D00DBBCB2922447900C9B247 /* DebugPrint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBCA2922447900C9B247 /* DebugPrint.swift */; };
 		D047BE4528688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */; };
 		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
 		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
@@ -77,6 +78,7 @@
 		D0087E9F283551F300B28BF3 /* SymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTable.swift; sourceTree = "<group>"; };
 		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
 		D00DBBC829221A0C00C9B247 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		D00DBBCA2922447900C9B247 /* DebugPrint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPrint.swift; sourceTree = "<group>"; };
 		D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableHasInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
@@ -247,6 +249,7 @@
 				D09DE7CB282B9080007AFAFA /* CatchErrorClosure.swift */,
 				D06A4931283001F5005DE578 /* UnionFind.swift */,
 				D052DEEF283B321300C060FE /* stringifyOptional.swift */,
+				D00DBBCA2922447900C9B247 /* DebugPrint.swift */,
 			);
 			path = Util;
 			sourceTree = "<group>";
@@ -394,6 +397,7 @@
 				D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */,
 				D0832F602876A9DD0003B625 /* OpCode.swift in Sources */,
 				D0087EA0283551F300B28BF3 /* SymbolTable.swift in Sources */,
+				D00DBBCB2922447900C9B247 /* DebugPrint.swift in Sources */,
 				D07B70F8281CC9FF003A672F /* Parser.swift in Sources */,
 				D0AA390B282166ED00CF94ED /* Symbol.swift in Sources */,
 				D07B70EF281A2A9A003A672F /* VisibilityModifier.swift in Sources */,
