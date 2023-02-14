@@ -429,11 +429,26 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return result
     }
     
-    func visitSetExprExpr(expr: SetExpr) -> Expr {
-        let result = SetExpr.init(expr)
-        result.to = (catchErrorClosure {
-            try expandClasses(expr.to)
-        } ?? expr.to)
+    func visitPropertySetExprExpr(expr: PropertySetExpr) throws -> Expr {
+        let result = PropertySetExpr(expr)
+        result.object = (catchErrorClosure {
+            try expandClasses(expr.object)
+        } ?? expr.object)
+        result.value = (catchErrorClosure {
+            try expandClasses(expr.value)
+        } ?? expr.value)
+        
+        return result
+    }
+    
+    func visitArraySetExprExpr(expr: SubscriptSetExpr) throws -> Expr {
+        let result = SubscriptSetExpr(expr)
+        result.expression = (catchErrorClosure {
+            try expandClasses(expr.expression)
+        } ?? expr.expression)
+        result.index = (catchErrorClosure {
+            try expandClasses(expr.index)
+        } ?? expr.index)
         result.value = (catchErrorClosure {
             try expandClasses(expr.value)
         } ?? expr.value)

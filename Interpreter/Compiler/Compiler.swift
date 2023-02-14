@@ -227,7 +227,11 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitSetExpr(expr: SetExpr) {
+    internal func visitPropertySetExpr(expr: PropertySetExpr) {
+        
+    }
+    
+    internal func visitArraySetExpr(expr: SubscriptSetExpr) {
         
     }
     

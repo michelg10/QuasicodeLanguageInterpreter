@@ -224,8 +224,14 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         try resolve(expr.right)
     }
     
-    internal func visitSetExpr(expr: SetExpr) throws {
-        try resolve(expr.to)
+    func visitPropertySetExpr(expr: PropertySetExpr) throws {
+        try resolve(expr.object)
+        try resolve(expr.value)
+    }
+    
+    func visitArraySetExpr(expr: SubscriptSetExpr) throws {
+        try resolve(expr.expression)
+        try resolve(expr.index)
         try resolve(expr.value)
     }
     

@@ -638,6 +638,67 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
+    private enum StaticLimit {
+        case limitToStatic, limitToNonstatic, noLimit
+    }
+    
+    private struct ComputedObjectPropertyInfo {
+        var type: QsType
+        var propertyId: Int
+    }
+    
+    private func getPropertyForObject(property: Token, className: String, classSymbolScopeIndex: Int, staticLimit: StaticLimit) -> ComputedObjectPropertyInfo? {
+        let previousSymbolTableLocation = symbolTable.getCurrentTableId()
+        defer {
+            symbolTable.gotoTable(previousSymbolTableLocation)
+        }
+        
+        symbolTable.gotoTable(classSymbolScopeIndex)
+        
+        let queriedSymbol = symbolTable.query(property.lexeme)
+        let propertyDescription: String = {
+            switch staticLimit {
+            case .limitToStatic:
+                return "static"
+            case .limitToNonstatic:
+                return "instance"
+            case .noLimit:
+                return ""
+            }
+        }()
+        let errorMessage = "Type '\(className)' has no \(propertyDescription + (propertyDescription == "" ? "" : " "))property '\(property.lexeme)'"
+        
+        guard let queriedSymbol = queriedSymbol else {
+            error(message: errorMessage, on: property)
+            return nil
+        }
+        guard let queriedSymbol = queriedSymbol as? VariableSymbol else {
+            error(message: errorMessage, on: property)
+            return nil
+        }
+        
+        if staticLimit == .limitToStatic {
+            if queriedSymbol.variableType != .staticVar {
+                error(message: errorMessage, on: property)
+                return nil
+            }
+        } else if staticLimit == .limitToNonstatic {
+            if queriedSymbol.variableType != .instance {
+                error(message: errorMessage, on: property)
+                return nil
+            }
+        }
+        
+        var type = queriedSymbol.type
+        type?.assignable = true
+        return ComputedObjectPropertyInfo(type: type!, propertyId: queriedSymbol.id)
+    }
+    
+    private func getPropertyForObject(property: Token, className: String, classId: Int, staticLimit: StaticLimit) -> ComputedObjectPropertyInfo? {
+        let symbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
+        return getPropertyForObject(property: property, className: className, classSymbolScopeIndex: symbol.classScopeSymbolTableIndex!, staticLimit: staticLimit)
+    }
+    
     internal func visitGetExpr(expr: GetExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
@@ -655,56 +716,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // public instance property and language property (only array.length) getters: from variables, ArrayLiteralExprs, SubscriptExprs, CallExprs, other GetExprs, CastExprs, ArrayAllocationExprs, ClassAllocationExprs, BinaryExprs, SetExprs, AssignExprs, SuperExprs (the getting part for supers are handled within the resolver)
         // context-dependent getters: this (static and nonstatic)
         
-        enum StaticLimit {
-            case limitToStatic, limitToNonstatic, noLimit
-        }
-        
-        func getPropertyForObject(property: Token, className: String, classSymbolScopeIndex: Int, staticLimit: StaticLimit) {
-            symbolTable.gotoTable(classSymbolScopeIndex)
-            
-            let queriedSymbol = symbolTable.query(property.lexeme)
-            let propertyDescription: String = {
-                switch staticLimit {
-                case .limitToStatic:
-                    return "static"
-                case .limitToNonstatic:
-                    return "instance"
-                case .noLimit:
-                    return ""
-                }
-            }()
-            let errorMessage = "Type '\(className)' has no \(propertyDescription + (propertyDescription == "" ? "" : " "))property '\(expr.property.lexeme)'"
-            
-            guard let queriedSymbol = queriedSymbol else {
-                error(message: errorMessage, on: expr.property)
-                return
-            }
-            guard let queriedSymbol = queriedSymbol as? VariableSymbol else {
-                error(message: errorMessage, on: expr.property)
-                return
-            }
-            
-            if staticLimit == .limitToStatic {
-                if queriedSymbol.variableType != .staticVar {
-                    error(message: errorMessage, on: expr.property)
-                    return
-                }
-            } else if staticLimit == .limitToNonstatic {
-                if queriedSymbol.variableType != .instance {
-                    error(message: errorMessage, on: expr.property)
-                    return
-                }
-            }
-            
-            expr.type = queriedSymbol.type
-            expr.type?.assignable = true
-            expr.propertyId = queriedSymbol.id
-        }
-        func getPropertyForObject(property: Token, className: String, classId: Int, staticLimit: StaticLimit) {
-            let symbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
-            getPropertyForObject(property: property, className: className, classSymbolScopeIndex: symbol.classScopeSymbolTableIndex!, staticLimit: staticLimit)
-        }
-        
         // static getters
         if expr.object is StaticClassExpr {
             let object = expr.object as! StaticClassExpr
@@ -713,7 +724,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
-            getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classScopeSymbolTableIndex!, staticLimit: .limitToStatic)
+            let fetchedProperty = getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classScopeSymbolTableIndex!, staticLimit: .limitToStatic)
+            
+            expr.type = fetchedProperty?.type
+            expr.propertyId = fetchedProperty?.propertyId
             return
         } else if expr.object is ThisExpr {
             let object = expr.object as! ThisExpr
@@ -722,7 +736,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             let symbol = symbolTable.getSymbol(id: object.symbolTableIndex!) as! VariableSymbol
             
-            getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .noLimit)
+            let fetchedProperty = getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .noLimit)
+            expr.type = fetchedProperty?.type
+            expr.propertyId = fetchedProperty?.propertyId
             return
         } else {
             if expr.object.type is QsErrorType {
@@ -740,7 +756,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             } else if expr.object.type is QsClass {
                 // fetch the instance property
                 let objectType = expr.object.type as! QsClass
-                getPropertyForObject(property: expr.property, className: objectType.name, classId: objectType.id, staticLimit: .limitToNonstatic)
+                let fetchedProperty = getPropertyForObject(property: expr.property, className: objectType.name, classId: objectType.id, staticLimit: .limitToNonstatic)
+                
+                expr.type = fetchedProperty?.type
+                expr.propertyId = fetchedProperty?.propertyId
             } else {
                 error(message: propertyDoesNotExistErrorMessage, on: expr)
             }
@@ -992,23 +1011,31 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return nil
     }
     
-    internal func visitSetExpr(expr: SetExpr) {
-        defer {
-            expr.fallbackToErrorType(assignable: false)
-            expr.type!.assignable = false
-        }
-        typeCheck(expr.value)
-        typeCheck(expr.to)
-        
-        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
-            return
-        }
-        
-        // assignment can be to: fields within classes
-        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
-            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
-        }
-        expr.type = expr.to.type!
+//    internal func visitSetExpr(expr: SetExpr) {
+//        defer {
+//            expr.fallbackToErrorType(assignable: false)
+//            expr.type!.assignable = false
+//        }
+//        typeCheck(expr.value)
+//        typeCheck(expr.to)
+//
+//        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
+//            return
+//        }
+//
+//        // assignment can be to: fields within classes
+//        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
+//            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
+//        }
+//        expr.type = expr.to.type!
+//    }
+    
+    func visitPropertySetExpr(expr: PropertySetExpr) {
+        // TODO: fill in
+    }
+    
+    func visitArraySetExpr(expr: SubscriptSetExpr) {
+        // TODO: fill in
     }
     
     func visitAssignExpr(expr: AssignExpr) {

@@ -435,7 +435,12 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure()
     }
     
-    internal func visitSetExprOptionalAny(expr: SetExpr) -> Any? {
+    func visitPropertySetExprOptionalAny(expr: PropertySetExpr) throws -> Any? {
+        // TODO
+        return nil
+    }
+    
+    func visitArraySetExprOptionalAny(expr: SubscriptSetExpr) throws -> Any? {
         // TODO
         return nil
     }

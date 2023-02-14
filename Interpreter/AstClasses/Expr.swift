@@ -28,7 +28,8 @@ protocol ExprVisitor {
     func visitClassAllocationExpr(expr: ClassAllocationExpr) 
     func visitBinaryExpr(expr: BinaryExpr) 
     func visitLogicalExpr(expr: LogicalExpr) 
-    func visitSetExpr(expr: SetExpr) 
+    func visitPropertySetExpr(expr: PropertySetExpr) 
+    func visitArraySetExpr(expr: SubscriptSetExpr) 
     func visitAssignExpr(expr: AssignExpr) 
     func visitIsTypeExpr(expr: IsTypeExpr) 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
@@ -51,7 +52,8 @@ protocol ExprThrowVisitor {
     func visitClassAllocationExpr(expr: ClassAllocationExpr) throws 
     func visitBinaryExpr(expr: BinaryExpr) throws 
     func visitLogicalExpr(expr: LogicalExpr) throws 
-    func visitSetExpr(expr: SetExpr) throws 
+    func visitPropertySetExpr(expr: PropertySetExpr) throws 
+    func visitArraySetExpr(expr: SubscriptSetExpr) throws 
     func visitAssignExpr(expr: AssignExpr) throws 
     func visitIsTypeExpr(expr: IsTypeExpr) throws 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
@@ -74,7 +76,8 @@ protocol ExprQsTypeThrowVisitor {
     func visitClassAllocationExprQsType(expr: ClassAllocationExpr) throws -> QsType
     func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType
     func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
-    func visitSetExprQsType(expr: SetExpr) throws -> QsType
+    func visitPropertySetExprQsType(expr: PropertySetExpr) throws -> QsType
+    func visitArraySetExprQsType(expr: SubscriptSetExpr) throws -> QsType
     func visitAssignExprQsType(expr: AssignExpr) throws -> QsType
     func visitIsTypeExprQsType(expr: IsTypeExpr) throws -> QsType
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
@@ -97,7 +100,8 @@ protocol ExprExprThrowVisitor {
     func visitClassAllocationExprExpr(expr: ClassAllocationExpr) throws -> Expr
     func visitBinaryExprExpr(expr: BinaryExpr) throws -> Expr
     func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
-    func visitSetExprExpr(expr: SetExpr) throws -> Expr
+    func visitPropertySetExprExpr(expr: PropertySetExpr) throws -> Expr
+    func visitArraySetExprExpr(expr: SubscriptSetExpr) throws -> Expr
     func visitAssignExprExpr(expr: AssignExpr) throws -> Expr
     func visitIsTypeExprExpr(expr: IsTypeExpr) throws -> Expr
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
@@ -120,7 +124,8 @@ protocol ExprStringVisitor {
     func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String
     func visitBinaryExprString(expr: BinaryExpr) -> String
     func visitLogicalExprString(expr: LogicalExpr) -> String
-    func visitSetExprString(expr: SetExpr) -> String
+    func visitPropertySetExprString(expr: PropertySetExpr) -> String
+    func visitArraySetExprString(expr: SubscriptSetExpr) -> String
     func visitAssignExprString(expr: AssignExpr) -> String
     func visitIsTypeExprString(expr: IsTypeExpr) -> String
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
@@ -143,7 +148,8 @@ protocol ExprOptionalAnyThrowVisitor {
     func visitClassAllocationExprOptionalAny(expr: ClassAllocationExpr) throws -> Any?
     func visitBinaryExprOptionalAny(expr: BinaryExpr) throws -> Any?
     func visitLogicalExprOptionalAny(expr: LogicalExpr) throws -> Any?
-    func visitSetExprOptionalAny(expr: SetExpr) throws -> Any?
+    func visitPropertySetExprOptionalAny(expr: PropertySetExpr) throws -> Any?
+    func visitArraySetExprOptionalAny(expr: SubscriptSetExpr) throws -> Any?
     func visitAssignExprOptionalAny(expr: AssignExpr) throws -> Any?
     func visitIsTypeExprOptionalAny(expr: IsTypeExpr) throws -> Any?
     func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
@@ -935,22 +941,28 @@ class LogicalExpr: Expr {
     }
 }
 
-class SetExpr: Expr {
-    var to: Expr
+class PropertySetExpr: Expr {
+    var object: Expr
+    var property: Token
+    var propertyId: Int?
     var value: Expr
     var type: QsType?
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
-    init(to: Expr, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
-        self.to = to
+    init(object: Expr, property: Token, propertyId: Int?, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.object = object
+        self.property = property
+        self.propertyId = propertyId
         self.value = value
         self.type = type
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
-    init(_ objectToCopy: SetExpr) {
-        self.to = objectToCopy.to
+    init(_ objectToCopy: PropertySetExpr) {
+        self.object = objectToCopy.object
+        self.property = objectToCopy.property
+        self.propertyId = objectToCopy.propertyId
         self.value = objectToCopy.value
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation
@@ -964,22 +976,73 @@ class SetExpr: Expr {
     }
 
     func accept(visitor: ExprVisitor) {
-        visitor.visitSetExpr(expr: self)
+        visitor.visitPropertySetExpr(expr: self)
     }
     func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitSetExpr(expr: self)
+        try visitor.visitPropertySetExpr(expr: self)
     }
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
-        try visitor.visitSetExprQsType(expr: self)
+        try visitor.visitPropertySetExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
-        try visitor.visitSetExprExpr(expr: self)
+        try visitor.visitPropertySetExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
-        visitor.visitSetExprString(expr: self)
+        visitor.visitPropertySetExprString(expr: self)
     }
     func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
-        try visitor.visitSetExprOptionalAny(expr: self)
+        try visitor.visitPropertySetExprOptionalAny(expr: self)
+    }
+}
+
+class SubscriptSetExpr: Expr {
+    var expression: Expr
+    var index: Expr
+    var value: Expr
+    var type: QsType?
+    var startLocation: InterpreterLocation
+    var endLocation: InterpreterLocation
+    
+    init(expression: Expr, index: Expr, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.expression = expression
+        self.index = index
+        self.value = value
+        self.type = type
+        self.startLocation = startLocation
+        self.endLocation = endLocation
+    }
+    init(_ objectToCopy: SubscriptSetExpr) {
+        self.expression = objectToCopy.expression
+        self.index = objectToCopy.index
+        self.value = objectToCopy.value
+        self.type = objectToCopy.type
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
+    }
+
+    func fallbackToErrorType(assignable: Bool) {
+        if self.type == nil {
+            self.type = QsErrorType(assignable: assignable)
+        }
+    }
+
+    func accept(visitor: ExprVisitor) {
+        visitor.visitArraySetExpr(expr: self)
+    }
+    func accept(visitor: ExprThrowVisitor) throws {
+        try visitor.visitArraySetExpr(expr: self)
+    }
+    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+        try visitor.visitArraySetExprQsType(expr: self)
+    }
+    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+        try visitor.visitArraySetExprExpr(expr: self)
+    }
+    func accept(visitor: ExprStringVisitor) -> String {
+        visitor.visitArraySetExprString(expr: self)
+    }
+    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+        try visitor.visitArraySetExprOptionalAny(expr: self)
     }
 }
 

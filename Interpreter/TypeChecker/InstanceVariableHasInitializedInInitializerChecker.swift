@@ -321,17 +321,19 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         restoreState(state: state)
     }
     
-    internal func visitSetExpr(expr: SetExpr) {
-        markVariables(expr.value)
-        // the only exception should be: set object is this.?
-        if expr.to is GetExpr {
-            let to = expr.to as! GetExpr
-            if to.object is ThisExpr {
-                markAsInitialized(to.propertyId!)
-                return
-            }
+    internal func visitPropertySetExpr(expr: PropertySetExpr) {
+        if expr.object is ThisExpr {
+            markAsInitialized(expr.propertyId!)
+        } else {
+            markVariables(expr.object)
         }
-        markVariables(expr.to)
+        markVariables(expr.value)
+    }
+    
+    internal func visitArraySetExpr(expr: SubscriptSetExpr) {
+        markVariables(expr.expression)
+        markVariables(expr.index)
+        markVariables(expr.value)
     }
     
     internal func visitAssignExpr(expr: AssignExpr) {

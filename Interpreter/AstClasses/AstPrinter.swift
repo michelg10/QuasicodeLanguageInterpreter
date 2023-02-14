@@ -196,8 +196,15 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return parenthesize(name: expr.opr.lexeme, additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.left, expr.right)
     }
     
-    internal func visitSetExprString(expr: SetExpr) -> String {
-        return parenthesize(name: "Set", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.to, expr.value)
+    internal func visitPropertySetExprString(expr: PropertySetExpr) -> String {
+        return parenthesize(name: "PropertySet", additionalProperties: [
+            ("property", expr.property.lexeme),
+            ("propertyId", stringifyOptionalInt(expr.propertyId)),
+        ]+generateAdditionalTypePropertyArray(expr), exprs: expr.object, expr.value)
+    }
+    
+    internal func visitArraySetExprString(expr: SubscriptSetExpr) -> String {
+        return parenthesize(name: "ArraySet", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.expression, expr.index, expr.value)
     }
     
     func visitAssignExprString(expr: AssignExpr) -> String {
