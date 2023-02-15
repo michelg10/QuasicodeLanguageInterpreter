@@ -304,44 +304,72 @@ class Parser {
         return try expressionStatement()
     }
     
-    private func breakStatement() -> Stmt {
-        let keyword = previous()
-        return BreakStmt(keyword: keyword)
-    }
-    
-    private func continueStatement() -> Stmt {
-        let keyword = previous()
-        return ContinueStmt(keyword: keyword)
-    }
-    
-    private func exitStatement() -> Stmt {
-        let keyword = previous()
-        return ExitStmt(keyword: keyword)
-    }
-    
-    private func whileLoop() throws -> Stmt {
-        let whileOrUntil = previous()
-        var condition = try expression()
-        if whileOrUntil.tokenType == .UNTIL {
-            // desugar the "do until" statement into a "do while not" statement
-            let untilAsUnaryNotOpr: Token = .init(
-                tokenType: .NOT,
-                lexeme: whileOrUntil.lexeme,
-                start: .init(start: whileOrUntil),
-                end: .init(end: whileOrUntil),
-                value: whileOrUntil.value
-            )
-            condition = UnaryExpr(
-                opr: untilAsUnaryNotOpr,
-                right: condition,
-                type: nil,
-                startLocation: .init(start: whileOrUntil),
-                endLocation: .init(end: whileOrUntil)
-            )
-        }
-        let body = block(additionalEndMarkers: [])
+    private func ifStatement() throws -> Stmt {
+        let condition = try expression()
+        try consume(type: .THEN, message: "Expect 'then' after if condition")
+        try consume(type: .EOL, message: "Expect end-of-line after if condition")
+        let thenBranch: BlockStmt = block(additionalEndMarkers: [.ELSE])
+        var elseIfBranches: [IfStmt] = []
+        var elseBranch: BlockStmt?
         
-        return WhileStmt(expression: condition, body: body)
+        while match(types: .ELSE) {
+            if match(types: .IF) {
+                let condition = try expression()
+                try consume(type: .THEN, message: "Expect 'then' after if condition")
+                try consume(type: .EOL, message: "Expect end-of-line after if condition")
+                let thisElseIfBranch = block(additionalEndMarkers: [.ELSE])
+                elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil))
+            } else {
+                try consume(type: .EOL, message: "Expect end-of-line after else")
+                elseBranch = block(additionalEndMarkers: [.ELSE])
+                break
+            }
+        }
+        
+        try consume(type: .END, message: "Expect 'end if' after if statement")
+        try consume(type: .IF, message: "Expect 'end if' after if statement")
+        try consume(type: .EOL, message: "Expect end-of-line after 'end if'")
+        
+        return IfStmt(condition: condition, thenBranch: thenBranch, elseIfBranches: elseIfBranches, elseBranch: elseBranch)
+    }
+    
+    private func outputStatement() throws -> Stmt {
+        let expressions = try commaSeparatedExpressions()
+        try consume(type: .EOL, message: "Expect end-of-line after output statement")
+        return OutputStmt(expressions: expressions)
+    }
+    
+    private func inputStatement() throws -> Stmt {
+        let expressions = try commaSeparatedExpressions()
+        try consume(type: .EOL, message: "Expect end-of-line after input statement")
+        return InputStmt(expressions: expressions)
+    }
+    
+    private func returnStatement() throws -> Stmt {
+        let keyword = previous()
+        var value: Expr?
+        
+        if !checkTokenType(is: .EOL) {
+            value = try expression()
+        }
+        
+        try consume(type: .EOL, message: "Expect end-of-line after return statement")
+        return ReturnStmt(keyword: keyword, value: value, isTerminator: false)
+    }
+    
+    private func loopStatement() throws -> Stmt {
+        var stmt: Stmt?
+        if match(types: .WHILE, .UNTIL) {
+            stmt = try whileLoop()
+        } else {
+            stmt = try loopFrom()
+        }
+        
+        try consume(type: .END, message: "Expect 'end loop' after loop statement")
+        try consume(type: .LOOP, message: "Expect 'end loop' after loop statement")
+        try consume(type: .EOL, message: "Expect end-of-line after 'end loop'")
+        
+        return stmt!
     }
     
     private func loopFrom() throws -> Stmt {
@@ -372,43 +400,50 @@ class Parser {
         return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, body: body)
     }
     
-    private func loopStatement() throws -> Stmt {
-        var stmt: Stmt?
-        if match(types: .WHILE, .UNTIL) {
-            stmt = try whileLoop()
-        } else {
-            stmt = try loopFrom()
+    private func whileLoop() throws -> Stmt {
+        let whileOrUntil = previous()
+        var condition = try expression()
+        if whileOrUntil.tokenType == .UNTIL {
+            // desugar the "do until" statement into a "do while not" statement
+            let untilAsUnaryNotOpr: Token = .init(
+                tokenType: .NOT,
+                lexeme: whileOrUntil.lexeme,
+                start: .init(start: whileOrUntil),
+                end: .init(end: whileOrUntil),
+                value: whileOrUntil.value
+            )
+            condition = UnaryExpr(
+                opr: untilAsUnaryNotOpr,
+                right: condition,
+                type: nil,
+                startLocation: .init(start: whileOrUntil),
+                endLocation: .init(end: whileOrUntil)
+            )
         }
+        let body = block(additionalEndMarkers: [])
         
-        try consume(type: .END, message: "Expect 'end loop' after loop statement")
-        try consume(type: .LOOP, message: "Expect 'end loop' after loop statement")
-        try consume(type: .EOL, message: "Expect end-of-line after 'end loop'")
-        
-        return stmt!
+        return WhileStmt(expression: condition, body: body)
     }
     
-    private func outputStatement() throws -> Stmt {
-        let expressions = try commaSeparatedExpressions()
-        try consume(type: .EOL, message: "Expect end-of-line after output statement")
-        return OutputStmt(expressions: expressions)
-    }
-    
-    private func inputStatement() throws -> Stmt {
-        let expressions = try commaSeparatedExpressions()
-        try consume(type: .EOL, message: "Expect end-of-line after input statement")
-        return InputStmt(expressions: expressions)
-    }
-    
-    private func returnStatement() throws -> Stmt {
+    private func continueStatement() -> Stmt {
         let keyword = previous()
-        var value: Expr?
-        
-        if !checkTokenType(is: .EOL) {
-            value = try expression()
-        }
-        
-        try consume(type: .EOL, message: "Expect end-of-line after return statement")
-        return ReturnStmt(keyword: keyword, value: value, isTerminator: false)
+        return ContinueStmt(keyword: keyword)
+    }
+    
+    private func breakStatement() -> Stmt {
+        let keyword = previous()
+        return BreakStmt(keyword: keyword)
+    }
+    
+    private func exitStatement() -> Stmt {
+        let keyword = previous()
+        return ExitStmt(keyword: keyword)
+    }
+    
+    private func expressionStatement() throws -> Stmt {
+        let expr = try expression()
+        try consume(type: .EOL, message: "Expect end-of-line after expression")
+        return ExpressionStmt(expression: expr)
     }
     
     private func commaSeparatedExpressions() throws -> [Expr] {
@@ -430,41 +465,6 @@ class Parser {
         }
         isInGlobalScope = previousIsInGlobalScope
         return .init(statements: statements, scopeIndex: nil)
-    }
-    
-    private func ifStatement() throws -> Stmt {
-        let condition = try expression()
-        try consume(type: .THEN, message: "Expect 'then' after if condition")
-        try consume(type: .EOL, message: "Expect end-of-line after if condition")
-        let thenBranch: BlockStmt = block(additionalEndMarkers: [.ELSE])
-        var elseIfBranches: [IfStmt] = []
-        var elseBranch: BlockStmt?
-        
-        while match(types: .ELSE) {
-            if match(types: .IF) {
-                let condition = try expression()
-                try consume(type: .THEN, message: "Expect 'then' after if condition")
-                try consume(type: .EOL, message: "Expect end-of-line after if condition")
-                let thisElseIfBranch = block(additionalEndMarkers: [.ELSE])
-                elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil))
-            } else {
-                try consume(type: .EOL, message: "Expect end-of-line after else")
-                elseBranch = block(additionalEndMarkers: [.ELSE])
-                break
-            }
-        }
-        
-        try consume(type: .END, message: "Expect 'end if' after if statement")
-        try consume(type: .IF, message: "Expect 'end if' after if statement")
-        try consume(type: .EOL, message: "Expect end-of-line after 'end if'")
-        
-        return IfStmt(condition: condition, thenBranch: thenBranch, elseIfBranches: elseIfBranches, elseBranch: elseBranch)
-    }
-    
-    private func expressionStatement() throws -> Stmt {
-        let expr = try expression()
-        try consume(type: .EOL, message: "Expect end-of-line after expression")
-        return ExpressionStmt(expression: expr)
     }
     
     private func expression() throws -> Expr {
