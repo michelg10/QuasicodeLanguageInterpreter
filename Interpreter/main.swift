@@ -16,8 +16,9 @@ if true {
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test11.qs")
     // swiftlint:disable:next all
-    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test11.qs")
+    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/line continuations/4.qsc")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
     
     let start = DispatchTime.now()
@@ -31,6 +32,8 @@ if true {
     }
     print("\nErrors")
     print(scanErrors)
+    
+    exit(0)
     
     // initialize the symbol table and put in all the default classes
     var symbolTable: SymbolTables = .init()

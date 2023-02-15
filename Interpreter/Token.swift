@@ -6,7 +6,7 @@ struct Token {
     let value: Any?
     
     func isDummy() -> Bool {
-        return startLocation.line == -1
+        return startLocation.index == -1
     }
     
     static func dummyToken(tokenType: TokenType, lexeme: String) -> Token {

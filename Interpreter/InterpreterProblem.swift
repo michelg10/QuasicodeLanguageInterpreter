@@ -2,23 +2,24 @@ enum InterpreterProblemType {
     case error, warning, breakpoint
 }
 
-struct InterpreterLocation {
+struct StringLineAndColumnLocation {
     var line: Int
     var column: Int
-    init(line: Int, column: Int) {
-        self.line = line
-        self.column = column
+}
+
+struct InterpreterLocation {
+    var index: Int
+    init(index: Int) {
+        self.index = index
     }
     init(start: Token) {
-        line = start.startLocation.line
-        column = start.startLocation.column
+        index = start.startLocation.index
     }
     init(end: Token) {
-        line = end.endLocation.line
-        column = end.endLocation.column
+        index = end.endLocation.index
     }
     static func dub() -> InterpreterLocation {
-        return .init(line: -1, column: -1)
+        return .init(index: -1)
     }
 }
 

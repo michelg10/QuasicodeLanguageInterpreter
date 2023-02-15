@@ -4,44 +4,35 @@ class Scanner {
     private var tokens: [Token] = []
     private var problems: [InterpreterProblem] = []
     private var start: String.Index
-    private var startLocation: InterpreterLocation = .init(line: 1, column: 1)
+    private var startLocation: InterpreterLocation = .init(index: 0)
     private var current: String.Index
-    private var currentLocation: InterpreterLocation = .init(line: 1, column: 1)
+    private var currentLocation: InterpreterLocation = .init(index: 0)
     
-    func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ string: String.SubSequence) -> String.SubSequence {
-        if string.isEmpty {
-            return string
-        }
-        var i = string.endIndex
-        while i != string.startIndex {
-            i = string.index(i, offsetBy: -1)
-            
-            if !isWhiteSpace(string[i]) {
-                if string[i] != "\\" {
-                    return string
-                }
-                break
-            }
-        }
-        
-        return string[string.startIndex...i]
+    /// Saves the current location state of the interpreter
+    private struct LocationState {
+        var start: String.Index
+        var startLocation: InterpreterLocation
+        var current: String.Index
+        var currentLocation: InterpreterLocation
     }
     
-    func trimWhitespaceOfMultilineString(_ string: String) -> String {
-        var lines = string.split(separator: "\n", omittingEmptySubsequences: false)
-        for i in 0..<lines.count {
-            lines[i] = trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(lines[i])
-        }
-        
-        var result = ""
-        for i in 0..<lines.count {
-            result += lines[i] + "\n"
-        }
-        
-        return result
+    private func saveLocationState() -> LocationState {
+        .init(
+            start: start,
+            startLocation: startLocation,
+            current: current,
+            currentLocation: currentLocation
+        )
     }
     
-    static let keywords:[String:TokenType] = [
+    private func loadLocationState(_ state: LocationState) {
+        start = state.start
+        startLocation = state.startLocation
+        current = state.current
+        currentLocation = state.currentLocation
+    }
+    
+    static let keywords: [String:TokenType] = [
         "int"      : .INT,
         "double"   : .DOUBLE,
         "boolean"  : .BOOLEAN,
@@ -99,8 +90,6 @@ class Scanner {
         self.source = source
         self.start = source.startIndex
         self.current = self.start
-        
-        self.source = trimWhitespaceOfMultilineString(self.source)
     }
     
     private func isAtEnd() -> Bool {
@@ -121,20 +110,20 @@ class Scanner {
         tokens.append(.init(
             tokenType: .EOL,
             lexeme: "",
-            start: .init(line: currentLocation.line, column: 0),
-            end: .init(line: currentLocation.line, column: 0)
+            start: .init(index: source.count),
+            end: .init(index: source.count)
         ))
         tokens.append(.init(
             tokenType: .EOF,
             lexeme: "",
-            start: .init(line: currentLocation.line, column: 0),
-            end: .init(line: currentLocation.line, column: 0)
+            start: .init(index: source.count),
+            end: .init(index: source.count)
         ))
         return (tokens, problems)
     }
     
     private func consumeWhiteSpace() {
-        while !isAtEnd() && !isWhiteSpace(peek()!) {
+        while !isAtEnd() && isWhiteSpace(peek()!) {
             advance()
         }
     }
@@ -146,8 +135,9 @@ class Scanner {
             return
         }
         if peek()! != "\n" {
-            // add new problem
-//            problems
+            problems.append(.init(message: "Expected end-of-line after line continuation", start: currentLocation, end: currentLocation))
+        } else {
+            advance()
         }
     }
     
@@ -197,6 +187,8 @@ class Scanner {
             } else {
                 addToken(type: .SLASH)
             }
+        case "\\":
+            lineContinuation()
         case " ": break
         case "\r": break
         case "\t": break
@@ -219,7 +211,7 @@ class Scanner {
     }
     
     private func blockComment() {
-        let startingCommentLocation: InterpreterLocation = .init(line: currentLocation.line, column: currentLocation.column - 2)
+        let startingCommentLocation: InterpreterLocation = .init(index: currentLocation.index - 2)
         var blockCommentLevel = 1
         while blockCommentLevel > 0 && !isAtEnd() {
             let currentCharacter = advance()
@@ -289,7 +281,7 @@ class Scanner {
     }
     
     private func string() {
-        let startingQuoteLocation: InterpreterLocation = .init(line: currentLocation.line, column: currentLocation.column - 1)
+        let startingQuoteLocation: InterpreterLocation = .init(index: currentLocation.index - 1)
         var value = ""
         while peek() != "\"" && !isAtEnd() {
             let currentCharacter = advance()
@@ -297,16 +289,13 @@ class Scanner {
                 if isAtEnd() {
                     problems.append(.init(
                         message: "Empty escape sequence",
-                        start: .init(line: currentLocation.line, column: currentLocation.column - 1),
-                        end: .init(line: currentLocation.line, column: currentLocation.column - 1)
+                        start: .init(index: currentLocation.index - 1),
+                        end: .init(index: currentLocation.index - 1)
                     ))
                     return
                 }
                 let next = advance()
                 switch next {
-                case "\n":
-                    // ignore it
-                    break
                 case "\\":
                     value += "\\"
                 case "t":
@@ -318,11 +307,26 @@ class Scanner {
                 case "\"":
                     value += "\""
                 default:
+                    if isWhiteSpace(next) {
+                        // try to see if its a line continuation
+                        let locationState = saveLocationState()
+                        while !isAtEnd() && isWhiteSpace(peek()!) {
+                            advance()
+                        }
+                        if peek() == "\n" {
+                            // it is a line continuation
+                            advance()
+                            break
+                        } else {
+                            loadLocationState(locationState)
+                        }
+                    }
+                    
                     // error!
                     problems.append(.init(
                         message: "Invalid escape sequence \"\\\(next)\"",
-                        start: .init(line: currentLocation.line, column: currentLocation.column - 2),
-                        end: .init(line: currentLocation.line, column: currentLocation.column - 1)
+                        start: .init(index: currentLocation.index - 2),
+                        end: .init(index: currentLocation.index - 1)
                     ))
                 }
             } else {
@@ -423,12 +427,7 @@ class Scanner {
         current = source.index(current, offsetBy: 1)
         
         if !isAtEnd() {
-            if value == "\n" {
-                currentLocation.line += 1
-                currentLocation.column = 1
-            } else {
-                currentLocation.column += 1
-            }
+            currentLocation.index += 1
         }
         
         return value
@@ -440,7 +439,7 @@ class Scanner {
             tokenType: type,
             lexeme: lexeme,
             start: startLocation,
-            end: .init(line: currentLocation.line - (type == .EOL ? 1 : 0), column: currentLocation.column),
+            end: currentLocation,
             value: value
         ))
     }

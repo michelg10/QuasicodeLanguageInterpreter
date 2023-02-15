@@ -14,15 +14,15 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     private func writeInstructionToChunk(op: OpCode, expr: Expr) {
-        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: op, line: expr.startLocation.line)
+        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: op, index: expr.startLocation.index)
     }
     
     private func writeLongToChunk(data: UInt64, expr: Expr) {
-        ChunkInterface.writeLongToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
+        ChunkInterface.writeLongToChunk(chunk: currentChunk(), data: data, index: expr.startLocation.index)
     }
     
     private func writeByteToChunk(data: UInt8, expr: Expr) {
-        ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: data, line: expr.startLocation.line)
+        ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: data, index: expr.startLocation.index)
     }
     
     private func addConstantToChunk(data: UInt64) -> Int {
@@ -32,11 +32,11 @@ class Compiler: ExprVisitor, StmtVisitor {
     private func writeLoadConstantFromTableInstruction(constantIndex: Int, expr: Expr) {
         let alwaysUseLongOperations = false // debug option
         if !alwaysUseLongOperations && constantIndex <= UInt8.max {
-            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_loadConstantFromTable, line: expr.startLocation.line)
-            ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: UInt8(constantIndex), line: expr.startLocation.line)
+            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_loadConstantFromTable, index: expr.startLocation.index)
+            ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: UInt8(constantIndex), index: expr.startLocation.index)
         } else if constantIndex <= ((1 << 32) - 1) {
-            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_LONG_loadConstantFromTable, line: expr.startLocation.line)
-            ChunkInterface.writeUIntToChunk(chunk: currentChunk(), data: UInt32(constantIndex), line: expr.startLocation.line)
+            ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_LONG_loadConstantFromTable, index: expr.startLocation.index)
+            ChunkInterface.writeUIntToChunk(chunk: currentChunk(), data: UInt32(constantIndex), index: expr.startLocation.index)
         } else {
             // TODO: Error handling
             assertionFailure("Compiler internal failure (too many constants)")
@@ -48,7 +48,7 @@ class Compiler: ExprVisitor, StmtVisitor {
             chunk: currentChunk(),
             object: object,
             classId: symbolTable.getClassRuntimeId(symbolTableIndex: type.id),
-            line: expr.startLocation.line
+            index: expr.startLocation.index
         )
     }
     
@@ -340,7 +340,7 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     private func endCompiler() {
-        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)
+        ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, index: 0)
     }
     
     private func compile(_ stmt: Stmt) {
