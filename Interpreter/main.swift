@@ -1,27 +1,22 @@
 import Foundation
 
 let DEBUG = true
+// swiftlint:disable identifier_name
 let INCLUDE_STRING = true
 let INCLUDE_BUILTIN_CLASSES = false
+// swiftlint:enable identifier_name
 enum ExecutionMode {
-    case CompilerAndVM
-    case Interpreter
+    case compilerAndVM
+    case interpreter
 }
-let executionMode = ExecutionMode.Interpreter
+let executionMode = ExecutionMode.interpreter
 
-var s = ""
-s.utf8CString.withUnsafeBufferPointer { test in
-    var s = String.init(cString: test.baseAddress!)
-    print(s)
-    
-}
-print(s)
-
-if (true) {
-    //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
-    //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
-    //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
-    //let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+if true {
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test8.qs")
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
+    // swiftlint:disable:next all
     let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test11.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/triad_test.qs")
     
@@ -94,7 +89,7 @@ if (true) {
     print("\nErrors")
     print(typeCheckerErrors)
     
-    if executionMode == .CompilerAndVM {
+    if executionMode == .compilerAndVM {
         print("----- Compiler -----")
         let compiler = Compiler()
         let chunk = compiler.compileAst(stmts: ast, symbolTable: symbolTable)
@@ -114,12 +109,11 @@ if (true) {
         let vmInterface = VMInterface()
         vmInterface.run(chunk: chunk, classesRuntimeIdToClassNameArray: symbolTable.getClassesRuntimeIdToClassNameArray())
         
-        
         let end = DispatchTime.now()
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
         
-        //print("Execution time \(timeInterval) ms")
+//        print("Execution time \(timeInterval) ms")
     } else {
         print("----- Interpreter -----")
         let interpreter = Interpreter()

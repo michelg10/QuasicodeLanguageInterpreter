@@ -5,11 +5,11 @@ class Compiler: ExprVisitor, StmtVisitor {
     let useEmbeddedConstants = true // don't know why not, but just feels like that there's a reason that Java and Lox used a constants table.
     var classSymbolTableIndexToClassRuntimeIdMap: [Int : Int] = [:]
     
-    internal func currentChunk() -> UnsafeMutablePointer<Chunk>! {
+    func currentChunk() -> UnsafeMutablePointer<Chunk>! {
         return compilingChunk
     }
     
-    internal func visitGroupingExpr(expr: GroupingExpr) {
+    func visitGroupingExpr(expr: GroupingExpr) {
         compile(expr.expression)
     }
     
@@ -34,7 +34,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         if !alwaysUseLongOperations && constantIndex <= UInt8.max {
             ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_loadConstantFromTable, line: expr.startLocation.line)
             ChunkInterface.writeByteToChunk(chunk: currentChunk(), data: UInt8(constantIndex), line: expr.startLocation.line)
-        } else if constantIndex <= ((1<<32) - 1) {
+        } else if constantIndex <= ((1 << 32) - 1) {
             ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_LONG_loadConstantFromTable, line: expr.startLocation.line)
             ChunkInterface.writeUIntToChunk(chunk: currentChunk(), data: UInt32(constantIndex), line: expr.startLocation.line)
         } else {
@@ -44,7 +44,12 @@ class Compiler: ExprVisitor, StmtVisitor {
     }
     
     private func writeExplicitlyTypedValueObjectToChunk(object: UnsafeMutableRawPointer, type: QsClass, expr: Expr) {
-        ChunkInterface.writeExplicitlyTypedValueObjectToChunk(chunk: currentChunk(), object: object, classId: symbolTable.getClassRuntimeId(symbolTableIndex: type.id), line: expr.startLocation.line)
+        ChunkInterface.writeExplicitlyTypedValueObjectToChunk(
+            chunk: currentChunk(),
+            object: object,
+            classId: symbolTable.getClassRuntimeId(symbolTableIndex: type.id),
+            line: expr.startLocation.line
+        )
     }
     
     private func writeStringToChunk(_ string: String, expr: Expr) {
@@ -54,7 +59,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         writeExplicitlyTypedValueObjectToChunk(object: objString!, type: stringClass as! QsClass, expr: expr)
     }
     
-    internal func visitLiteralExpr(expr: LiteralExpr) {
+    func visitLiteralExpr(expr: LiteralExpr) {
         // TODO: Strings
         switch expr.type! {
         case is QsInt:
@@ -103,39 +108,39 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         
     }
     
-    internal func visitStaticClassExpr(expr: StaticClassExpr) {
+    func visitStaticClassExpr(expr: StaticClassExpr) {
         
     }
     
-    internal func visitThisExpr(expr: ThisExpr) {
+    func visitThisExpr(expr: ThisExpr) {
         
     }
     
-    internal func visitSuperExpr(expr: SuperExpr) {
+    func visitSuperExpr(expr: SuperExpr) {
         
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) {
+    func visitVariableExpr(expr: VariableExpr) {
         
     }
     
-    internal func visitSubscriptExpr(expr: SubscriptExpr) {
+    func visitSubscriptExpr(expr: SubscriptExpr) {
         
     }
     
-    internal func visitCallExpr(expr: CallExpr) {
+    func visitCallExpr(expr: CallExpr) {
         
     }
     
-    internal func visitGetExpr(expr: GetExpr) {
+    func visitGetExpr(expr: GetExpr) {
         
     }
     
-    internal func visitUnaryExpr(expr: UnaryExpr) {
+    func visitUnaryExpr(expr: UnaryExpr) {
         compile(expr.right)
         switch expr.opr.tokenType {
         case .NOT:
@@ -153,25 +158,30 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitCastExpr(expr: CastExpr) {
+    func visitCastExpr(expr: CastExpr) {
         
     }
     
-    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         
     }
     
-    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         
     }
     
-    internal func visitBinaryExpr(expr: BinaryExpr) {
+    func visitBinaryExpr(expr: BinaryExpr) {
         compile(expr.left)
         compile(expr.right)
         let leftType = expr.left.type!
         
         // convenience function
-        func writeInstruction(_ intInstruction: OpCode, _ doubleInstruction: OpCode, stringInstruction: OpCode? = nil, boolInstruction: OpCode? = nil) {
+        func writeInstruction(
+            _ intInstruction: OpCode,
+            _ doubleInstruction: OpCode,
+            stringInstruction: OpCode? = nil,
+            boolInstruction: OpCode? = nil
+        ) {
             if leftType is QsInt {
                 writeInstructionToChunk(op: intInstruction, expr: expr)
             } else if leftType is QsDouble {
@@ -214,7 +224,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitLogicalExpr(expr: LogicalExpr) {
+    func visitLogicalExpr(expr: LogicalExpr) {
         compile(expr.left)
         compile(expr.right)
         switch expr.opr.tokenType {
@@ -227,48 +237,48 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitPropertySetExpr(expr: PropertySetExpr) {
+    func visitPropertySetExpr(expr: PropertySetExpr) {
         
     }
     
-    internal func visitArraySetExpr(expr: SubscriptSetExpr) {
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
         
     }
     
-    internal func visitAssignExpr(expr: AssignExpr) {
+    func visitAssignExpr(expr: AssignExpr) {
         
     }
     
-    internal func visitIsTypeExpr(expr: IsTypeExpr) {
+    func visitIsTypeExpr(expr: IsTypeExpr) {
         
     }
     
-    internal func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         
     }
     
-    internal func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmt(stmt: ClassStmt) {
         
     }
     
-    internal func visitMethodStmt(stmt: MethodStmt) {
+    func visitMethodStmt(stmt: MethodStmt) {
         
     }
     
-    internal func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmt(stmt: FunctionStmt) {
         
     }
     
-    internal func visitExpressionStmt(stmt: ExpressionStmt) {
+    func visitExpressionStmt(stmt: ExpressionStmt) {
         compile(stmt.expression)
         writeInstructionToChunk(op: .OP_pop, expr: stmt.expression)
     }
     
-    internal func visitIfStmt(stmt: IfStmt) {
+    func visitIfStmt(stmt: IfStmt) {
         
     }
     
-    internal func visitOutputStmt(stmt: OutputStmt) {
+    func visitOutputStmt(stmt: OutputStmt) {
         for expr in stmt.expressions {
             compile(expr)
             let type = expr.type!
@@ -297,38 +307,37 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    internal func visitInputStmt(stmt: InputStmt) {
+    func visitInputStmt(stmt: InputStmt) {
         
     }
     
-    internal func visitReturnStmt(stmt: ReturnStmt) {
+    func visitReturnStmt(stmt: ReturnStmt) {
         
     }
     
-    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
+    func visitLoopFromStmt(stmt: LoopFromStmt) {
         
     }
     
-    internal func visitWhileStmt(stmt: WhileStmt) {
+    func visitWhileStmt(stmt: WhileStmt) {
         
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) {
+    func visitBreakStmt(stmt: BreakStmt) {
         
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) {
+    func visitContinueStmt(stmt: ContinueStmt) {
         
     }
     
-    internal func visitBlockStmt(stmt: BlockStmt) {
+    func visitBlockStmt(stmt: BlockStmt) {
         
     }
     
-    internal func visitExitStmt(stmt: ExitStmt) {
+    func visitExitStmt(stmt: ExitStmt) {
         
     }
-    
     
     private func endCompiler() {
         ChunkInterface.writeInstructionToChunk(chunk: currentChunk(), op: .OP_return, line: 0)

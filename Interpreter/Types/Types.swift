@@ -104,8 +104,9 @@ class QsVoidType: QsType {
         get {
             false
         }
+        // swiftlint:ignore:next unused_setter_value
         set {
-            // kek
+            // do nothing: QsVoidType should always be unsettable but the protocol requires that assignable be settable
         }
     }
 }

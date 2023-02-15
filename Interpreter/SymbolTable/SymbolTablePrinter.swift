@@ -29,36 +29,50 @@ func printSymbol(symbol: Symbol) -> [String] {
     return [String(symbol.id), String(symbol.belongsToTable), String(symbol.name), symbolType, result]
 }
 func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
-    return printVariableInfo(symbol)
+    printVariableInfo(symbol)
 }
 func printVariableInfo(_ symbol: VariableSymbol) -> String {
-    return "type: \(printType(symbol.type)), status: \(symbol.variableStatus), variableType: \(symbol.variableType)"
+    "type: \(printType(symbol.type)), status: \(symbol.variableStatus), variableType: \(symbol.variableType)"
 }
 func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
-    return "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
+    "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
 }
 func debugClosedIntRangeToString(_ range: ClosedRange<Int>) -> String {
-    return "\(range.lowerBound)...\(range.upperBound)"
+    "\(range.lowerBound)...\(range.upperBound)"
 }
 func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> String {
-    return "["+functionParams.reduce("") { partialResult, functionParam in
-        var nextResult = partialResult
-        if nextResult != "" {
-            nextResult += ", "
+    "[" + functionParams.reduce(into: "", { result, functionParam in
+        if !result.isEmpty {
+            result += ", "
         }
-        nextResult+="\(functionParam.name): \(printType(functionParam.type))"
-        return nextResult
-    }+"]"
+        result += "\(functionParam.name): \(printType(functionParam.type))"
+    }) + "]"
 }
 func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
-    return "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), returnType: \(printType(symbol.returnType))"
+    "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
+    "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
+    "returnType: \(printType(symbol.returnType))"
 }
 func printMethodInfo(_ symbol: MethodSymbol) -> String {
-    return "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), returnType: \(printType(symbol.returnType)), isStatic: \(symbol.isStatic), visibility: \(symbol.visibility), withinClass: \(stringifyOptionalInt(symbol.withinClass)), overridedBy: \(symbol.overridedBy), finishedInit: \(symbol.finishedInit), isConstructor: \(symbol.isConstructor)"
+    "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
+    "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
+    "returnType: \(printType(symbol.returnType)), " +
+    "isStatic: \(symbol.isStatic), " +
+    "visibility: \(symbol.visibility), " +
+    "withinClass: \(stringifyOptionalInt(symbol.withinClass)), " +
+    "overridedBy: \(symbol.overridedBy), " +
+    "finishedInit: \(symbol.finishedInit), " +
+    "isConstructor: \(symbol.isConstructor)"
 }
 func printClassInfo(_ symbol: ClassSymbol) -> String {
-    return "displayName: \(symbol.displayName), nonSignatureName: \(symbol.nonSignatureName), runtimeId: \(symbol.runtimeId), depth: \(stringifyOptionalInt(symbol.depth)), parentOf: \(symbol.parentOf)), upperClass: \(stringifyOptionalInt(symbol.upperClass)), classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
+    "displayName: \(symbol.displayName), " +
+    "nonSignatureName: \(symbol.nonSignatureName), " +
+    "runtimeId: \(symbol.runtimeId), " +
+    "depth: \(stringifyOptionalInt(symbol.depth)), " +
+    "parentOf: \(symbol.parentOf)), " +
+    "upperClass: \(stringifyOptionalInt(symbol.upperClass)), " +
+    "classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
 }
 func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
-    return ""
+    ""
 }

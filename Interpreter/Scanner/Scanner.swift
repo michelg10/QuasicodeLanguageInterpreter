@@ -1,33 +1,34 @@
+// swiftlint:disable:next type_body_length
 class Scanner {
     private var source: String
     private var tokens: [Token] = []
     private var problems: [InterpreterProblem] = []
     private var start: String.Index
-    private var startLocation = InterpreterLocation.init(line: 1, column: 1)
+    private var startLocation: InterpreterLocation = .init(line: 1, column: 1)
     private var current: String.Index
-    private var currentLocation = InterpreterLocation.init(line: 1, column: 1)
+    private var currentLocation: InterpreterLocation = .init(line: 1, column: 1)
     
-    func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ s: String.SubSequence) -> String.SubSequence {
-        if s.count == 0 {
-            return s
+    func trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(_ string: String.SubSequence) -> String.SubSequence {
+        if string.isEmpty {
+            return string
         }
-        var i=s.endIndex
-        while i != s.startIndex {
-            i = s.index(i, offsetBy: -1)
+        var i = string.endIndex
+        while i != string.startIndex {
+            i = string.index(i, offsetBy: -1)
             
-            if !isWhiteSpace(s[i]) {
-                if s[i] != "\\" {
-                    return s
+            if !isWhiteSpace(string[i]) {
+                if string[i] != "\\" {
+                    return string
                 }
                 break
             }
         }
         
-        return s[s.startIndex...i]
+        return string[string.startIndex...i]
     }
     
-    func trimWhitespaceOfMultilineString(_ s: String) -> String {
-        var lines = s.split(separator: "\n", omittingEmptySubsequences: false)
+    func trimWhitespaceOfMultilineString(_ string: String) -> String {
+        var lines = string.split(separator: "\n", omittingEmptySubsequences: false)
         for i in 0..<lines.count {
             lines[i] = trimWhitespaceOfSingleLineStringWithTrailingForwardSlash(lines[i])
         }
@@ -91,19 +92,19 @@ class Scanner {
         "this"     : .THIS,
         "super"    : .SUPER,
         
-        "end"      : .END,
+        "end"      : .END
     ]
     
     init(source: String) {
         self.source = source
         self.start = source.startIndex
-        self.current = self.start;
+        self.current = self.start
         
         self.source = trimWhitespaceOfMultilineString(self.source)
     }
     
     private func isAtEnd() -> Bool {
-        return current == source.endIndex;
+        return current == source.endIndex
     }
     
     private func isAtEnd(_ index:String.Index) -> Bool {
@@ -117,8 +118,18 @@ class Scanner {
             scanToken()
         }
         
-        tokens.append(.init(tokenType: .EOL, lexeme: "", start: .init(line: currentLocation.line, column: 0), end: .init(line: currentLocation.line, column: 0)))
-        tokens.append(.init(tokenType: .EOF, lexeme: "", start: .init(line: currentLocation.line, column: 0), end: .init(line: currentLocation.line, column: 0)))
+        tokens.append(.init(
+            tokenType: .EOL,
+            lexeme: "",
+            start: .init(line: currentLocation.line, column: 0),
+            end: .init(line: currentLocation.line, column: 0)
+        ))
+        tokens.append(.init(
+            tokenType: .EOF,
+            lexeme: "",
+            start: .init(line: currentLocation.line, column: 0),
+            end: .init(line: currentLocation.line, column: 0)
+        ))
         return (tokens, problems)
     }
     
@@ -141,8 +152,8 @@ class Scanner {
     }
     
     private func scanToken() {
-        let c = advance()
-        switch c {
+        let currentCharacter = advance()
+        switch currentCharacter {
         case "(":
             addToken(type: .LEFT_PAREN)
         case ")":
@@ -192,33 +203,33 @@ class Scanner {
         case "\n":
             addToken(type: .EOL)
         case "\"":
-            string();
+            string()
         default:
-            if isDigit(c) {
+            if isDigit(currentCharacter) {
                 number()
-            } else if isAlpha(c) {
+            } else if isAlpha(currentCharacter) {
                 identifier()
-            } else if c == "!" && peek() == "=" {
+            } else if currentCharacter == "!" && peek() == "=" {
                 advance()
                 addToken(type: .BANG_EQUAL)
             } else {
-                problems.append(.init(message: "Unexpected character \(c)", start: currentLocation, end: currentLocation))
+                problems.append(.init(message: "Unexpected character \(currentCharacter)", start: currentLocation, end: currentLocation))
             }
         }
     }
     
     private func blockComment() {
-        let startingCommentLocation = InterpreterLocation.init(line: currentLocation.line, column: currentLocation.column-2)
+        let startingCommentLocation: InterpreterLocation = .init(line: currentLocation.line, column: currentLocation.column - 2)
         var blockCommentLevel = 1
-        while blockCommentLevel>0 && !isAtEnd() {
-            let c = advance()
-            if c == "*" {
+        while blockCommentLevel > 0 && !isAtEnd() {
+            let currentCharacter = advance()
+            if currentCharacter == "*" {
                 if match(expected: "/") {
-                    blockCommentLevel-=1
+                    blockCommentLevel -= 1
                 }
-            } else if c == "/" {
+            } else if currentCharacter == "/" {
                 if match(expected: "*") {
-                    blockCommentLevel+=1
+                    blockCommentLevel += 1
                 }
             }
         }
@@ -239,7 +250,7 @@ class Scanner {
         }
         
         // if there is a decimal
-        if peek() == "."&&isDigit(peekNext()) {
+        if peek() == "." && isDigit(peekNext()) {
             isDouble = true
             // consume the decimal point
             advance()
@@ -278,13 +289,17 @@ class Scanner {
     }
     
     private func string() {
-        let startingQuoteLocation = InterpreterLocation.init(line: currentLocation.line, column: currentLocation.column-1)
+        let startingQuoteLocation: InterpreterLocation = .init(line: currentLocation.line, column: currentLocation.column - 1)
         var value = ""
         while peek() != "\"" && !isAtEnd() {
-            let c = advance()
-            if c == "\\" {
+            let currentCharacter = advance()
+            if currentCharacter == "\\" {
                 if isAtEnd() {
-                    problems.append(.init(message: "Empty escape sequence", start: .init(line: currentLocation.line, column: currentLocation.column-1), end: .init(line: currentLocation.line, column: currentLocation.column-1)))
+                    problems.append(.init(
+                        message: "Empty escape sequence",
+                        start: .init(line: currentLocation.line, column: currentLocation.column - 1),
+                        end: .init(line: currentLocation.line, column: currentLocation.column - 1)
+                    ))
                     return
                 }
                 let next = advance()
@@ -304,10 +319,14 @@ class Scanner {
                     value += "\""
                 default:
                     // error!
-                    problems.append(.init(message: "Invalid escape sequence \"\\\(next)\"", start: .init(line: currentLocation.line, column: currentLocation.column-2), end: .init(line: currentLocation.line, column: currentLocation.column-1)))
+                    problems.append(.init(
+                        message: "Invalid escape sequence \"\\\(next)\"",
+                        start: .init(line: currentLocation.line, column: currentLocation.column - 2),
+                        end: .init(line: currentLocation.line, column: currentLocation.column - 1)
+                    ))
                 }
             } else {
-                value = value+String(c)
+                value += String(currentCharacter)
             }
         }
         
@@ -321,9 +340,9 @@ class Scanner {
         addToken(type: .STRING, value: value)
     }
     
-    private func isWhiteSpace(_ c:Character) -> Bool {
-        if c.isASCII {
-            if c==" " || c=="\r" || c=="\t" {
+    private func isWhiteSpace(_ character:Character) -> Bool {
+        if character.isASCII {
+            if character == " " || character == "\r" || character == "\t" {
                 return true
             }
         }
@@ -344,47 +363,47 @@ class Scanner {
         }
         let nextIndex = source.index(current, offsetBy: 1)
         
-        if (!isAtEnd(nextIndex)) {
+        if !isAtEnd(nextIndex) {
             return source[nextIndex]
         }
         
         return nil
     }
     
-    private func isAlpha(_ c:Character?) -> Bool {
-        if c == nil {
+    private func isAlpha(_ character:Character?) -> Bool {
+        if character == nil {
             return false
         }
-        if c=="$" || c=="_" {
+        if character == "$" || character == "_" {
             return true
         }
-        if c!.isASCII {
-            let asciiValue = c!.asciiValue!
-            if asciiValue>=97 && asciiValue<=122 {
+        if character!.isASCII {
+            let asciiValue = character!.asciiValue!
+            if asciiValue >= 97 && asciiValue <= 122 {
                 return true
             }
-            if asciiValue>=65 && asciiValue<=90 {
+            if asciiValue >= 65 && asciiValue <= 90 {
                 return true
             }
         }
         return false
     }
     
-    private func isDigit(_ c: Character?) -> Bool {
-        if c == nil {
+    private func isDigit(_ character: Character?) -> Bool {
+        if character == nil {
             return false
         }
-        if c!.isASCII {
-            let asciiValue = c!.asciiValue!
-            if asciiValue>=48 && asciiValue<=57 {
+        if character!.isASCII {
+            let asciiValue = character!.asciiValue!
+            if asciiValue >= 48 && asciiValue <= 57 {
                 return true
             }
         }
         return false
     }
     
-    private func isAlphaNumeric(_ c:Character?) -> Bool {
-        return isAlpha(c) || isDigit(c)
+    private func isAlphaNumeric(_ character:Character?) -> Bool {
+        return isAlpha(character) || isDigit(character)
     }
     
     private func match(expected: Character) -> Bool {
@@ -408,7 +427,7 @@ class Scanner {
                 currentLocation.line += 1
                 currentLocation.column = 1
             } else {
-                currentLocation.column+=1 
+                currentLocation.column += 1
             }
         }
         
@@ -416,7 +435,13 @@ class Scanner {
     }
     
     private func addToken(type: TokenType, value: Any? = nil) {
-        let lexeme: String = String(source[start..<current])
-        tokens.append(.init(tokenType: type, lexeme: lexeme, start: startLocation, end: .init(line: currentLocation.line - (type == .EOL ? 1 : 0), column: currentLocation.column), value: value))
+        let lexeme = String(source[start..<current])
+        tokens.append(.init(
+            tokenType: type,
+            lexeme: lexeme,
+            start: startLocation,
+            end: .init(line: currentLocation.line - (type == .EOL ? 1 : 0), column: currentLocation.column),
+            value: value
+        ))
     }
 }

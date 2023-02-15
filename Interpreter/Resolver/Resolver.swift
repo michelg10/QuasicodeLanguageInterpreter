@@ -1,3 +1,4 @@
+// swiftlint:disable:next type_body_length
 class Resolver: ExprThrowVisitor, StmtVisitor {
     private enum FunctionType {
         case none, function, staticMethod, nonstaticMethod, initializer
@@ -6,9 +7,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         case error(String)
     }
     private enum ClassType {
-        case Class, Subclass
+        case baseClass, subclass
     }
-    var superInitCallIsFirstLineOfInitializer: Bool? = nil // this is for the super expressions
+    var superInitCallIsFirstLineOfInitializer: Bool? // this is for the super expressions
     private struct ClassStatus {
         var classType: ClassType
         var name: String
@@ -17,33 +18,36 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     
     // include functions and classes in the symbol table and resolve them like everything else
     private var isInLoop = false
-    private var currentClassStatus: ClassStatus? = nil
+    private var currentClassStatus: ClassStatus?
     private var currentFunction: FunctionType = .none
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
     private var isInGlobalScope = false
     
-    internal func visitGroupingExpr(expr: GroupingExpr) throws {
+    func visitGroupingExpr(expr: GroupingExpr) throws {
         try resolve(expr.expression)
     }
     
-    internal func visitLiteralExpr(expr: LiteralExpr) {
+    func visitLiteralExpr(expr: LiteralExpr) {
         // nothing
     }
     
-    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
         for value in expr.values {
             try resolve(value)
         }
     }
     
-    internal func visitStaticClassExpr(expr: StaticClassExpr) throws {
-        let symbol = symbolTable.query(generateClassSignature(className: expr.classType.name.lexeme, templateAstTypes: expr.classType.templateArguments))
+    func visitStaticClassExpr(expr: StaticClassExpr) throws {
+        let symbol = symbolTable.query(generateClassSignature(
+            className: expr.classType.name.lexeme,
+            templateAstTypes: expr.classType.templateArguments
+        ))
         assert(symbol is ClassSymbol, "Expected class symbol")
         expr.classId = symbol!.id
     }
     
-    internal func visitThisExpr(expr: ThisExpr) throws {
+    func visitThisExpr(expr: ThisExpr) throws {
         if currentClassStatus == nil || currentFunction != .nonstaticMethod && currentFunction != .staticMethod && currentFunction != .initializer {
             throw error(message: "Cannot use 'this' outside of a method", token: expr.keyword)
         }
@@ -55,11 +59,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         assert(expr.symbolTableIndex != nil, "'this' is undefined")
     }
     
-    internal func visitSuperExpr(expr: SuperExpr) throws {
-        if currentClassStatus?.classType != .Subclass {
+    func visitSuperExpr(expr: SuperExpr) throws {
+        if currentClassStatus?.classType != .subclass {
             if currentClassStatus == nil {
                 throw error(message: "'super' cannot be referenced outside of a class", token: expr.keyword)
-            } else if currentClassStatus!.classType == .Class {
+            } else if currentClassStatus!.classType == .baseClass {
                 throw error(message: "'super' cannot be referenced in a root class", token: expr.keyword)
             }
         }
@@ -92,7 +96,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         case .instance:
             expr.propertyId = variableSymbol.id
             if currentFunction == .staticMethod {
-                error(message: "Instance member '\(expr.property.lexeme)' cannot be used in a static context", start: expr.startLocation, end: expr.endLocation)
+                error(
+                    message: "Instance member '\(expr.property.lexeme)' cannot be used in a static context",
+                    start: expr.startLocation,
+                    end: expr.endLocation
+                )
             }
         case .staticVar:
             expr.propertyId = variableSymbol.id
@@ -101,7 +109,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) {
+    func visitVariableExpr(expr: VariableExpr) {
         if let existingSymbol = symbolTable.query(expr.name.lexeme) {
             if let symbol = existingSymbol as? VariableSymbol {
                 // uninit -> is a global, init it
@@ -141,12 +149,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitSubscriptExpr(expr: SubscriptExpr) throws {
+    func visitSubscriptExpr(expr: SubscriptExpr) throws {
         try resolve(expr.expression)
         try resolve(expr.index)
     }
     
-    internal func visitCallExpr(expr: CallExpr) throws {
+    func visitCallExpr(expr: CallExpr) throws {
         if expr.object != nil {
             var isSuperCall = false
             if expr.object is VariableExpr {
@@ -156,7 +164,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                     isSuperCall = true
                     if currentFunction != .staticMethod && currentFunction != .initializer && currentFunction != .nonstaticMethod {
                         error(message: "'super' cannot be referenced outside of a method", start: expr.startLocation, end: expr.endLocation)
-                    } else if currentClassStatus?.classType != .Subclass {
+                    } else if currentClassStatus?.classType != .subclass {
                         // must be in a method because it's an "else if," so if it's not a subclass then it must be a root class.
                         error(message: "'super' cannot be referenced in a root class", token: expr.property)
                     }
@@ -167,8 +175,8 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             }
         }
         if expr.property.lexeme == "super" {
-            if currentClassStatus?.classType != .Subclass {
-                if currentClassStatus?.classType == .Class {
+            if currentClassStatus?.classType != .subclass {
+                if currentClassStatus?.classType == .baseClass {
                     error(message: "'super' cannot be referenced in a root class", token: expr.property)
                 } else {
                     error(message: "'super' cannot be referenced outside of a class", token: expr.property)
@@ -190,36 +198,36 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitGetExpr(expr: GetExpr) throws {
+    func visitGetExpr(expr: GetExpr) throws {
         try resolve(expr.object)
     }
     
-    internal func visitUnaryExpr(expr: UnaryExpr) throws {
+    func visitUnaryExpr(expr: UnaryExpr) throws {
         try resolve(expr.right)
     }
     
-    internal func visitCastExpr(expr: CastExpr) throws {
+    func visitCastExpr(expr: CastExpr) throws {
         try resolve(expr.value)
     }
     
-    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws {
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws {
         for expression in expr.capacity {
             try resolve(expression)
         }
     }
     
-    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) throws {
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) throws {
         for expression in expr.arguments {
             try resolve(expression)
         }
     }
     
-    internal func visitBinaryExpr(expr: BinaryExpr) throws {
+    func visitBinaryExpr(expr: BinaryExpr) throws {
         try resolve(expr.left)
         try resolve(expr.right)
     }
     
-    internal func visitLogicalExpr(expr: LogicalExpr) throws {
+    func visitLogicalExpr(expr: LogicalExpr) throws {
         try resolve(expr.left)
         try resolve(expr.right)
     }
@@ -229,13 +237,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         try resolve(expr.value)
     }
     
-    func visitArraySetExpr(expr: SubscriptSetExpr) throws {
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) throws {
         try resolve(expr.expression)
         try resolve(expr.index)
         try resolve(expr.value)
     }
     
-    internal func visitAssignExpr(expr: AssignExpr) throws {
+    func visitAssignExpr(expr: AssignExpr) throws {
         // first figure out if it is a variable declaration (is first assignment)
         
         // isFirstAssignment being nil means that it needs to be computed.
@@ -308,7 +316,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         return symbolTableIndex
     }
     
-    internal func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmt(stmt: ClassStmt) {
         guard stmt.symbolTableIndex != nil else {
             return
         }
@@ -318,24 +326,30 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         isInGlobalScope = false
         let previousSymbolTablePosition = symbolTable.getCurrentTableId()
         symbolTable.gotoTable(stmt.scopeIndex!)
-    linkSymbolTableToSuperclass: if stmt.superclass != nil {
-            let superclassSignature = generateClassSignature(className: stmt.superclass!.name.lexeme, templateAstTypes: stmt.superclass!.templateArguments)
+        if stmt.superclass != nil {
+            let superclassSignature = generateClassSignature(
+                className: stmt.superclass!.name.lexeme,
+                templateAstTypes: stmt.superclass!.templateArguments
+            )
             let superclassSymbol = symbolTable.queryAtGlobalOnly(superclassSignature)
-            guard let superclassSymbol = superclassSymbol as? ClassSymbol else {
-                break linkSymbolTableToSuperclass
-            }
-            if superclassSymbol.classScopeSymbolTableIndex != nil {
-                symbolTable.linkCurrentTableToParent(superclassSymbol.classScopeSymbolTableIndex!)
+            if let superclassSymbol = superclassSymbol as? ClassSymbol {
+                if superclassSymbol.classScopeSymbolTableIndex != nil {
+                    symbolTable.linkCurrentTableToParent(superclassSymbol.classScopeSymbolTableIndex!)
+                }
             }
         }
-        stmt.instanceThisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "$Instance$this", variableStatus: .finishedInit, variableType: .instance))
-        stmt.staticThisSymbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(name: "$Static$this", variableStatus: .finishedInit, variableType: .staticVar))
+        stmt.instanceThisSymbolTableIndex = symbolTable.addToSymbolTable(
+            symbol: VariableSymbol(name: "$Instance$this", variableStatus: .finishedInit, variableType: .instance)
+        )
+        stmt.staticThisSymbolTableIndex = symbolTable.addToSymbolTable(
+            symbol: VariableSymbol(name: "$Static$this", variableStatus: .finishedInit, variableType: .staticVar)
+        )
         let previousClassStatus = currentClassStatus
-        var currentClassType = ClassType.Class
+        var currentClassType = ClassType.baseClass
         if stmt.superclass != nil {
-            currentClassType = .Subclass
+            currentClassType = .subclass
         } else {
-            currentClassType = .Class
+            currentClassType = .baseClass
         }
         currentClassStatus = .init(classType: currentClassType, name: currentClassName, symbolTableIndex: stmt.symbolTableIndex!)
         
@@ -350,11 +364,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             return
         }
         
-        for field in stmt.fields {
-            if field.initializer != nil {
-                catchErrorClosure {
-                    try resolve(field.initializer!)
-                }
+        for field in stmt.fields where field.initializer != nil {
+            catchErrorClosure {
+                try resolve(field.initializer!)
             }
         }
         
@@ -380,11 +392,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitMethodStmt(stmt: MethodStmt) {
+    func visitMethodStmt(stmt: MethodStmt) {
         let previousFunctionStatus = currentFunction
         if stmt.function.name.lexeme == currentClassStatus?.name {
             currentFunction = .initializer
-            if currentClassStatus?.classType == .Subclass {
+            if currentClassStatus?.classType == .subclass {
                 superInitCallIsFirstLineOfInitializer = true
             }
             if stmt.isStatic {
@@ -447,13 +459,25 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         var symbolTableIndex = -1
         if withinClass == nil {
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsVoidType()))
+            symbolTableIndex = symbolTable.addToSymbolTable(
+                symbol: FunctionSymbol(name: functionSignature, functionStmt: stmt, returnType: QsVoidType())
+            )
         } else {
             let classSymbol = symbolTable.getSymbol(id: withinClass!) as! ClassSymbol
-            symbolTableIndex = symbolTable.addToSymbolTable(symbol: MethodSymbol(name: functionSignature, withinClass: withinClass!, overridedBy: [], methodStmt: methodStmt!, returnType: QsVoidType(), finishedInit: false, isConstructor: classSymbol.nonSignatureName == stmt.name.lexeme))
+            symbolTableIndex = symbolTable.addToSymbolTable(
+                symbol: MethodSymbol(
+                    name: functionSignature,
+                    withinClass: withinClass!,
+                    overridedBy: [],
+                    methodStmt: methodStmt!,
+                    returnType: QsVoidType(),
+                    finishedInit: false,
+                    isConstructor: classSymbol.nonSignatureName == stmt.name.lexeme
+                )
+            )
         }
         stmt.symbolTableIndex = symbolTableIndex
-        let functionNameSymbolName = "#FuncName#"+stmt.name.lexeme
+        let functionNameSymbolName = "#FuncName#" + stmt.name.lexeme
         if let existingNameSymbolInfo = symbolTable.queryAtScopeOnly(functionNameSymbolName) {
             guard let functionNameSymbolInfo = existingNameSymbolInfo as? FunctionNameSymbol else {
                 throw error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
@@ -461,26 +485,32 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             stmt.nameSymbolTableIndex = functionNameSymbolInfo.id
             functionNameSymbolInfo.belongingFunctions.append(symbolTableIndex)
         } else {
-            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(symbol: FunctionNameSymbol(isForMethods: withinClass != nil, name: functionNameSymbolName, belongingFunctions: [symbolTableIndex]))
+            stmt.nameSymbolTableIndex = symbolTable.addToSymbolTable(
+                symbol: FunctionNameSymbol(
+                    isForMethods: withinClass != nil,
+                    name: functionNameSymbolName,
+                    belongingFunctions: [symbolTableIndex]
+                )
+            )
         }
         
         return symbolTableIndex
     }
     
-    internal func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmt(stmt: FunctionStmt) {
         let previousFunction = currentFunction
         currentFunction = .function
         resolveFunction(stmt: stmt)
         currentFunction = previousFunction
     }
     
-    internal func visitExpressionStmt(stmt: ExpressionStmt) {
+    func visitExpressionStmt(stmt: ExpressionStmt) {
         catchErrorClosure {
             try resolve(stmt.expression)
         }
     }
     
-    internal func visitIfStmt(stmt: IfStmt) {
+    func visitIfStmt(stmt: IfStmt) {
         catchErrorClosure {
             try resolve(stmt.condition)
         }
@@ -494,7 +524,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitOutputStmt(stmt: OutputStmt) {
+    func visitOutputStmt(stmt: OutputStmt) {
         for expression in stmt.expressions {
             catchErrorClosure {
                 try resolve(expression)
@@ -502,7 +532,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitInputStmt(stmt: InputStmt) {
+    func visitInputStmt(stmt: InputStmt) {
         for expression in stmt.expressions {
             catchErrorClosure {
                 try resolve(expression)
@@ -510,7 +540,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitReturnStmt(stmt: ReturnStmt) {
+    func visitReturnStmt(stmt: ReturnStmt) {
         if currentFunction == .none {
             if stmt.value != nil {
                 error(message: "Can't return a value from top-level code.", token: stmt.keyword)
@@ -528,14 +558,16 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
+    func visitLoopFromStmt(stmt: LoopFromStmt) {
         let previousLoopState = isInLoop
         catchErrorClosure {
             let existingSymbol = symbolTable.query(stmt.variable.name.lexeme)
             if existingSymbol is VariableSymbol {
                 try resolve(stmt.variable)
             } else {
-                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, variableType: .local))
+                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(
+                    symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, variableType: .local)
+                )
                 stmt.variable.type = QsInt(assignable: true)
             }
         }
@@ -553,7 +585,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.body)
     }
     
-    internal func visitWhileStmt(stmt: WhileStmt) {
+    func visitWhileStmt(stmt: WhileStmt) {
         let previousLoopState = isInLoop
         
         catchErrorClosure {
@@ -567,19 +599,19 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.body)
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) {
+    func visitBreakStmt(stmt: BreakStmt) {
         if !isInLoop {
             error(message: "Can't use 'break' outside of loop", token: stmt.keyword)
         }
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) {
+    func visitContinueStmt(stmt: ContinueStmt) {
         if !isInLoop {
             error(message: "Can't use 'continue' outside of loop", token: stmt.keyword)
         }
     }
     
-    internal func visitBlockStmt(stmt: BlockStmt) {
+    func visitBlockStmt(stmt: BlockStmt) {
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         let previousInGlobalScope = isInGlobalScope
@@ -652,7 +684,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of \(field.name.lexeme)", token: field.name)
                 return
             }
-            let symbol = VariableSymbol(name: field.name.lexeme, variableStatus: .fieldIniting, variableType: (field.isStatic ? .staticVar : .instance))
+            let symbol = VariableSymbol(
+                name: field.name.lexeme,
+                variableStatus: .fieldIniting,
+                variableType: (field.isStatic ? .staticVar : .instance)
+            )
             field.symbolTableIndex = symbolTable.addToSymbolTable(symbol: symbol)
         }
         for field in stmt.fields {
@@ -708,7 +744,9 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 assignExpr.to.symbolTableIndex = existingSymbol.id
             } else {
                 assignExpr.isFirstAssignment = true
-                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: GlobalVariableSymbol(name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit))
+                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(
+                    symbol: GlobalVariableSymbol(name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit)
+                )
                 globalVariableIndexes.append(assignExpr.to.symbolTableIndex!)
             }
         }
@@ -718,6 +756,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
+    // swiftlint:disable:next function_body_length
     private func buildClassHierarchy(statements: [Stmt]) {
         // first find all of the class statements
         var classStmts: [ClassStmt] = []
@@ -728,10 +767,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
         
         // find the maximum class id to create a union-find disjoint set in order to find circular references
-        var classRuntimeIdCount = symbolTable.getClassRuntimeIdCount()
+        let classRuntimeIdCount = symbolTable.getClassRuntimeIdCount()
         
-        let classClusterer = UnionFind(size: classRuntimeIdCount+1+1)
-        let anyTypeClusterId = classRuntimeIdCount+1
+        // 2 extra is needed because class IDs start from 1 and for the any type
+        let classClusterer = UnionFind(size: classRuntimeIdCount + 1 + 1)
+        let anyTypeClusterId = classRuntimeIdCount + 1
         
         // create the class chains by initializing every class without a superclass with a depth of 1 and linking child classes classes with their superclasses
         for classStmt in classStmts {
@@ -747,7 +787,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 classSymbol.depth = 1
                 continue
             }
-            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(generateClassSignature(className: classStmt.superclass!.name.lexeme, templateAstTypes: classStmt.superclass!.templateArguments)) else {
+            guard let inheritedClassSymbol = symbolTable.queryAtGlobalOnly(
+                generateClassSignature(
+                    className: classStmt.superclass!.name.lexeme,
+                    templateAstTypes: classStmt.superclass!.templateArguments
+                )
+            ) else {
                 assertionFailure("Inherited class not found")
                 continue
             }
@@ -771,13 +816,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             let classSymbol = symbolTable.getSymbol(id: symbolTableId) as! ClassSymbol
             classSymbol.depth = depth
             for children in classSymbol.parentOf {
-                fillDepth(children, depth: depth+1)
+                fillDepth(children, depth: depth + 1)
             }
         }
         var methodsChain: [[String : Int]] = []
         func findMethodInChain(signature: String) -> Int? {
             for i in 0..<methodsChain.count {
-                let methodChain = methodsChain[methodsChain.count-i-1]
+                let methodChain = methodsChain[methodsChain.count - i - 1]
                 if let resultingId = methodChain[signature] {
                     return resultingId
                 }
@@ -815,7 +860,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 overrides[methodSignature]!.append(contentsOf: functionIds)
             }
             
-            
             func handleMethod(_ methodSymbol: MethodSymbol) {
                 let signature = methodSymbol.name
                 let existingMethod = findMethodInChain(signature: signature)
@@ -833,7 +877,10 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                         if methodSymbol.methodStmt == nil {
                             assertionFailure("An internal language error occurred")
                         } else {
-                            error(message: "Static does not match for overriding method", token: (methodSymbol.isStatic ? methodSymbol.methodStmt!.staticKeyword! : methodSymbol.methodStmt!.function.name))
+                            error(
+                                message: "Static does not match for overriding method",
+                                token: (methodSymbol.isStatic ? methodSymbol.methodStmt!.staticKeyword! : methodSymbol.methodStmt!.function.name)
+                            )
                         }
                     }
                     // check return type consistency
@@ -845,7 +892,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                             if annotation == nil {
                                 error(message: "Return type does not match for overriding method", token: methodSymbol.methodStmt!.function.keyword)
                             } else {
-                                error(message: "Return type does not match for overriding method", start: annotation!.startLocation, end: annotation!.endLocation)
+                                error(
+                                    message: "Return type does not match for overriding method",
+                                    start: annotation!.startLocation,
+                                    end: annotation!.endLocation
+                                )
                             }
                         }
                     }

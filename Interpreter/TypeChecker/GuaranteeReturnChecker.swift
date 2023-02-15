@@ -7,27 +7,27 @@ class GaurenteeReturnChecker: StmtThrowVisitor {
     }
     
     private enum AnalysisInterrupts: Error {
-        case ProgramExitInterrupt // for exit
-        case HasReturnedInterrupt
+        case programExitInterrupt // for exit
+        case hasReturnedInterrupt
     }
     
-    internal func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmt(stmt: ClassStmt) {
         // impossible
     }
     
-    internal func visitMethodStmt(stmt: MethodStmt) {
+    func visitMethodStmt(stmt: MethodStmt) {
         // impossible
     }
     
-    internal func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmt(stmt: FunctionStmt) {
         // impossible
     }
     
-    internal func visitExpressionStmt(stmt: ExpressionStmt) {
+    func visitExpressionStmt(stmt: ExpressionStmt) {
         // do nothing
     }
     
-    internal func visitIfStmt(stmt: IfStmt) throws {
+    func visitIfStmt(stmt: IfStmt) throws {
         func processBranch(_ stmt: BlockStmt) {
             do {
                 try checkReturn(stmt)
@@ -50,56 +50,56 @@ class GaurenteeReturnChecker: StmtThrowVisitor {
         }
         
         var allPathsReturn = true
-        for _ in 0..<stmt.elseIfBranches.count+2 {
+        for _ in 0 ..< stmt.elseIfBranches.count + 2 {
             allPathsReturn = allPathsReturn && hasReturnedStack.popLast()!
         }
         
         if allPathsReturn {
             hasReturnedStack.popLast()
             hasReturnedStack.append(true)
-            throw AnalysisInterrupts.HasReturnedInterrupt
+            throw AnalysisInterrupts.hasReturnedInterrupt
         }
     }
     
-    internal func visitOutputStmt(stmt: OutputStmt) {
+    func visitOutputStmt(stmt: OutputStmt) {
         // do nothing
     }
     
-    internal func visitInputStmt(stmt: InputStmt) {
+    func visitInputStmt(stmt: InputStmt) {
         // do nothing
     }
     
-    internal func visitReturnStmt(stmt: ReturnStmt) throws {
+    func visitReturnStmt(stmt: ReturnStmt) throws {
         hasReturnedStack.popLast()
         hasReturnedStack.append(true)
-        throw AnalysisInterrupts.HasReturnedInterrupt
+        throw AnalysisInterrupts.hasReturnedInterrupt
     }
     
-    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
+    func visitLoopFromStmt(stmt: LoopFromStmt) {
         // do nothing
     }
     
-    internal func visitWhileStmt(stmt: WhileStmt) {
+    func visitWhileStmt(stmt: WhileStmt) {
         // do nothing
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) {
+    func visitBreakStmt(stmt: BreakStmt) {
         // do nothing
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) {
+    func visitContinueStmt(stmt: ContinueStmt) {
         // do nothing
     }
     
-    internal func visitBlockStmt(stmt: BlockStmt) throws {
+    func visitBlockStmt(stmt: BlockStmt) throws {
         try checkReturn(stmt.statements)
     }
     
-    internal func visitExitStmt(stmt: ExitStmt) throws {
+    func visitExitStmt(stmt: ExitStmt) throws {
         // by all means, it has returned
         hasReturnedStack.popLast()
         hasReturnedStack.append(true)
-        throw AnalysisInterrupts.ProgramExitInterrupt
+        throw AnalysisInterrupts.programExitInterrupt
     }
     
     private func checkReturn(_ stmt: Stmt) throws {

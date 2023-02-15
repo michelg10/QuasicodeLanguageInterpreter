@@ -1,3 +1,4 @@
+// swiftlint:disable all
 protocol Stmt {
     func accept(visitor: StmtVisitor)
     func accept(visitor: StmtThrowVisitor) throws

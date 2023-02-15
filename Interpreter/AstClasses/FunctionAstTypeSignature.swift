@@ -6,7 +6,7 @@ func createFunctionAstTypeSignature(functionStmt: FunctionStmt) -> String {
 func createFunctionAstTypeSignature(functionName: String, functionParams: [AstType?]) -> String {
     var paramsName = ""
     for param in functionParams {
-        if paramsName != "" {
+        if !paramsName.isEmpty {
             paramsName += ", "
         }
         paramsName += astTypeToStringSingleton.stringify(param ?? AstAnyType(startLocation: .dub(), endLocation: .dub()))

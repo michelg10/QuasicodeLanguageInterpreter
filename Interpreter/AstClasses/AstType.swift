@@ -1,3 +1,4 @@
+// swiftlint:disable all
 protocol AstType {
     func accept(visitor: AstTypeVisitor)
     func accept(visitor: AstTypeStringVisitor) -> String

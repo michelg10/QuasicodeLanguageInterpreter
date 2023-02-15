@@ -1,4 +1,4 @@
-class ChunkInterface {
+enum ChunkInterface {
     static func writeInstructionToChunk(chunk: UnsafeMutablePointer<Chunk>!, op: OpCode, line: Int) {
         writeChunk(chunk, UInt8(op.rawValue), Int32(line))
     }
@@ -15,7 +15,12 @@ class ChunkInterface {
         writeChunkLong(chunk, data, Int32(line))
     }
     
-    static func writeExplicitlyTypedValueObjectToChunk(chunk: UnsafeMutablePointer<Chunk>!, object: UnsafeMutableRawPointer!, classId: Int, line: Int) {
+    static func writeExplicitlyTypedValueObjectToChunk(
+        chunk: UnsafeMutablePointer<Chunk>!,
+        object: UnsafeMutableRawPointer!,
+        classId: Int,
+        line: Int
+    ) {
         writeChunkExplicitlyTypedValueObject(chunk, object, Int32(classId), Int32(line))
     }
     

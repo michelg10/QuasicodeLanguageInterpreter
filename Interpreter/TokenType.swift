@@ -1,3 +1,5 @@
+// swiftlint:disable identifier_name
+
 enum TokenType {
     // Single-character tokens
     case LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_BRACKET, RIGHT_BRACKET, COMMA, DOT, MINUS, PLUS, SLASH, STAR, COLON

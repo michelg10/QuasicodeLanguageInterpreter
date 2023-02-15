@@ -1,4 +1,6 @@
+// swiftlint:disable:next type_body_length
 class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisitor {
+    
     enum TemplaterError: Error {
         case error(String)
     }
@@ -17,13 +19,13 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
                 return false
             }
             
-            for i in 0..<lhs.templateParameters.count {
-                if !typesEqual(lhs.templateParameters[i], rhs.templateParameters[i]) {
-                    return false
-                }
+            if lhs.templateParameters.elementsEqual(rhs.templateParameters, by: { lhsAstType, rhsAstType in
+                typesEqual(lhsAstType, rhsAstType)
+            }) {
+                return true
+            } else {
+                return false
             }
-            
-            return true
         }
         
         func hash(into hasher: inout Hasher) {
@@ -47,12 +49,10 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         var expandedFields: [AstClassField] = []
         expandedFields.reserveCapacity(fields.count)
         for field in fields {
-            var newField = field
-            if field.astType != nil {
-                newField.astType = (catchErrorClosure {
-                    try expandClasses(field.astType)
-                } ?? field.astType)
-            }
+            let newField = field
+            newField.astType = (catchErrorClosure {
+                try expandClasses(field.astType)
+            } ?? field.astType)
             
             if field.initializer != nil {
                 newField.initializer = catchErrorClosure {
@@ -70,7 +70,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         var expandedMethods: [MethodStmt] = []
         expandedMethods.reserveCapacity(methods.capacity)
         for method in methods {
-            let newMethod = MethodStmt.init(method)
+            let newMethod: MethodStmt = .init(method)
             newMethod.function = expandClasses(method.function) as! FunctionStmt
             expandedMethods.append(newMethod)
         }
@@ -84,14 +84,17 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             return
         }
         
-        let resultingClass = ClassStmt.init(belongingClass)
+        let resultingClass: ClassStmt = .init(belongingClass)
         resultingClass.expandedTemplateParameters = classSignature.templateParameters
         
         let classParameters = belongingClass.templateParameters?.map({ token in
             token.lexeme
         }) ?? []
         
-        assert(classParameters.count == classSignature.templateParameters.count, "Mismatch between parameters given in signature and parameters required in class!")
+        assert(
+            classParameters.count == classSignature.templateParameters.count,
+            "Mismatch between parameters given in signature and parameters required in class!"
+        )
         
         var newMapping: [String : AstType] = [:]
         for i in 0..<classParameters.count {
@@ -127,7 +130,11 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             computedTemplateArguments = [AstAnyType(startLocation: .dub(), endLocation: .dub())]
         } else {
             if belongingClassTemplateParameterCount != givenArguments {
-                throw error(message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)", start: asttype.startLocation, end: asttype.endLocation) // underline the entire ast class
+                throw error(
+                    message: "Expected \(belongingClassTemplateParameterCount) template parameters, got \(givenArguments)",
+                    start: asttype.startLocation,
+                    end: asttype.endLocation
+                ) // underline the entire ast class
             }
             
             for templateArgument in templateArguments {
@@ -140,15 +147,13 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             let classToGenerateSignature = ClassSignature(name: asttype.name.lexeme, templateParameters: computedTemplateArguments)
             if !templatedClasses.contains(classToGenerateSignature) {
                 templatedClasses.insert(classToGenerateSignature)
-                if (DEBUG) {
+                if DEBUG {
                     let astPrinter = AstPrinter()
-                    let templateParametersDesc = classToGenerateSignature.templateParameters.reduce("") { partialResult, next in
-                        var result = partialResult
-                        if result != "" {
+                    let templateParametersDesc = classToGenerateSignature.templateParameters.reduce(into: "") { result, astType in
+                        if !result.isEmpty {
                             result += ", "
                         }
-                        result += astPrinter.printAst(next)
-                        return result
+                        result += astPrinter.printAst(astType)
                     }
                     print("Generate class \(classToGenerateSignature.name)<\(templateParametersDesc)>")
                 }
@@ -158,11 +163,16 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
             }
         }
         
-        return AstClassType(name: asttype.name, templateArguments: computedTemplateArguments, startLocation: asttype.startLocation, endLocation: asttype.endLocation)
+        return AstClassType(
+            name: asttype.name,
+            templateArguments: computedTemplateArguments,
+            startLocation: asttype.startLocation,
+            endLocation: asttype.endLocation
+        )
     }
     
     func visitAstTemplateTypeNameAstType(asttype: AstTemplateTypeName) -> AstType {
-        if templateParameterMappings.count == 0 {
+        if templateParameterMappings.isEmpty {
             assertionFailure("AST template mappings empty!")
             return asttype // just return something random
         }
@@ -198,13 +208,13 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitMethodStmtStmt(stmt: MethodStmt) -> Stmt {
-        let result = MethodStmt.init(stmt)
+        let result: MethodStmt = .init(stmt)
         result.function = expandClasses(stmt.function) as! FunctionStmt
         return result
     }
     
     func visitFunctionStmtStmt(stmt: FunctionStmt) -> Stmt {
-        let result = FunctionStmt.init(stmt)
+        let result: FunctionStmt = .init(stmt)
         if stmt.annotation != nil {
             result.annotation = catchErrorClosure {
                 try expandClasses(stmt.annotation!)
@@ -233,7 +243,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitExpressionStmtStmt(stmt: ExpressionStmt) -> Stmt {
-        let result = ExpressionStmt.init(stmt)
+        let result: ExpressionStmt = .init(stmt)
         result.expression = (catchErrorClosure {
             try expandClasses(stmt.expression)
         } ?? stmt.expression)
@@ -242,7 +252,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitIfStmtStmt(stmt: IfStmt) -> Stmt {
-        let result = IfStmt.init(stmt)
+        let result: IfStmt = .init(stmt)
         result.condition = (catchErrorClosure {
             try expandClasses(stmt.condition)
         } ?? stmt.condition)
@@ -255,19 +265,19 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitOutputStmtStmt(stmt: OutputStmt) -> Stmt {
-        let result = OutputStmt.init(stmt)
+        let result: OutputStmt = .init(stmt)
         result.expressions = expandClasses(stmt.expressions)
         return result
     }
     
     func visitInputStmtStmt(stmt: InputStmt) -> Stmt {
-        let result = InputStmt.init(stmt)
+        let result: InputStmt = .init(stmt)
         result.expressions = expandClasses(stmt.expressions)
         return result
     }
     
     func visitReturnStmtStmt(stmt: ReturnStmt) -> Stmt {
-        let result = ReturnStmt.init(stmt)
+        let result: ReturnStmt = .init(stmt)
         if stmt.value != nil {
             result.value = catchErrorClosure {
                 try expandClasses(stmt.value!)
@@ -277,7 +287,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitLoopFromStmtStmt(stmt: LoopFromStmt) -> Stmt {
-        let result = LoopFromStmt.init(stmt)
+        let result: LoopFromStmt = .init(stmt)
         result.variable = (catchErrorClosure {
             try expandClasses(stmt.variable) as! VariableExpr
         } ?? stmt.variable)
@@ -294,7 +304,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitWhileStmtStmt(stmt: WhileStmt) -> Stmt {
-        let result = WhileStmt.init(stmt)
+        let result: WhileStmt = .init(stmt)
         result.expression = (catchErrorClosure {
             try expandClasses(stmt.expression)
         } ?? stmt.expression)
@@ -311,7 +321,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitBlockStmtStmt(stmt: BlockStmt) -> Stmt {
-        let result = BlockStmt.init(stmt)
+        let result: BlockStmt = .init(stmt)
         result.statements = expandClasses(result.statements)
         return result
     }
@@ -321,7 +331,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr {
-        let result = GroupingExpr.init(expr)
+        let result: GroupingExpr = .init(expr)
         result.expression = try expandClasses(expr.expression)
         return result
     }
@@ -331,13 +341,13 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr {
-        let result = ArrayLiteralExpr.init(expr)
+        let result: ArrayLiteralExpr = .init(expr)
         result.values = expandClasses(expr.values)
         return result
     }
     
     func visitStaticClassExprExpr(expr: StaticClassExpr) throws -> Expr {
-        let result = StaticClassExpr.init(expr)
+        let result: StaticClassExpr = .init(expr)
         result.classType = try expandClasses(expr.classType) as! AstClassType
         return result
     }
@@ -355,14 +365,14 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitSubscriptExprExpr(expr: SubscriptExpr) throws -> Expr {
-        let result = SubscriptExpr.init(expr)
+        let result: SubscriptExpr = .init(expr)
         result.expression = try expandClasses(expr.expression)
         result.index = try expandClasses(expr.index)
         return result
     }
     
     func visitCallExprExpr(expr: CallExpr) throws -> Expr {
-        let result = CallExpr.init(expr)
+        let result: CallExpr = .init(expr)
         if expr.object != nil {
             expr.object = try expandClasses(expr.object!)
         }
@@ -371,26 +381,26 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitGetExprExpr(expr: GetExpr) throws -> Expr {
-        let result = GetExpr.init(expr)
+        let result: GetExpr = .init(expr)
         result.object = try expandClasses(expr.object)
         return result
     }
     
     func visitUnaryExprExpr(expr: UnaryExpr) throws -> Expr {
-        let result = UnaryExpr.init(expr)
+        let result: UnaryExpr = .init(expr)
         result.right = try expandClasses(expr.right)
         return result
     }
     
     func visitCastExprExpr(expr: CastExpr) throws -> Expr {
-        let result = CastExpr.init(expr)
+        let result: CastExpr = .init(expr)
         result.value = try expandClasses(expr.value)
         result.toType = try expandClasses(expr.toType)
         return result
     }
     
     func visitArrayAllocationExprExpr(expr: ArrayAllocationExpr) -> Expr {
-        let result = ArrayAllocationExpr.init(expr)
+        let result: ArrayAllocationExpr = .init(expr)
         result.capacity = expandClasses(expr.capacity)
         result.contains = (catchErrorClosure {
             try expandClasses(expr.contains)
@@ -399,7 +409,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitClassAllocationExprExpr(expr: ClassAllocationExpr) -> Expr {
-        let result = ClassAllocationExpr.init(expr)
+        let result: ClassAllocationExpr = .init(expr)
         result.arguments = expandClasses(expr.arguments)
         result.classType = (catchErrorClosure {
             try expandClasses(expr.classType) as! AstClassType
@@ -441,7 +451,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         return result
     }
     
-    func visitArraySetExprExpr(expr: SubscriptSetExpr) throws -> Expr {
+    func visitSubscriptSetExprExpr(expr: SubscriptSetExpr) throws -> Expr {
         let result = SubscriptSetExpr(expr)
         result.expression = (catchErrorClosure {
             try expandClasses(expr.expression)
@@ -457,7 +467,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitAssignExprExpr(expr: AssignExpr) throws -> Expr {
-        let result = AssignExpr.init(expr)
+        let result: AssignExpr = .init(expr)
         result.to = (catchErrorClosure {
             try expandClasses(expr.to)
         } as? VariableExpr ?? expr.to)
@@ -474,7 +484,7 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func visitIsTypeExprExpr(expr: IsTypeExpr) throws -> Expr {
-        let result = IsTypeExpr.init(expr)
+        let result: IsTypeExpr = .init(expr)
         result.left = (catchErrorClosure({
             try expandClasses(result.left)
         }) ?? expr.left)
@@ -569,19 +579,22 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
     }
     
     func addEmptyInitializers(classStmts: [ClassStmt]) {
-        for classStmt in classStmts {
-            var canAddEmptyInitializer = true
-            for field in classStmt.fields {
-                if field.initializer == nil {
-                    canAddEmptyInitializer = false
-                    break
-                }
-            }
-            if canAddEmptyInitializer {
-                let newFunctionStmt = FunctionStmt(keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"), name: classStmt.name, symbolTableIndex: nil, nameSymbolTableIndex: nil, scopeIndex: nil, params: [], annotation: nil, body: [], endOfFunction: .dummyToken(tokenType: .END, lexeme: "end"))
-                let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt)
-                classStmt.methods.append(newMethodStmt)
-            }
+        for classStmt in classStmts where classStmt.fields.allSatisfy({ field in
+            field.isStatic || field.initializer != nil
+        }) { // an empty initializer can be added as every instance field has an initializing expression
+            let newFunctionStmt = FunctionStmt(
+                keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"),
+                name: classStmt.name,
+                symbolTableIndex: nil,
+                nameSymbolTableIndex: nil,
+                scopeIndex: nil,
+                params: [],
+                annotation: nil,
+                body: [],
+                endOfFunction: .dummyToken(tokenType: .END, lexeme: "end")
+            )
+            let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt)
+            classStmt.methods.append(newMethodStmt)
         }
     }
     
@@ -590,10 +603,8 @@ class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisit
         problems = []
         classes = [:]
         var classStmts: [ClassStmt] = []
-        for statement in statements {
-            if statement is ClassStmt {
-                classStmts.append(statement as! ClassStmt)
-            }
+        for statement in statements where statement is ClassStmt {
+            classStmts.append(statement as! ClassStmt)
         }
         addEmptyInitializers(classStmts: classStmts)
         gatherClasses(classStmts: classStmts)

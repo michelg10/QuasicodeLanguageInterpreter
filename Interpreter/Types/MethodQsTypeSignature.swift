@@ -12,12 +12,13 @@ struct MethodQsTypeSignature: Hashable {
             return false
         }
         
-        for i in 0..<lhs.parameters.count {
-            if !typesEqual(lhs.parameters[i], rhs.parameters[i], anyEqAny: true) {
-                return false
-            }
+        if lhs.parameters.elementsEqual(rhs.parameters, by: { parameter1, parameter2 in
+            typesEqual(parameter1, parameter2, anyEqAny: true)
+        }) {
+            return true
+        } else {
+            return false
         }
-        return true
     }
     
     func hash(into hasher: inout Hasher) {

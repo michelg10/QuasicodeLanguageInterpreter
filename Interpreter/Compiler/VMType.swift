@@ -1,3 +1,4 @@
+// swiftlint:disable all
 enum VMType: Int {
     case Int
     case Double

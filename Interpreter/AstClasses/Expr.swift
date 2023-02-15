@@ -1,3 +1,4 @@
+// swiftlint:disable all
 protocol Expr {
     func accept(visitor: ExprVisitor)
     func accept(visitor: ExprThrowVisitor) throws
@@ -29,7 +30,7 @@ protocol ExprVisitor {
     func visitBinaryExpr(expr: BinaryExpr) 
     func visitLogicalExpr(expr: LogicalExpr) 
     func visitPropertySetExpr(expr: PropertySetExpr) 
-    func visitArraySetExpr(expr: SubscriptSetExpr) 
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) 
     func visitAssignExpr(expr: AssignExpr) 
     func visitIsTypeExpr(expr: IsTypeExpr) 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
@@ -53,7 +54,7 @@ protocol ExprThrowVisitor {
     func visitBinaryExpr(expr: BinaryExpr) throws 
     func visitLogicalExpr(expr: LogicalExpr) throws 
     func visitPropertySetExpr(expr: PropertySetExpr) throws 
-    func visitArraySetExpr(expr: SubscriptSetExpr) throws 
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) throws 
     func visitAssignExpr(expr: AssignExpr) throws 
     func visitIsTypeExpr(expr: IsTypeExpr) throws 
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
@@ -77,7 +78,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitBinaryExprQsType(expr: BinaryExpr) throws -> QsType
     func visitLogicalExprQsType(expr: LogicalExpr) throws -> QsType
     func visitPropertySetExprQsType(expr: PropertySetExpr) throws -> QsType
-    func visitArraySetExprQsType(expr: SubscriptSetExpr) throws -> QsType
+    func visitSubscriptSetExprQsType(expr: SubscriptSetExpr) throws -> QsType
     func visitAssignExprQsType(expr: AssignExpr) throws -> QsType
     func visitIsTypeExprQsType(expr: IsTypeExpr) throws -> QsType
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
@@ -101,7 +102,7 @@ protocol ExprExprThrowVisitor {
     func visitBinaryExprExpr(expr: BinaryExpr) throws -> Expr
     func visitLogicalExprExpr(expr: LogicalExpr) throws -> Expr
     func visitPropertySetExprExpr(expr: PropertySetExpr) throws -> Expr
-    func visitArraySetExprExpr(expr: SubscriptSetExpr) throws -> Expr
+    func visitSubscriptSetExprExpr(expr: SubscriptSetExpr) throws -> Expr
     func visitAssignExprExpr(expr: AssignExpr) throws -> Expr
     func visitIsTypeExprExpr(expr: IsTypeExpr) throws -> Expr
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
@@ -125,7 +126,7 @@ protocol ExprStringVisitor {
     func visitBinaryExprString(expr: BinaryExpr) -> String
     func visitLogicalExprString(expr: LogicalExpr) -> String
     func visitPropertySetExprString(expr: PropertySetExpr) -> String
-    func visitArraySetExprString(expr: SubscriptSetExpr) -> String
+    func visitSubscriptSetExprString(expr: SubscriptSetExpr) -> String
     func visitAssignExprString(expr: AssignExpr) -> String
     func visitIsTypeExprString(expr: IsTypeExpr) -> String
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
@@ -149,7 +150,7 @@ protocol ExprOptionalAnyThrowVisitor {
     func visitBinaryExprOptionalAny(expr: BinaryExpr) throws -> Any?
     func visitLogicalExprOptionalAny(expr: LogicalExpr) throws -> Any?
     func visitPropertySetExprOptionalAny(expr: PropertySetExpr) throws -> Any?
-    func visitArraySetExprOptionalAny(expr: SubscriptSetExpr) throws -> Any?
+    func visitSubscriptSetExprOptionalAny(expr: SubscriptSetExpr) throws -> Any?
     func visitAssignExprOptionalAny(expr: AssignExpr) throws -> Any?
     func visitIsTypeExprOptionalAny(expr: IsTypeExpr) throws -> Any?
     func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
@@ -1027,22 +1028,22 @@ class SubscriptSetExpr: Expr {
     }
 
     func accept(visitor: ExprVisitor) {
-        visitor.visitArraySetExpr(expr: self)
+        visitor.visitSubscriptSetExpr(expr: self)
     }
     func accept(visitor: ExprThrowVisitor) throws {
-        try visitor.visitArraySetExpr(expr: self)
+        try visitor.visitSubscriptSetExpr(expr: self)
     }
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
-        try visitor.visitArraySetExprQsType(expr: self)
+        try visitor.visitSubscriptSetExprQsType(expr: self)
     }
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
-        try visitor.visitArraySetExprExpr(expr: self)
+        try visitor.visitSubscriptSetExprExpr(expr: self)
     }
     func accept(visitor: ExprStringVisitor) -> String {
-        visitor.visitArraySetExprString(expr: self)
+        visitor.visitSubscriptSetExprString(expr: self)
     }
     func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
-        try visitor.visitArraySetExprOptionalAny(expr: self)
+        try visitor.visitSubscriptSetExprOptionalAny(expr: self)
     }
 }
 

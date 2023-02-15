@@ -1,3 +1,4 @@
+// swiftlint:disable:next type_body_length
 class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
@@ -12,42 +13,42 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return currentFunctionIndex != nil && currentClassIndex != nil
     }
     
-    private func findCommonType(_ a: QsType, _ b: QsType) -> QsType {
-        if a is QsErrorType || b is QsErrorType {
+    private func findCommonType(_ lhs: QsType, _ rhs: QsType) -> QsType {
+        if lhs is QsErrorType || rhs is QsErrorType {
             return QsErrorType()
         }
-        if a is QsVoidType || b is QsVoidType {
+        if lhs is QsVoidType || rhs is QsVoidType {
             return QsVoidType()
         }
-        if typesEqual(a, b, anyEqAny: true) {
-            return a
+        if typesEqual(lhs, rhs, anyEqAny: true) {
+            return lhs
         }
-        if a is QsAnyType || b is QsAnyType {
+        if lhs is QsAnyType || rhs is QsAnyType {
             return QsAnyType()
         }
-        if a is QsNativeType || b is QsNativeType {
-            if !(a is QsNativeType && b is QsNativeType) {
+        if lhs is QsNativeType || rhs is QsNativeType {
+            if !(lhs is QsNativeType && rhs is QsNativeType) {
                 // if one of them is a native type but one of them aren't
                 return QsAnyType()
             }
             
             // both of them are of QsNativeType and are different
             // case 1: one of them is boolean. thus the other one must be int or double
-            if a is QsBoolean || b is QsBoolean {
+            if lhs is QsBoolean || rhs is QsBoolean {
                 return QsAnyType()
             }
             
             // if none of them are QsBoolean, then one must be QsInt and another must be QsDouble. the common type there is QsDouble, so return that
             return QsDouble()
         }
-        if a is QsArray || b is QsArray {
-            if !(a is QsArray && b is QsArray) {
+        if lhs is QsArray || rhs is QsArray {
+            if !(lhs is QsArray && rhs is QsArray) {
                 // one of them is a QsArray but another isn't
                 return QsAnyType()
             }
             
             // both are QsArrays
-            return QsArray(contains: findCommonType((a as! QsArray).contains, (b as! QsArray).contains))
+            return QsArray(contains: findCommonType((lhs as! QsArray).contains, (rhs as! QsArray).contains))
         }
         
         struct JumpError: Error { }
@@ -60,19 +61,19 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         do {
-            if a is QsClass || b is QsClass {
-                if !(a is QsClass && b is QsClass) {
+            if lhs is QsClass || rhs is QsClass {
+                if !(lhs is QsClass && rhs is QsClass) {
                     // one of them is a QsClass but another isn't
                     return QsAnyType()
                 }
                 // they're unequal, so jump up the chain
                 // let the depth of aClass is deeper than bClass
-                var aClassSymbol = symbolTable.getSymbol(id: (a as! QsClass).id) as! ClassSymbol
-                var bClassSymbol = symbolTable.getSymbol(id: (b as! QsClass).id) as! ClassSymbol
+                var aClassSymbol = symbolTable.getSymbol(id: (lhs as! QsClass).id) as! ClassSymbol
+                var bClassSymbol = symbolTable.getSymbol(id: (rhs as! QsClass).id) as! ClassSymbol
                 if aClassSymbol.depth == nil || bClassSymbol.depth == nil {
                     return QsErrorType()
                 }
-                if aClassSymbol.depth!<bClassSymbol.depth! {
+                if aClassSymbol.depth! < bClassSymbol.depth! {
                     swap(&aClassSymbol, &bClassSymbol)
                 }
                 let depthDiff = abs(aClassSymbol.depth! - bClassSymbol.depth!)
@@ -83,7 +84,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 assert(aClassSymbol.depth == bClassSymbol.depth, "Depth of chains should be identical!")
                 
                 // keep on jumping up for both until they are the same
-                while (aClassSymbol.id != bClassSymbol.id) {
+                while aClassSymbol.id != bClassSymbol.id {
                     if aClassSymbol.upperClass == nil {
                         return QsAnyType()
                     }
@@ -255,7 +256,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitGroupingExpr(expr: GroupingExpr) {
+    func visitGroupingExpr(expr: GroupingExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -265,16 +266,16 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expr.expression.type
     }
     
-    internal func visitLiteralExpr(expr: LiteralExpr) {
+    func visitLiteralExpr(expr: LiteralExpr) {
         // already done
     }
     
-    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
         }
-        if expr.values.count == 0 {
+        if expr.values.isEmpty {
             expr.type = QsAnyType()
             return
         }
@@ -297,12 +298,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitStaticClassExpr(expr: StaticClassExpr) {
+    func visitStaticClassExpr(expr: StaticClassExpr) {
         // handle it at its source (CallExprs and GetExprs)
         // should never be visited
     }
     
-    internal func visitThisExpr(expr: ThisExpr) {
+    func visitThisExpr(expr: ThisExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -317,7 +318,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitSuperExpr(expr: SuperExpr) {
+    func visitSuperExpr(expr: SuperExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             expr.type!.assignable = true
@@ -329,7 +330,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = symbol.type
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) {
+    func visitVariableExpr(expr: VariableExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             // IMPORTANT: whether the type of this expression is assignable depends on the actual property. be careful to set assignable here
@@ -378,7 +379,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitSubscriptExpr(expr: SubscriptExpr) {
+    func visitSubscriptExpr(expr: SubscriptExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             expr.type!.assignable = true
@@ -458,7 +459,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return bestMatches
     }
     
-    internal func visitCallExpr(expr: CallExpr) {
+    // swiftlint:disable:next function_body_length
+    func visitCallExpr(expr: CallExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -527,7 +529,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             // cannot be polymorphic
             blockPolymorphicCall = true
             let allMethods = symbolTable.getAllMethods(methodName: expr.property.lexeme)
-            if allMethods == [] {
+            if allMethods.isEmpty {
                 // search for global functions
                 let globalFunctionNameSymbol = symbolTable.queryAtGlobalOnly("#FuncName#\(expr.property.lexeme)")
                 if globalFunctionNameSymbol != nil {
@@ -598,7 +600,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
         let bestMatches: [Int] = pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: expr.arguments)
-        if bestMatches.count == 0 {
+        if bestMatches.isEmpty {
             error(message: "No matching function to call", on: expr)
             return
         }
@@ -647,7 +649,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         var propertyId: Int
     }
     
-    private func getPropertyForObject(property: Token, className: String, classSymbolScopeIndex: Int, staticLimit: StaticLimit) -> ComputedObjectPropertyInfo? {
+    private func getPropertyForObject(
+        property: Token,
+        className: String,
+        classSymbolScopeIndex: Int,
+        staticLimit: StaticLimit
+    ) -> ComputedObjectPropertyInfo? {
         let previousSymbolTableLocation = symbolTable.getCurrentTableId()
         defer {
             symbolTable.gotoTable(previousSymbolTableLocation)
@@ -666,7 +673,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return ""
             }
         }()
-        let errorMessage = "Type '\(className)' has no \(propertyDescription + (propertyDescription == "" ? "" : " "))property '\(property.lexeme)'"
+        let errorMessage = "Type '\(className)' has no \(propertyDescription + (propertyDescription.isEmpty ? "" : " "))property '\(property.lexeme)'"
         
         guard let queriedSymbol = queriedSymbol else {
             error(message: errorMessage, on: property)
@@ -696,10 +703,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     
     private func getPropertyForObject(property: Token, className: String, classId: Int, staticLimit: StaticLimit) -> ComputedObjectPropertyInfo? {
         let symbol = symbolTable.getSymbol(id: classId) as! ClassSymbol
-        return getPropertyForObject(property: property, className: className, classSymbolScopeIndex: symbol.classScopeSymbolTableIndex!, staticLimit: staticLimit)
+        return getPropertyForObject(
+            property: property,
+            className: className,
+            classSymbolScopeIndex: symbol.classScopeSymbolTableIndex!,
+            staticLimit: staticLimit
+        )
     }
     
-    internal func visitGetExpr(expr: GetExpr) {
+    func visitGetExpr(expr: GetExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             // IMPORTANT: whether the type of this expression is assignable depends on the actual property. be careful to set assignable here
@@ -724,7 +736,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             let classSymbol = symbolTable.getSymbol(id: object.classId!) as! ClassSymbol
-            let fetchedProperty = getPropertyForObject(property: expr.property, className: classSymbol.displayName, classSymbolScopeIndex: classSymbol.classScopeSymbolTableIndex!, staticLimit: .limitToStatic)
+            let fetchedProperty = getPropertyForObject(
+                property: expr.property,
+                className: classSymbol.displayName,
+                classSymbolScopeIndex: classSymbol.classScopeSymbolTableIndex!,
+                staticLimit: .limitToStatic
+            )
             
             expr.type = fetchedProperty?.type
             expr.propertyId = fetchedProperty?.propertyId
@@ -736,7 +753,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             let symbol = symbolTable.getSymbol(id: object.symbolTableIndex!) as! VariableSymbol
             
-            let fetchedProperty = getPropertyForObject(property: expr.property, className: (object.type! as! QsClass).name, classSymbolScopeIndex: symbol.belongsToTable, staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .noLimit)
+            let fetchedProperty = getPropertyForObject(
+                property: expr.property,
+                className: (object.type! as! QsClass).name,
+                classSymbolScopeIndex: symbol.belongsToTable,
+                staticLimit: symbol.variableType == .staticVar ? .limitToStatic : .noLimit
+            )
             expr.type = fetchedProperty?.type
             expr.propertyId = fetchedProperty?.propertyId
             return
@@ -756,7 +778,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             } else if expr.object.type is QsClass {
                 // fetch the instance property
                 let objectType = expr.object.type as! QsClass
-                let fetchedProperty = getPropertyForObject(property: expr.property, className: objectType.name, classId: objectType.id, staticLimit: .limitToNonstatic)
+                let fetchedProperty = getPropertyForObject(
+                    property: expr.property,
+                    className: objectType.name,
+                    classId: objectType.id,
+                    staticLimit: .limitToNonstatic
+                )
                 
                 expr.type = fetchedProperty?.type
                 expr.propertyId = fetchedProperty?.propertyId
@@ -766,7 +793,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitUnaryExpr(expr: UnaryExpr) {
+    func visitUnaryExpr(expr: UnaryExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -775,9 +802,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         switch expr.opr.tokenType {
         case .NOT:
             expr.type = QsBoolean()
-            assertType(expr: expr.right, errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'boolean'", typeAssertions: .isType(QsBoolean(assignable: false)))
+            assertType(
+                expr: expr.right,
+                errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'boolean'",
+                typeAssertions: .isType(QsBoolean(assignable: false))
+            )
         case .MINUS:
-            if assertType(expr: expr.right, errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'int' or 'double'", typeAssertions: .isNumeric) {
+            if assertType(
+                expr: expr.right,
+                errorMessage: "Unary operator '\(expr.opr.lexeme)' can only be applied to an operand of type 'int' or 'double'",
+                typeAssertions: .isNumeric
+            ) {
                 expr.type = expr.right.type
                 return
             }
@@ -786,7 +821,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitCastExpr(expr: CastExpr) {
+    func visitCastExpr(expr: CastExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -822,12 +857,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
         }
-        var expressionType = typeCheck(expr.contains)
+        let expressionType = typeCheck(expr.contains)
         for capacity in expr.capacity {
             typeCheck(capacity)
             assertType(expr: capacity, errorMessage: "Expect type 'int' for array capacity", typeAssertions: .isType(QsInt()))
@@ -835,7 +870,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expressionType
     }
     
-    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -849,7 +884,6 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             typeCheck(argument)
         }
         
-        
         let previousSymbolTablePosition = symbolTable.getCurrentTableId()
         if classSymbol.classScopeSymbolTableIndex == nil {
             return
@@ -859,7 +893,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             symbolTable.gotoTable(previousSymbolTablePosition)
         }
         
-        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#"+classSymbol.nonSignatureName)
+        let initializerFunctionNameSymbol = symbolTable.queryAtScopeOnly("#FuncName#" + classSymbol.nonSignatureName)
         let noInitializerFoundErrorMessage = "No matches in call to initializer"
         guard let initializerFunctionNameSymbol = initializerFunctionNameSymbol as? FunctionNameSymbol else {
             error(message: noInitializerFoundErrorMessage, on: expr)
@@ -867,7 +901,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         let bestMatches = pickBestFunctions(potentialFunctions: initializerFunctionNameSymbol.belongingFunctions, withParameters: expr.arguments)
-        if bestMatches.count == 0 {
+        if bestMatches.isEmpty {
             error(message: noInitializerFoundErrorMessage, on: expr)
             return
         }
@@ -878,7 +912,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.callsFunction = bestMatches[0]
     }
     
-    internal func visitBinaryExpr(expr: BinaryExpr) {
+    func visitBinaryExpr(expr: BinaryExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -968,12 +1002,16 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             expr.type = QsErrorType()
         }
         if !(expr.left.type is QsErrorType) && !(expr.right.type is QsErrorType) {
-            error(message: "Binary operator '\(expr.opr.lexeme)' cannot be applied to operands of type '\(printType(expr.left.type))' and '\(printType(expr.right.type))'", on: expr)
+            error(
+                message: "Binary operator '\(expr.opr.lexeme)' cannot be applied " +
+                "to operands of type '\(printType(expr.left.type))' and '\(printType(expr.right.type))'",
+                on: expr
+            )
         }
 
     }
     
-    internal func visitLogicalExpr(expr: LogicalExpr) {
+    func visitLogicalExpr(expr: LogicalExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -981,7 +1019,10 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.left)
         typeCheck(expr.right)
         expr.type = QsBoolean()
-        if !(assertType(expr: expr.left, errorMessage: nil, typeAssertions: .isType(QsBoolean())) && assertType(expr: expr.right, errorMessage: nil, typeAssertions: .isType(QsBoolean()))) {
+        if !(
+            assertType(expr: expr.left, errorMessage: nil, typeAssertions: .isType(QsBoolean())) &&
+            assertType(expr: expr.right, errorMessage: nil, typeAssertions: .isType(QsBoolean()))
+        ) {
             error(message: "Binary operator '\(expr.opr.lexeme)' can only be applied to operands of type 'boolean' and 'boolean'", on: expr)
         }
     }
@@ -1011,7 +1052,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return nil
     }
     
-//    internal func visitSetExpr(expr: SetExpr) {
+//    func visitSetExpr(expr: SetExpr) {
 //        defer {
 //            expr.fallbackToErrorType(assignable: false)
 //            expr.type!.assignable = false
@@ -1034,7 +1075,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // TODO: fill in
     }
     
-    func visitArraySetExpr(expr: SubscriptSetExpr) {
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
         // TODO: fill in
     }
     
@@ -1074,7 +1115,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         expr.type = expr.to.type!
-        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
+        if assertType(
+            expr: expr.value,
+            errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'",
+            typeAssertions: .isSubTypeOf(expr.to.type!)
+        ) {
             implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
         }
     }
@@ -1093,7 +1138,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         assertionFailure("Implicit cast expression should not be visited!")
     }
     
-    internal func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmt(stmt: ClassStmt) {
         if stmt.symbolTableIndex == nil {
             return
         }
@@ -1116,7 +1161,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             let fieldType = fieldSymbol.type!
             if field.initializer != nil {
-                if assertType(expr: field.initializer!, errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'", typeAssertions: .isSubTypeOf(fieldType)) {
+                if assertType(
+                    expr: field.initializer!,
+                    errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'",
+                    typeAssertions: .isSubTypeOf(fieldType)
+                ) {
                     implicitlyCastExprOfSubTypeToType(expr: &field.initializer!, toType: fieldType, reportError: true)
                 }
                 
@@ -1145,7 +1194,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         let isDub = stmt.function.keyword.isDummy()
         
         if isInitializer && !isDub {
-            let instanceVariableHasInitializedInInitializerChecker = InstanceVariableHasInitializedInInitializerChecker(
+            let instanceVariableHasInitializedInInitializerChecker = InstanceVariableInitializedInInitializerChecker(
                 reportErrorForReturnStatement: { returnStmt, message in
                     self.error(message: message, on: returnStmt.keyword)
                 },
@@ -1157,24 +1206,25 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 },
                 symbolTable: symbolTable
             )
-            for field in accompanyingClassStmt.fields {
-                if field.symbolTableIndex != nil {
-                    instanceVariableHasInitializedInInitializerChecker.trackVariable(variableId: field.symbolTableIndex!)
-                }
+            for field in accompanyingClassStmt.fields where field.symbolTableIndex != nil {
+                instanceVariableHasInitializedInInitializerChecker.trackVariable(variableId: field.symbolTableIndex!)
             }
             if accompanyingClassStmt.symbolTableIndex != nil {
                 
-                instanceVariableHasInitializedInInitializerChecker.checkStatements(stmt.function.body, withinClass: accompanyingClassStmt.symbolTableIndex!)
+                instanceVariableHasInitializedInInitializerChecker.checkStatements(
+                    stmt.function.body,
+                    withinClass: accompanyingClassStmt.symbolTableIndex!
+                )
             }
         }
     }
     
-    internal func visitMethodStmt(stmt: MethodStmt) {
+    func visitMethodStmt(stmt: MethodStmt) {
         assertionFailure("visitMethodStmt should never be called!")
         // this should never be visited
     }
     
-    internal func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmt(stmt: FunctionStmt) {
         if stmt.scopeIndex == nil {
             return
         }
@@ -1203,13 +1253,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitExpressionStmt(stmt: ExpressionStmt) {
+    func visitExpressionStmt(stmt: ExpressionStmt) {
         typeCheck(stmt.expression)
     }
     
-    internal func visitIfStmt(stmt: IfStmt) {
+    func visitIfStmt(stmt: IfStmt) {
         typeCheck(stmt.condition)
-        assertType(expr: stmt.condition, errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean()))
+        assertType(
+            expr: stmt.condition,
+            errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean",
+            typeAssertions: .isType(QsBoolean())
+        )
         typeCheck(stmt.thenBranch)
         for elseIfBranch in stmt.elseIfBranches {
             typeCheck(elseIfBranch)
@@ -1219,21 +1273,32 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitOutputStmt(stmt: OutputStmt) {
+    func visitOutputStmt(stmt: OutputStmt) {
         for expression in stmt.expressions {
             typeCheck(expression)
         }
     }
     
-    internal func visitInputStmt(stmt: InputStmt) {
+    func visitInputStmt(stmt: InputStmt) {
         for expression in stmt.expressions {
             typeCheck(expression)
-            assertType(expr: expression, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
-            assertType(expr: expression, errorMessage: "Cannot input to type '\(printType(expression.type!))'", typeAssertions: .isType(QsInt()), .isType(QsAnyType()), .isType(QsDouble()), .isString)
+            assertType(
+                expr: expression,
+                errorMessage: "Cannot assign to immutable value",
+                typeAssertions: .isAssignable
+            )
+            assertType(
+                expr: expression,
+                errorMessage: "Cannot input to type '\(printType(expression.type!))'",
+                typeAssertions: .isType(QsInt()),
+                .isType(QsAnyType()),
+                .isType(QsDouble()),
+                .isString
+            )
         }
     }
     
-    internal func visitReturnStmt(stmt: ReturnStmt) {
+    func visitReturnStmt(stmt: ReturnStmt) {
         if stmt.value != nil {
             typeCheck(stmt.value!)
         }
@@ -1248,7 +1313,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if stmt.value == nil {
                     error(message: "Non-void function should return a value", on: stmt.keyword)
                 } else {
-                    if assertType(expr: stmt.value!, errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'", typeAssertions: .isSubTypeOf(returnType)) {
+                    if assertType(
+                        expr: stmt.value!,
+                        errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'",
+                        typeAssertions: .isSubTypeOf(returnType)
+                    ) {
                         implicitlyCastExprOfSubTypeToType(expr: &stmt.value!, toType: returnType, reportError: true)
                     }
                 }
@@ -1256,29 +1325,45 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
+    func visitLoopFromStmt(stmt: LoopFromStmt) {
         typeCheck(stmt.lRange)
         typeCheck(stmt.rRange)
         if stmt.variable.type == nil {
             typeCheck(stmt.variable)
-            assertType(expr: stmt.variable, errorMessage: "Type '\(printType(stmt.variable.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
+            assertType(
+                expr: stmt.variable,
+                errorMessage: "Type '\(printType(stmt.variable.type!))' cannot be used as an int",
+                typeAssertions: .isType(QsInt())
+            )
         }
-        assertType(expr: stmt.lRange, errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
-        assertType(expr: stmt.rRange, errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int", typeAssertions: .isType(QsInt()))
+        assertType(
+            expr: stmt.lRange,
+            errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int",
+            typeAssertions: .isType(QsInt())
+        )
+        assertType(
+            expr: stmt.rRange,
+            errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int",
+            typeAssertions: .isType(QsInt())
+        )
         typeCheck(stmt.body)
     }
     
-    internal func visitWhileStmt(stmt: WhileStmt) {
+    func visitWhileStmt(stmt: WhileStmt) {
         typeCheck(stmt.expression)
-        assertType(expr: stmt.expression, errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean", typeAssertions: .isType(QsBoolean()))
+        assertType(
+            expr: stmt.expression,
+            errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean",
+            typeAssertions: .isType(QsBoolean())
+        )
         typeCheck(stmt.body)
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) {
+    func visitBreakStmt(stmt: BreakStmt) {
         // nothing to do
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) {
+    func visitContinueStmt(stmt: ContinueStmt) {
         // nothing to do
     }
     
@@ -1372,10 +1457,8 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     private func typeClassFields(statements: [Stmt]) {
-        for statement in statements {
-            if statement is ClassStmt {
-                typeClassFields(classStmt: statement as! ClassStmt)
-            }
+        for statement in statements where statement is ClassStmt {
+            typeClassFields(classStmt: statement as! ClassStmt)
         }
     }
     

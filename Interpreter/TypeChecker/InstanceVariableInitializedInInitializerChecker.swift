@@ -1,4 +1,4 @@
-class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
+class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
     private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
     private var symbolTable: SymbolTables
@@ -8,21 +8,31 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
     private var withinClass: Int = 0
     
     private enum AnalysisInterrupts: Error {
-        case LoopExecutionFlowInterrupt // for break and continue
-        case ProgramExitInterrupt // for exit
+        case loopExecutionFlowInterrupt // for break and continue
+        case programExitInterrupt // for exit
     }
     
-    typealias State = ([Int : Bool], Int, Int)
+    private struct State {
+        var hasInitializedDict: [Int : Bool]
+        var totalUninitialized: Int
+        var symbolTableId: Int
+    }
+    
     private func saveState() -> State {
-        return (hasInitializedDict, totalUninitialized, symbolTable.getCurrentTableId())
+        .init(hasInitializedDict: hasInitializedDict, totalUninitialized: totalUninitialized, symbolTableId: symbolTable.getCurrentTableId())
     }
     private func restoreState(state: State) {
-        hasInitializedDict = state.0
-        totalUninitialized = state.1
-        symbolTable.gotoTable(state.2)
+        hasInitializedDict = state.hasInitializedDict
+        totalUninitialized = state.totalUninitialized
+        symbolTable.gotoTable(state.symbolTableId)
     }
     
-    internal init(reportErrorForReturnStatement: @escaping ((ReturnStmt, String) -> Void), reportErrorForExpression: @escaping ((Expr, String) -> Void), reportEndingError: @escaping ((String) -> Void), symbolTable: SymbolTables) {
+    init(
+        reportErrorForReturnStatement: @escaping ((ReturnStmt, String) -> Void),
+        reportErrorForExpression: @escaping ((Expr, String) -> Void),
+        reportEndingError: @escaping ((String) -> Void),
+        symbolTable: SymbolTables
+    ) {
         self.reportErrorForReturnStatement = reportErrorForReturnStatement
         self.reportErrorForExpression = reportErrorForExpression
         self.reportEndingError = reportEndingError
@@ -41,33 +51,31 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
     
     private func getUninitialized() -> [Int] {
         var uninitializedVariables: [Int] = []
-        for element in hasInitializedDict {
-            if element.value == false {
-                uninitializedVariables.append(element.key)
-            }
+        for element in hasInitializedDict where element.value == false {
+            uninitializedVariables.append(element.key)
         }
         return uninitializedVariables
     }
     
-    internal func visitClassStmt(stmt: ClassStmt) {
+    func visitClassStmt(stmt: ClassStmt) {
         // there shouldn't be any
     }
     
-    internal func visitMethodStmt(stmt: MethodStmt) {
+    func visitMethodStmt(stmt: MethodStmt) {
         // there shouldn't be any
     }
     
-    internal func visitFunctionStmt(stmt: FunctionStmt) {
+    func visitFunctionStmt(stmt: FunctionStmt) {
         // there shouldn't be any
     }
     
-    internal func visitExpressionStmt(stmt: ExpressionStmt) {
+    func visitExpressionStmt(stmt: ExpressionStmt) {
         markVariables(stmt.expression)
     }
     
     private var branchingInitializedSetsStack: [Set<Int>] = []
     
-    internal func visitIfStmt(stmt: IfStmt) throws {
+    func visitIfStmt(stmt: IfStmt) throws {
         markVariables(stmt.condition)
         let previousTrackedState = saveState()
         var runningState = previousTrackedState
@@ -76,7 +84,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         func processBranch(_ stmt: BlockStmt) {
             do {
                 try markVariables(stmt)
-            } catch AnalysisInterrupts.ProgramExitInterrupt {
+            } catch AnalysisInterrupts.programExitInterrupt {
                 branchingInitializedSetsStack.popLast()
                 branchingInitializedSetsStack.append(executionTerminatedSet)
             } catch {
@@ -127,7 +135,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         
         restoreState(state: previousTrackedState)
         if runningUnion == executionTerminatedSet {
-            throw AnalysisInterrupts.ProgramExitInterrupt
+            throw AnalysisInterrupts.programExitInterrupt
         } else {
             for remaining in runningUnion {
                 markAsInitialized(remaining)
@@ -143,11 +151,11 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         restoreState(state: state)
     }
     
-    internal func visitOutputStmt(stmt: OutputStmt) {
+    func visitOutputStmt(stmt: OutputStmt) {
         markVariables(stmt.expressions)
     }
     
-    internal func visitInputStmt(stmt: InputStmt) {
+    func visitInputStmt(stmt: InputStmt) {
         if stmt is GetExpr && (stmt as! GetExpr).object is VariableExpr && ((stmt as! GetExpr).object as! VariableExpr).name.lexeme == "this" {
             guard let id = (stmt as! GetExpr).propertyId else {
                 return
@@ -167,7 +175,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         markVariables(stmt.expressions)
     }
     
-    internal func visitReturnStmt(stmt: ReturnStmt) {
+    func visitReturnStmt(stmt: ReturnStmt) {
         if stmt.value != nil {
             markVariables(stmt.value!)
         }
@@ -177,28 +185,28 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         }
     }
     
-    internal func visitLoopFromStmt(stmt: LoopFromStmt) {
+    func visitLoopFromStmt(stmt: LoopFromStmt) {
         markVariables(stmt.lRange)
         markVariables(stmt.rRange)
         processLoopBlockStmt(stmt.body)
     }
     
-    internal func visitWhileStmt(stmt: WhileStmt) {
+    func visitWhileStmt(stmt: WhileStmt) {
         markVariables(stmt.expression)
         processLoopBlockStmt(stmt.body)
     }
     
-    internal func visitBreakStmt(stmt: BreakStmt) throws {
+    func visitBreakStmt(stmt: BreakStmt) throws {
         // do not analyze anything after this
-        throw AnalysisInterrupts.LoopExecutionFlowInterrupt
+        throw AnalysisInterrupts.loopExecutionFlowInterrupt
     }
     
-    internal func visitContinueStmt(stmt: ContinueStmt) throws {
+    func visitContinueStmt(stmt: ContinueStmt) throws {
         // like the break statement
-        throw AnalysisInterrupts.LoopExecutionFlowInterrupt
+        throw AnalysisInterrupts.loopExecutionFlowInterrupt
     }
     
-    internal func visitBlockStmt(stmt: BlockStmt) throws {
+    func visitBlockStmt(stmt: BlockStmt) throws {
         if stmt.scopeIndex != nil {
             let previousSymbolTablePosition = symbolTable.getCurrentTableId()
             symbolTable.gotoTable(stmt.scopeIndex!)
@@ -211,36 +219,36 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
     
     func visitExitStmt(stmt: ExitStmt) throws {
         // behavior when an exit statement is seen: just ignore this branch of code entirely. it doesn't matter if anything happens anyway
-        throw AnalysisInterrupts.ProgramExitInterrupt
+        throw AnalysisInterrupts.programExitInterrupt
     }
     
-    internal func visitGroupingExpr(expr: GroupingExpr) {
+    func visitGroupingExpr(expr: GroupingExpr) {
         markVariables(expr.expression)
     }
     
-    internal func visitLiteralExpr(expr: LiteralExpr) {
+    func visitLiteralExpr(expr: LiteralExpr) {
         // do nothing
     }
     
-    internal func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         markVariables(expr.values)
     }
     
-    internal func visitStaticClassExpr(expr: StaticClassExpr) {
+    func visitStaticClassExpr(expr: StaticClassExpr) {
         // do nothing
     }
     
-    internal func visitThisExpr(expr: ThisExpr) {
+    func visitThisExpr(expr: ThisExpr) {
         if !finishedInitialization() {
             reportError(expr, message: "'this' is unavailable until all stored properties are initialized")
         }
     }
     
-    internal func visitSuperExpr(expr: SuperExpr) {
+    func visitSuperExpr(expr: SuperExpr) {
         // do nothing
     }
     
-    internal func visitVariableExpr(expr: VariableExpr) {
+    func visitVariableExpr(expr: VariableExpr) {
         let index = expr.symbolTableIndex
         if index != nil {
             let symbol = symbolTable.getSymbol(id: index!) as! VariableSymbol
@@ -250,12 +258,12 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         }
     }
     
-    internal func visitSubscriptExpr(expr: SubscriptExpr) {
+    func visitSubscriptExpr(expr: SubscriptExpr) {
         markVariables(expr.expression)
         markVariables(expr.index)
     }
     
-    internal func visitCallExpr(expr: CallExpr) {
+    func visitCallExpr(expr: CallExpr) {
         if expr.object != nil {
             markVariables(expr.object!)
         }
@@ -281,7 +289,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         }
     }
     
-    internal func visitGetExpr(expr: GetExpr) {
+    func visitGetExpr(expr: GetExpr) {
         // as long as there is a get expression, as long as it's not on a ThisExpr, it *must* be marked!
         if expr.object is ThisExpr {
             if expr.propertyId != nil {
@@ -292,28 +300,28 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         markVariables(expr.object)
     }
     
-    internal func visitUnaryExpr(expr: UnaryExpr) {
+    func visitUnaryExpr(expr: UnaryExpr) {
         markVariables(expr.right)
     }
     
-    internal func visitCastExpr(expr: CastExpr) {
+    func visitCastExpr(expr: CastExpr) {
         markVariables(expr.value)
     }
     
-    internal func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         markVariables(expr.capacity)
     }
     
-    internal func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         markVariables(expr.arguments)
     }
     
-    internal func visitBinaryExpr(expr: BinaryExpr) {
+    func visitBinaryExpr(expr: BinaryExpr) {
         markVariables(expr.left)
         markVariables(expr.right)
     }
     
-    internal func visitLogicalExpr(expr: LogicalExpr) {
+    func visitLogicalExpr(expr: LogicalExpr) {
         markVariables(expr.left)
         // the right might not always be executed because logical operators are short-circuited
         let state = saveState()
@@ -321,7 +329,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         restoreState(state: state)
     }
     
-    internal func visitPropertySetExpr(expr: PropertySetExpr) {
+    func visitPropertySetExpr(expr: PropertySetExpr) {
         if expr.object is ThisExpr {
             markAsInitialized(expr.propertyId!)
         } else {
@@ -330,13 +338,13 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         markVariables(expr.value)
     }
     
-    internal func visitArraySetExpr(expr: SubscriptSetExpr) {
+    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
         markVariables(expr.expression)
         markVariables(expr.index)
         markVariables(expr.value)
     }
     
-    internal func visitAssignExpr(expr: AssignExpr) {
+    func visitAssignExpr(expr: AssignExpr) {
         markVariables(expr.value)
         if expr.to.symbolTableIndex != nil {
             let symbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
@@ -346,11 +354,11 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
         }
     }
     
-    internal func visitIsTypeExpr(expr: IsTypeExpr) {
+    func visitIsTypeExpr(expr: IsTypeExpr) {
         markVariables(expr.left)
     }
     
-    internal func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         markVariables(expr.expression)
     }
     
@@ -395,7 +403,7 @@ class InstanceVariableHasInitializedInInitializerChecker: StmtThrowVisitor, Expr
     
     public func trackVariable(variableId: Int) {
         if hasInitializedDict[variableId] == nil {
-            totalUninitialized+=1
+            totalUninitialized += 1
         }
         hasInitializedDict[variableId] = false
     }

@@ -61,9 +61,9 @@ class FunctionNameSymbol: Symbol {
 func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
     var lowerBound = functionStmt.params.count
     for i in 0..<functionStmt.params.count {
-        let index = functionStmt.params.count-i-1
+        let index = functionStmt.params.count - i - 1
         if functionStmt.params[index].initializer != nil {
-            lowerBound=index
+            lowerBound = index
         }
     }
     return lowerBound...functionStmt.params.count
@@ -118,7 +118,17 @@ class MethodSymbol: FunctionLikeSymbol {
         self.functionParams = []
     }
     
-    init(name: String, withinClass: Int, overridedBy: [Int], isStatic: Bool, visibility: VisibilityModifier, functionParams: [FunctionParam], paramRange: ClosedRange<Int>, returnType: QsType, isConstructor: Bool) {
+    init(
+        name: String,
+        withinClass: Int,
+        overridedBy: [Int],
+        isStatic: Bool,
+        visibility: VisibilityModifier,
+        functionParams: [FunctionParam],
+        paramRange: ClosedRange<Int>,
+        returnType: QsType,
+        isConstructor: Bool
+    ) {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
@@ -160,7 +170,15 @@ class ClassChain {
     var parentOf: [Int]
 }
 class ClassSymbol: Symbol {
-    init(name: String, displayName: String, nonSignatureName: String, classScopeSymbolTableIndex: Int? = nil, upperClass: Int? = nil, depth: Int? = nil, parentOf: [Int]) {
+    init(
+        name: String,
+        displayName: String,
+        nonSignatureName: String,
+        classScopeSymbolTableIndex: Int? = nil,
+        upperClass: Int? = nil,
+        depth: Int? = nil,
+        parentOf: [Int]
+    ) {
         self.id = -1
         self.belongsToTable = -1
         self.runtimeId = -1
@@ -179,7 +197,7 @@ class ClassSymbol: Symbol {
         self.runtimeId = -1
         self.name = name
         self.nonSignatureName = classStmt.name.lexeme
-        if classStmt.expandedTemplateParameters == nil || classStmt.expandedTemplateParameters!.count == 0 {
+        if classStmt.expandedTemplateParameters == nil || classStmt.expandedTemplateParameters!.isEmpty {
             displayName = classStmt.name.lexeme
         } else {
             displayName = name
@@ -212,10 +230,8 @@ class ClassSymbol: Symbol {
         symbolTable.gotoTable(classScopeSymbolTableIndex!)
         let allSymbols = symbolTable.getAllSymbols()
         var result: [MethodSymbol] = []
-        for symbol in allSymbols {
-            if symbol is MethodSymbol {
-                result.append(symbol as! MethodSymbol)
-            }
+        for symbol in allSymbols where symbol is MethodSymbol {
+            result.append(symbol as! MethodSymbol)
         }
         return result
     }

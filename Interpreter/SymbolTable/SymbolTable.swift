@@ -4,7 +4,7 @@ class SymbolTables {
         var parent: SymbolTable?
         var childTables: [SymbolTable] = []
         private var table: [String : Symbol] = [:]
-        private var allSymbolsCache: [Symbol]? = nil
+        private var allSymbolsCache: [Symbol]?
         init(parent: SymbolTable?, id: Int) {
             self.parent = parent
             self.id = id
@@ -49,8 +49,8 @@ class SymbolTables {
     }
     
     public func getClassesRuntimeIdToClassNameArray() -> [String] {
-        var result = Array(repeating: "", count: getClassRuntimeIdCount()+1)
-        classSymbolTableIndexToRuntimeIdDict.forEach { (key, value) in
+        var result = Array(repeating: "", count: getClassRuntimeIdCount() + 1)
+        classSymbolTableIndexToRuntimeIdDict.forEach { key, value in
             let symbol = getSymbol(id: key) as! ClassSymbol
             result[value] = symbol.displayName
         }
@@ -71,7 +71,7 @@ class SymbolTables {
     }
     
     public func createTableAtScope() -> Int {
-        let newTable = SymbolTable.init(parent: current, id: tables.count)
+        let newTable: SymbolTable = .init(parent: current, id: tables.count)
         current.childTables.append(newTable)
         tables.append(newTable)
         return newTable.id
@@ -101,7 +101,7 @@ class SymbolTables {
     
     public func query(_ name: String) -> Symbol? {
         var queryingTable: SymbolTable? = current
-        while (queryingTable != nil) {
+        while queryingTable != nil {
             if let result = queryingTable!.queryTable(name: name) {
                 return result
             }
@@ -111,7 +111,7 @@ class SymbolTables {
     }
     
     public func getSymbolIndex(name: String) -> Int? {
-        return query(name)?.id ?? nil
+        query(name)?.id
     }
     
     public func addToSymbolTable(symbol: Symbol) -> Int {
@@ -119,7 +119,7 @@ class SymbolTables {
         newSymbol.id = allSymbols.count
         newSymbol.belongsToTable = current.id
         if newSymbol is ClassSymbol {
-            classRuntimeIdCount+=1
+            classRuntimeIdCount += 1
             classSymbolTableIndexToRuntimeIdDict[newSymbol.id] = classRuntimeIdCount
             (newSymbol as! ClassSymbol).runtimeId = classRuntimeIdCount
         }
@@ -171,7 +171,7 @@ class SymbolTables {
         for symbol in allSymbols {
             tableToPrint.append(printSymbol(symbol: symbol))
         }
-        if tableToPrint.count == 0 {
+        if tableToPrint.isEmpty {
             return
         }
         var lengths: [Int] = Array(repeating: 0, count: tableToPrint[0].count)
@@ -184,19 +184,19 @@ class SymbolTables {
         // output it
         for row in tableToPrint {
             for i in 0..<row.count {
-                let isLastColumn = i==row.count-1
+                let isLastColumn = (i == row.count - 1)
                 var output = ""
-                let whitespaceCount = lengths[i]-row[i].count
-                if i==0 {
+                let whitespaceCount = lengths[i] - row[i].count
+                if i == 0 {
                     // its the ID, deal with it separately
-                    for j in 0..<whitespaceCount {
-                        output+="0"
+                    for _ in 0..<whitespaceCount {
+                        output += "0"
                     }
-                    output+=row[i]
+                    output += row[i]
                 } else {
-                    output=row[i]
-                    for j in 0..<whitespaceCount {
-                        output+=" "
+                    output = row[i]
+                    for _ in 0 ..< whitespaceCount {
+                        output += " "
                     }
                 }
                 print(output, terminator: (isLastColumn ? "\n" : " | "))

@@ -12,7 +12,7 @@
 		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
 		D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBC829221A0C00C9B247 /* Environment.swift */; };
 		D00DBBCB2922447900C9B247 /* DebugPrint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBCA2922447900C9B247 /* DebugPrint.swift */; };
-		D047BE4528688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */; };
+		D047BE4528688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */; };
 		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
 		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
 		D052DEF0283B321300C060FE /* stringifyOptional.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEF283B321300C060FE /* stringifyOptional.swift */; };
@@ -79,11 +79,12 @@
 		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
 		D00DBBC829221A0C00C9B247 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		D00DBBCA2922447900C9B247 /* DebugPrint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPrint.swift; sourceTree = "<group>"; };
-		D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableHasInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
+		D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
 		D052DEEF283B321300C060FE /* stringifyOptional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stringifyOptional.swift; sourceTree = "<group>"; };
 		D062D66F291E640100920A3E /* Interpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Interpreter.swift; sourceTree = "<group>"; };
+		D06507AA299BDA6100D9B3EB /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		D0691C552876D52000DA85F3 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		D0691C562876E2DF00DA85F3 /* VMType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VMType.h; sourceTree = "<group>"; };
 		D0691C572876E2EC00DA85F3 /* VMType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VMType.swift; sourceTree = "<group>"; };
@@ -184,7 +185,7 @@
 			isa = PBXGroup;
 			children = (
 				D06A492F282FEACB005DE578 /* TypeChecker.swift */,
-				D047BE4428688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift */,
+				D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */,
 				D06E65702892691100442105 /* GuaranteeReturnChecker.swift */,
 			);
 			path = TypeChecker;
@@ -257,6 +258,7 @@
 		D0DD7C1028179A1B00FBD20C = {
 			isa = PBXGroup;
 			children = (
+				D06507AA299BDA6100D9B3EB /* .swiftlint.yml */,
 				D0DD7C1B28179A1B00FBD20C /* Interpreter */,
 				D0DD7C1A28179A1B00FBD20C /* Products */,
 			);
@@ -341,6 +343,7 @@
 				D0DD7C1528179A1B00FBD20C /* Sources */,
 				D0DD7C1628179A1B00FBD20C /* Frameworks */,
 				D0DD7C1728179A1B00FBD20C /* CopyFiles */,
+				D06507A9299BDA3F00D9B3EB /* Run Script */,
 			);
 			buildRules = (
 			);
@@ -385,13 +388,35 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		D06507A9299BDA3F00D9B3EB /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nswiftlint\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		D0DD7C1528179A1B00FBD20C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				D070FBC72877F82600EF0033 /* VMInterface.swift in Sources */,
-				D047BE4528688DA200200DD7 /* InstanceVariableHasInitializedInInitializerChecker.swift in Sources */,
+				D047BE4528688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift in Sources */,
 				D0691C5F2877220500DA85F3 /* disassembler.c in Sources */,
 				D0DD7C2628179A5C00FBD20C /* TokenType.swift in Sources */,
 				D0AA39122823BB1900CF94ED /* AstTypeEquality.swift in Sources */,

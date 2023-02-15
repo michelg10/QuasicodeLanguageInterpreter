@@ -24,15 +24,19 @@ func typesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
                 
                 // compare their template types
                 if lhsClass.templateArguments!.count != rhsClass.templateArguments!.count {
-                    return false // this shouldn't happen because its the same class identifier but if i dont do this the next one might crash so... safest route is to just return false
+                    // this shouldn't happen because its the same class identifier
+                    // but if i dont do this the next one might crash so...
+                    // the safest route is to just return false
+                    return false
                 }
                 
-                for i in 0..<lhsClass.templateArguments!.count {
-                    if !typesEqual(lhsClass.templateArguments![i], rhsClass.templateArguments![i]) {
-                        return false
-                    }
+                if lhsClass.templateArguments!.elementsEqual(rhsClass.templateArguments!, by: { lhs, rhs in
+                    typesEqual(lhs, rhs)
+                }) {
+                    return true
+                } else {
+                    return false
                 }
-                return true
             } else {
                 return false
             }
