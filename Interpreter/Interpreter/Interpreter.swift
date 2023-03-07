@@ -180,9 +180,14 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return nil
     }
     
-    func visitGetExprOptionalAny(expr: GetExpr) -> Any? {
-        // TODO
-        return nil
+    func visitGetExprOptionalAny(expr: GetExpr) throws -> Any? {
+        // TODO: this, static class, or an object
+        let value = try interpret(expr.object)
+        if let value = value as? QsArrayReference {
+            return value.count
+        } else {
+            preconditionFailure("Operation not implemented")
+        }
     }
     
     func visitUnaryExprOptionalAny(expr: UnaryExpr) throws -> Any? {
