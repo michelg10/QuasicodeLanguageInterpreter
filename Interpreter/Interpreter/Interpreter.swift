@@ -5,8 +5,19 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
     private var environment = Environment()
     
+    private var stringClassId = -1
+    
+    private func getStringType() -> QsType {
+        return QsClass(name: "String", id: stringClassId)
+    }
+    
     private func printToStdout(_ str: String) {
         print(str, terminator: "")
+    }
+    
+    private func getStdin() -> String {
+        print("Expect input: ", terminator: "")
+        return readLine(strippingNewline: true) ?? ""
     }
     
     private enum InterpreterRuntimeError: Error {
@@ -570,7 +581,38 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     func visitInputStmt(stmt: InputStmt) throws {
-        // TODO
+        for expression in stmt.expressions {
+            let input = getStdin()
+            if typesEqual(expression.type!, QsInt(), anyEqAny: true) {
+                var value: Int
+                if let input = Int(input) {
+                    value = input
+                } else if let input = Double(input) {
+                    value = Int(input)
+                } else {
+                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printType(expression.type!))", expression.startLocation, expression.endLocation)
+                }
+                try assignTo(lhs: expression, rhs: value)
+            } else if typesEqual(expression.type!, QsDouble(), anyEqAny: true) {
+                if let input = Double(input) {
+                    try assignTo(lhs: expression, rhs: input)
+                } else {
+                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printType(expression.type!))", expression.startLocation, expression.endLocation)
+                }
+            } else if typesEqual(expression.type!, getStringType(), anyEqAny: true) {
+                try assignTo(lhs: expression, rhs: input)
+            } else if typesEqual(expression.type!, QsAnyType(), anyEqAny: true) {
+                if let input = Int(input) {
+                    try assignTo(lhs: expression, rhs: input)
+                } else if let input = Double(input) {
+                    try assignTo(lhs: expression, rhs: input)
+                } else {
+                    try assignTo(lhs: expression, rhs: input)
+                }
+            } else {
+                preconditionFailure("Expected input expression to be of type Int, Double, or String")
+            }
+        }
     }
     
     func visitReturnStmt(stmt: ReturnStmt) throws {
@@ -634,30 +676,31 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
+    private func assignTo(lhs: Expr, rhs: Any?) throws {
+        if lhs is GetExpr {
+            // TODO
+        } else if lhs is SubscriptExpr {
+            let lhs = lhs as! SubscriptExpr
+            let lhsObject = try interpret(lhs.expression) as! QsArrayReference
+            let lhsIndex = try interpret(lhs.index) as! Int
+            lhsObject[lhsIndex] = rhs
+        } else if lhs is VariableToSetExpr {
+            let lhs = lhs as! VariableToSetExpr
+            environment.add(symbolTableId: lhs.to.symbolTableIndex!, name: lhs.to.name.lexeme, value: rhs)
+        } else if lhs is VariableExpr {
+            let lhs = lhs as! VariableExpr
+            environment.add(symbolTableId: lhs.symbolTableIndex!, name: lhs.name.lexeme, value: rhs)
+        } else {
+            preconditionFailure("Unrecognized assignable expression \(type(of: lhs))")
+        }
+    }
+    
     func visitSetStmt(stmt: SetStmt) throws {
         let rhs = try interpret(stmt.value)
-        func setTo(lhs: Expr, rhs: Any?) throws {
-            if lhs is GetExpr {
-                // TODO
-            } else if lhs is SubscriptExpr {
-                let lhs = lhs as! SubscriptExpr
-                let lhsObject = try interpret(lhs.expression) as! QsArrayReference
-                let lhsIndex = try interpret(lhs.index) as! Int
-                lhsObject[lhsIndex] = rhs
-            } else if lhs is VariableToSetExpr {
-                let lhs = lhs as! VariableToSetExpr
-                environment.add(symbolTableId: lhs.to.symbolTableIndex!, name: lhs.to.name.lexeme, value: rhs)
-            } else if lhs is VariableExpr {
-                let lhs = lhs as! VariableExpr
-                environment.add(symbolTableId: lhs.symbolTableIndex!, name: lhs.name.lexeme, value: rhs)
-            } else {
-                preconditionFailure("Unrecognized assignable expression \(type(of: lhs))")
-            }
-        }
         for i in stmt.chained.indices.reversed() {
-            try setTo(lhs: stmt.chained[i], rhs: rhs)
+            try assignTo(lhs: stmt.chained[i], rhs: rhs)
         }
-        try setTo(lhs: stmt.left, rhs: rhs)
+        try assignTo(lhs: stmt.left, rhs: rhs)
     }
     
     private func interpret(_ expr: Expr) throws -> Any? {
@@ -682,7 +725,8 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func execute(_ stmts: [Stmt]) {
+    func execute(_ stmts: [Stmt], symbolTable: SymbolTables) {
+        stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         self.environment = Environment()
         for stmt in stmts {
             // TODO: error handling, user i/o
