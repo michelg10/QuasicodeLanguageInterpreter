@@ -1,3 +1,3 @@
-internal enum VisibilityModifier {
+public enum VisibilityModifier {
     case PRIVATE, PUBLIC
 }

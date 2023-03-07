@@ -1,13 +1,8 @@
-internal enum InterpreterProblemType {
+public enum InterpreterProblemType {
     case error, warning, breakpoint
 }
 
-internal struct StringLineAndColumnLocation {
-    var line: Int
-    var column: Int
-}
-
-internal struct InterpreterLocation {
+public struct InterpreterLocation {
     var index: Int
     init(index: Int) {
         self.index = index
@@ -23,7 +18,7 @@ internal struct InterpreterLocation {
     }
 }
 
-internal struct InterpreterProblem {
+public struct InterpreterProblem {
     var message: String
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation

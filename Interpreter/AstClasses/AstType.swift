@@ -1,5 +1,5 @@
 // swiftlint:disable all
-internal protocol AstType {
+public protocol AstType {
     func accept(visitor: AstTypeVisitor)
     func accept(visitor: AstTypeStringVisitor) -> String
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType
@@ -8,7 +8,7 @@ internal protocol AstType {
     var endLocation: InterpreterLocation { get set }
 }
 
-internal protocol AstTypeVisitor {
+public protocol AstTypeVisitor {
     func visitAstArrayType(asttype: AstArrayType) 
     func visitAstClassType(asttype: AstClassType) 
     func visitAstTemplateTypeName(asttype: AstTemplateTypeName) 
@@ -18,7 +18,7 @@ internal protocol AstTypeVisitor {
     func visitAstAnyType(asttype: AstAnyType) 
 }
 
-internal protocol AstTypeStringVisitor {
+public protocol AstTypeStringVisitor {
     func visitAstArrayTypeString(asttype: AstArrayType) -> String
     func visitAstClassTypeString(asttype: AstClassType) -> String
     func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String
@@ -28,7 +28,7 @@ internal protocol AstTypeStringVisitor {
     func visitAstAnyTypeString(asttype: AstAnyType) -> String
 }
 
-internal protocol AstTypeAstTypeThrowVisitor {
+public protocol AstTypeAstTypeThrowVisitor {
     func visitAstArrayTypeAstType(asttype: AstArrayType) throws -> AstType
     func visitAstClassTypeAstType(asttype: AstClassType) throws -> AstType
     func visitAstTemplateTypeNameAstType(asttype: AstTemplateTypeName) throws -> AstType
@@ -38,7 +38,7 @@ internal protocol AstTypeAstTypeThrowVisitor {
     func visitAstAnyTypeAstType(asttype: AstAnyType) throws -> AstType
 }
 
-internal protocol AstTypeQsTypeVisitor {
+public protocol AstTypeQsTypeVisitor {
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType
@@ -48,10 +48,10 @@ internal protocol AstTypeQsTypeVisitor {
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType
 }
 
-internal class AstArrayType: AstType {
-    var contains: AstType
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstArrayType: AstType {
+    public var contains: AstType
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(contains: AstType, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.contains = contains
@@ -64,25 +64,25 @@ internal class AstArrayType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstArrayType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstArrayTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstArrayTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstArrayTypeQsType(asttype: self)
     }
 }
 
-internal class AstClassType: AstType {
-    var name: Token
-    var templateArguments: [AstType]?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstClassType: AstType {
+    public var name: Token
+    public var templateArguments: [AstType]?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(name: Token, templateArguments: [AstType]?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.name = name
@@ -97,25 +97,25 @@ internal class AstClassType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstClassType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstClassTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstClassTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstClassTypeQsType(asttype: self)
     }
 }
 
-internal class AstTemplateTypeName: AstType {
-    var belongingClass: String
-    var name: Token
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstTemplateTypeName: AstType {
+    public var belongingClass: String
+    public var name: Token
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(belongingClass: String, name: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.belongingClass = belongingClass
@@ -130,23 +130,23 @@ internal class AstTemplateTypeName: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstTemplateTypeName(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstTemplateTypeNameString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstTemplateTypeNameAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstTemplateTypeNameQsType(asttype: self)
     }
 }
 
-internal class AstIntType: AstType {
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstIntType: AstType {
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.startLocation = startLocation
@@ -157,23 +157,23 @@ internal class AstIntType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstIntType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstIntTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstIntTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstIntTypeQsType(asttype: self)
     }
 }
 
-internal class AstDoubleType: AstType {
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstDoubleType: AstType {
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.startLocation = startLocation
@@ -184,23 +184,23 @@ internal class AstDoubleType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstDoubleType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstDoubleTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstDoubleTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstDoubleTypeQsType(asttype: self)
     }
 }
 
-internal class AstBooleanType: AstType {
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstBooleanType: AstType {
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.startLocation = startLocation
@@ -211,23 +211,23 @@ internal class AstBooleanType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstBooleanType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstBooleanTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstBooleanTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstBooleanTypeQsType(asttype: self)
     }
 }
 
-internal class AstAnyType: AstType {
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class AstAnyType: AstType {
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.startLocation = startLocation
@@ -238,16 +238,16 @@ internal class AstAnyType: AstType {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func accept(visitor: AstTypeVisitor) {
+    public func accept(visitor: AstTypeVisitor) {
         visitor.visitAstAnyType(asttype: self)
     }
-    func accept(visitor: AstTypeStringVisitor) -> String {
+    public func accept(visitor: AstTypeStringVisitor) -> String {
         visitor.visitAstAnyTypeString(asttype: self)
     }
-    func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
+    public func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType {
         try visitor.visitAstAnyTypeAstType(asttype: self)
     }
-    func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
+    public func accept(visitor: AstTypeQsTypeVisitor) -> QsType {
         visitor.visitAstAnyTypeQsType(asttype: self)
     }
 }

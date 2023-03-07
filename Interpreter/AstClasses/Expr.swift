@@ -1,5 +1,5 @@
 // swiftlint:disable all
-internal protocol Expr {
+public protocol Expr {
     func accept(visitor: ExprVisitor)
     func accept(visitor: ExprThrowVisitor) throws
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType
@@ -12,7 +12,7 @@ internal protocol Expr {
     var endLocation: InterpreterLocation { get set }
 }
 
-internal protocol ExprVisitor {
+public protocol ExprVisitor {
     func visitGroupingExpr(expr: GroupingExpr) 
     func visitLiteralExpr(expr: LiteralExpr) 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) 
@@ -34,7 +34,7 @@ internal protocol ExprVisitor {
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
 }
 
-internal protocol ExprThrowVisitor {
+public protocol ExprThrowVisitor {
     func visitGroupingExpr(expr: GroupingExpr) throws 
     func visitLiteralExpr(expr: LiteralExpr) throws 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws 
@@ -56,7 +56,7 @@ internal protocol ExprThrowVisitor {
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
 }
 
-internal protocol ExprQsTypeThrowVisitor {
+public protocol ExprQsTypeThrowVisitor {
     func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType
     func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType
     func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType
@@ -78,7 +78,7 @@ internal protocol ExprQsTypeThrowVisitor {
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
 }
 
-internal protocol ExprExprThrowVisitor {
+public protocol ExprExprThrowVisitor {
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr
     func visitLiteralExprExpr(expr: LiteralExpr) throws -> Expr
     func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr
@@ -100,7 +100,7 @@ internal protocol ExprExprThrowVisitor {
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
 }
 
-internal protocol ExprStringVisitor {
+public protocol ExprStringVisitor {
     func visitGroupingExprString(expr: GroupingExpr) -> String
     func visitLiteralExprString(expr: LiteralExpr) -> String
     func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String
@@ -122,7 +122,7 @@ internal protocol ExprStringVisitor {
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
-internal protocol ExprOptionalAnyThrowVisitor {
+public protocol ExprOptionalAnyThrowVisitor {
     func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any?
     func visitLiteralExprOptionalAny(expr: LiteralExpr) throws -> Any?
     func visitArrayLiteralExprOptionalAny(expr: ArrayLiteralExpr) throws -> Any?
@@ -144,11 +144,11 @@ internal protocol ExprOptionalAnyThrowVisitor {
     func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
 }
 
-internal class GroupingExpr: Expr {
-    var expression: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class GroupingExpr: Expr {
+    public var expression: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(expression: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
@@ -163,37 +163,37 @@ internal class GroupingExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitGroupingExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitGroupingExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitGroupingExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitGroupingExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGroupingExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitGroupingExprOptionalAny(expr: self)
     }
 }
 
-internal class LiteralExpr: Expr {
-    var value: Any?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class LiteralExpr: Expr {
+    public var value: Any?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(value: Any?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.value = value
@@ -208,37 +208,37 @@ internal class LiteralExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitLiteralExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitLiteralExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLiteralExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitLiteralExprOptionalAny(expr: self)
     }
 }
 
-internal class ArrayLiteralExpr: Expr {
-    var values: [Expr]
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class ArrayLiteralExpr: Expr {
+    public var values: [Expr]
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(values: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.values = values
@@ -253,38 +253,38 @@ internal class ArrayLiteralExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitArrayLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitArrayLiteralExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitArrayLiteralExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitArrayLiteralExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayLiteralExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitArrayLiteralExprOptionalAny(expr: self)
     }
 }
 
-internal class StaticClassExpr: Expr {
-    var classType: AstClassType
-    var classId: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class StaticClassExpr: Expr {
+    public var classType: AstClassType
+    public var classId: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(classType: AstClassType, classId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
@@ -301,38 +301,38 @@ internal class StaticClassExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitStaticClassExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitStaticClassExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitStaticClassExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitStaticClassExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitStaticClassExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitStaticClassExprOptionalAny(expr: self)
     }
 }
 
-internal class ThisExpr: Expr {
-    var keyword: Token
-    var symbolTableIndex: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class ThisExpr: Expr {
+    public var keyword: Token
+    public var symbolTableIndex: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(keyword: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
@@ -349,39 +349,39 @@ internal class ThisExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitThisExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitThisExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitThisExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitThisExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitThisExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitThisExprOptionalAny(expr: self)
     }
 }
 
-internal class SuperExpr: Expr {
-    var keyword: Token
-    var property: Token
-    var propertyId: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class SuperExpr: Expr {
+    public var keyword: Token
+    public var property: Token
+    public var propertyId: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(keyword: Token, property: Token, propertyId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
@@ -400,38 +400,38 @@ internal class SuperExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitSuperExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitSuperExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitSuperExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitSuperExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSuperExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitSuperExprOptionalAny(expr: self)
     }
 }
 
-internal class VariableExpr: Expr {
-    var name: Token
-    var symbolTableIndex: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class VariableExpr: Expr {
+    public var name: Token
+    public var symbolTableIndex: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(name: Token, symbolTableIndex: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.name = name
@@ -448,38 +448,38 @@ internal class VariableExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitVariableExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitVariableExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitVariableExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitVariableExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitVariableExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitVariableExprOptionalAny(expr: self)
     }
 }
 
-internal class SubscriptExpr: Expr {
-    var expression: Expr
-    var index: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class SubscriptExpr: Expr {
+    public var expression: Expr
+    public var index: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(expression: Expr, index: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
@@ -496,42 +496,42 @@ internal class SubscriptExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitSubscriptExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitSubscriptExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitSubscriptExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitSubscriptExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitSubscriptExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitSubscriptExprOptionalAny(expr: self)
     }
 }
 
-internal class CallExpr: Expr {
-    var object: Expr?
-    var property: Token
-    var paren: Token
-    var arguments: [Expr]
-    var uniqueFunctionCall: Int?
-    var polymorphicCallClassIdToIdDict: [Int : Int]?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class CallExpr: Expr {
+    public var object: Expr?
+    public var property: Token
+    public var paren: Token
+    public var arguments: [Expr]
+    public var uniqueFunctionCall: Int?
+    public var polymorphicCallClassIdToIdDict: [Int : Int]?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(object: Expr?, property: Token, paren: Token, arguments: [Expr], uniqueFunctionCall: Int?, polymorphicCallClassIdToIdDict: [Int : Int]?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.object = object
@@ -556,39 +556,39 @@ internal class CallExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitCallExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitCallExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitCallExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitCallExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCallExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitCallExprOptionalAny(expr: self)
     }
 }
 
-internal class GetExpr: Expr {
-    var object: Expr
-    var property: Token
-    var propertyId: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class GetExpr: Expr {
+    public var object: Expr
+    public var property: Token
+    public var propertyId: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(object: Expr, property: Token, propertyId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.object = object
@@ -607,38 +607,38 @@ internal class GetExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitGetExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitGetExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitGetExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitGetExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitGetExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitGetExprOptionalAny(expr: self)
     }
 }
 
-internal class UnaryExpr: Expr {
-    var opr: Token
-    var right: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class UnaryExpr: Expr {
+    public var opr: Token
+    public var right: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.opr = opr
@@ -655,38 +655,38 @@ internal class UnaryExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitUnaryExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitUnaryExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitUnaryExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitUnaryExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitUnaryExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitUnaryExprOptionalAny(expr: self)
     }
 }
 
-internal class CastExpr: Expr {
-    var toType: AstType
-    var value: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class CastExpr: Expr {
+    public var toType: AstType
+    public var value: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(toType: AstType, value: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.toType = toType
@@ -703,38 +703,38 @@ internal class CastExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitCastExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitCastExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitCastExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitCastExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitCastExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitCastExprOptionalAny(expr: self)
     }
 }
 
-internal class ArrayAllocationExpr: Expr {
-    var contains: AstType
-    var capacity: [Expr]
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class ArrayAllocationExpr: Expr {
+    public var contains: AstType
+    public var capacity: [Expr]
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(contains: AstType, capacity: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.contains = contains
@@ -751,39 +751,39 @@ internal class ArrayAllocationExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitArrayAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitArrayAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitArrayAllocationExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitArrayAllocationExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitArrayAllocationExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitArrayAllocationExprOptionalAny(expr: self)
     }
 }
 
-internal class ClassAllocationExpr: Expr {
-    var classType: AstClassType
-    var arguments: [Expr]
-    var callsFunction: Int?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class ClassAllocationExpr: Expr {
+    public var classType: AstClassType
+    public var arguments: [Expr]
+    public var callsFunction: Int?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(classType: AstClassType, arguments: [Expr], callsFunction: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.classType = classType
@@ -802,39 +802,39 @@ internal class ClassAllocationExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitClassAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitClassAllocationExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitClassAllocationExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitClassAllocationExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitClassAllocationExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitClassAllocationExprOptionalAny(expr: self)
     }
 }
 
-internal class BinaryExpr: Expr {
-    var left: Expr
-    var opr: Token
-    var right: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class BinaryExpr: Expr {
+    public var left: Expr
+    public var opr: Token
+    public var right: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(left: Expr, opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
@@ -853,39 +853,39 @@ internal class BinaryExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitBinaryExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitBinaryExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitBinaryExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitBinaryExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitBinaryExprOptionalAny(expr: self)
     }
 }
 
-internal class LogicalExpr: Expr {
-    var left: Expr
-    var opr: Token
-    var right: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class LogicalExpr: Expr {
+    public var left: Expr
+    public var opr: Token
+    public var right: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(left: Expr, opr: Token, right: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
@@ -904,40 +904,40 @@ internal class LogicalExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitLogicalExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitLogicalExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitLogicalExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitLogicalExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitLogicalExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitLogicalExprOptionalAny(expr: self)
     }
 }
 
-internal class VariableToSetExpr: Expr {
-    var to: VariableExpr
-    var annotationColon: Token?
-    var annotation: AstType?
-    var isFirstAssignment: Bool?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class VariableToSetExpr: Expr {
+    public var to: VariableExpr
+    public var annotationColon: Token?
+    public var annotation: AstType?
+    public var isFirstAssignment: Bool?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(to: VariableExpr, annotationColon: Token?, annotation: AstType?, isFirstAssignment: Bool?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.to = to
@@ -958,40 +958,40 @@ internal class VariableToSetExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitVariableToSetExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitVariableToSetExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitVariableToSetExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitVariableToSetExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitVariableToSetExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitVariableToSetExprOptionalAny(expr: self)
     }
 }
 
-internal class IsTypeExpr: Expr {
-    var left: Expr
-    var keyword: Token
-    var right: AstType
-    var rightType: QsType?
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class IsTypeExpr: Expr {
+    public var left: Expr
+    public var keyword: Token
+    public var right: AstType
+    public var rightType: QsType?
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(left: Expr, keyword: Token, right: AstType, rightType: QsType?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
@@ -1012,37 +1012,37 @@ internal class IsTypeExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitIsTypeExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitIsTypeExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitIsTypeExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitIsTypeExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitIsTypeExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitIsTypeExprOptionalAny(expr: self)
     }
 }
 
-internal class ImplicitCastExpr: Expr {
-    var expression: Expr
-    var type: QsType?
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+public class ImplicitCastExpr: Expr {
+    public var expression: Expr
+    public var type: QsType?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(expression: Expr, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
@@ -1057,28 +1057,28 @@ internal class ImplicitCastExpr: Expr {
         self.endLocation = objectToCopy.endLocation
     }
 
-    func fallbackToErrorType(assignable: Bool) {
+    public func fallbackToErrorType(assignable: Bool) {
         if self.type == nil {
             self.type = QsErrorType(assignable: assignable)
         }
     }
 
-    func accept(visitor: ExprVisitor) {
+    public func accept(visitor: ExprVisitor) {
         visitor.visitImplicitCastExpr(expr: self)
     }
-    func accept(visitor: ExprThrowVisitor) throws {
+    public func accept(visitor: ExprThrowVisitor) throws {
         try visitor.visitImplicitCastExpr(expr: self)
     }
-    func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
+    public func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType {
         try visitor.visitImplicitCastExprQsType(expr: self)
     }
-    func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
+    public func accept(visitor: ExprExprThrowVisitor) throws -> Expr {
         try visitor.visitImplicitCastExprExpr(expr: self)
     }
-    func accept(visitor: ExprStringVisitor) -> String {
+    public func accept(visitor: ExprStringVisitor) -> String {
         visitor.visitImplicitCastExprString(expr: self)
     }
-    func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
+    public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitImplicitCastExprOptionalAny(expr: self)
     }
 }

@@ -1,4 +1,4 @@
-internal protocol Symbol {
+public protocol Symbol {
     var id: Int { get set }
     var belongsToTable: Int { get set }
     var name: String { get }
@@ -9,14 +9,14 @@ internal protocol FunctionLikeSymbol: Symbol {
     var functionParams: [FunctionParam] { get set }
 }
 
-internal enum VariableStatus {
+public enum VariableStatus {
     case uninit, initing, globalIniting, fieldIniting, finishedInit
 }
-internal enum VariableType {
+public enum VariableType {
     case global, local, instance, staticVar
 }
 
-internal class VariableSymbol: Symbol {
+public class VariableSymbol: Symbol {
     init(type: QsType? = nil, name: String, variableStatus: VariableStatus, variableType: VariableType) {
         self.id = -1
         self.belongsToTable = -1
@@ -26,14 +26,14 @@ internal class VariableSymbol: Symbol {
         self.variableType = variableType
     }
     
-    var id: Int
-    var belongsToTable: Int
-    var type: QsType?
-    let name: String
-    var variableStatus: VariableStatus
-    var variableType: VariableType
+    public var id: Int
+    public var belongsToTable: Int
+    public var type: QsType?
+    public let name: String
+    public var variableStatus: VariableStatus
+    public var variableType: VariableType
 }
-internal class GlobalVariableSymbol: VariableSymbol {
+public class GlobalVariableSymbol: VariableSymbol {
     init(type: QsType? = nil, name: String, globalDefiningSetExpr: SetStmt, variableStatus: VariableStatus) {
         self.globalDefiningSetExpr = globalDefiningSetExpr
         super.init(type: type, name: name, variableStatus: variableStatus, variableType: .global)
@@ -41,7 +41,7 @@ internal class GlobalVariableSymbol: VariableSymbol {
     
     var globalDefiningSetExpr: SetStmt
 }
-internal class FunctionNameSymbol: Symbol {
+public class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
     init(isForMethods: Bool, name: String, belongingFunctions: [Int]) {
         self.id = -1
@@ -52,11 +52,11 @@ internal class FunctionNameSymbol: Symbol {
     }
     
     // multiple overloaded functions are under the same signature
-    var id: Int
-    var belongsToTable: Int
-    var isForMethods: Bool
-    let name: String
-    var belongingFunctions: [Int]
+    public var id: Int
+    public var belongsToTable: Int
+    public var isForMethods: Bool
+    public let name: String
+    public var belongingFunctions: [Int]
 }
 internal func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
     var lowerBound = functionStmt.params.count
@@ -68,11 +68,11 @@ internal func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRang
     }
     return lowerBound...functionStmt.params.count
 }
-internal struct FunctionParam {
+public struct FunctionParam {
     var name: String
     var type: QsType
 }
-internal class FunctionSymbol: FunctionLikeSymbol {
+public class FunctionSymbol: FunctionLikeSymbol {
     init(name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = -1
         self.belongsToTable = -1
@@ -93,15 +93,15 @@ internal class FunctionSymbol: FunctionLikeSymbol {
         self.functionStmt = nil
     }
     
-    var id: Int
-    var belongsToTable: Int
-    let name: String
-    let functionStmt: FunctionStmt?
-    var functionParams: [FunctionParam]
-    let paramRange: ClosedRange<Int>
-    var returnType: QsType
+    public var id: Int
+    public var belongsToTable: Int
+    public let name: String
+    public let functionStmt: FunctionStmt?
+    public var functionParams: [FunctionParam]
+    public let paramRange: ClosedRange<Int>
+    public var returnType: QsType
 }
-internal class MethodSymbol: FunctionLikeSymbol {
+public class MethodSymbol: FunctionLikeSymbol {
     init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool, isConstructor: Bool) {
         self.id = -1
         self.belongsToTable = -1
@@ -144,19 +144,19 @@ internal class MethodSymbol: FunctionLikeSymbol {
         self.isConstructor = isConstructor
     }
     
-    var id: Int
-    var belongsToTable: Int
-    let name: String
-    let withinClass: Int
-    var overridedBy: [Int]
-    let methodStmt: MethodStmt?
-    let isStatic: Bool
-    let visibility: VisibilityModifier
-    var functionParams: [FunctionParam]
-    let paramRange: ClosedRange<Int>
-    var returnType: QsType
-    var finishedInit: Bool
-    let isConstructor: Bool
+    public var id: Int
+    public var belongsToTable: Int
+    public let name: String
+    public let withinClass: Int
+    public var overridedBy: [Int]
+    public let methodStmt: MethodStmt?
+    public let isStatic: Bool
+    public let visibility: VisibilityModifier
+    public var functionParams: [FunctionParam]
+    public let paramRange: ClosedRange<Int>
+    public var returnType: QsType
+    public var finishedInit: Bool
+    public let isConstructor: Bool
 }
 internal class ClassChain {
     init(upperClass: Int?, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
@@ -169,7 +169,7 @@ internal class ClassChain {
     var depth: Int
     var parentOf: [Int]
 }
-internal class ClassSymbol: Symbol {
+public class ClassSymbol: Symbol {
     init(
         name: String,
         displayName: String,
@@ -208,18 +208,18 @@ internal class ClassSymbol: Symbol {
         self.upperClass = upperClass
     }
     
-    var id: Int
-    var belongsToTable: Int
-    let name: String // is actually its signature
-    var runtimeId: Int
-    let displayName: String
-    let nonSignatureName: String
-    var classScopeSymbolTableIndex: Int?
-    var upperClass: Int?
-    var depth: Int?
-    var parentOf: [Int]
+    public var id: Int
+    public var belongsToTable: Int
+    public let name: String // is actually its signature
+    public var runtimeId: Int
+    public let displayName: String
+    public let nonSignatureName: String
+    public var classScopeSymbolTableIndex: Int?
+    public var upperClass: Int?
+    public var depth: Int?
+    public var parentOf: [Int]
     
-    func getMethodSymbols(symbolTable: SymbolTables) -> [MethodSymbol] {
+    public func getMethodSymbols(symbolTable: SymbolTables) -> [MethodSymbol] {
         if classScopeSymbolTableIndex == nil {
             return []
         }
@@ -237,14 +237,14 @@ internal class ClassSymbol: Symbol {
     }
     
 }
-internal class ClassNameSymbol: Symbol {
+public class ClassNameSymbol: Symbol {
     init(name: String) {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
     }
     
-    var id: Int
-    var belongsToTable: Int
-    let name: String
+    public var id: Int
+    public var belongsToTable: Int
+    public let name: String
 }

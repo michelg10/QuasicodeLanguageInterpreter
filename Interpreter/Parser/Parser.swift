@@ -1,5 +1,5 @@
 // swiftlint:disable:next type_body_length
-class Parser {
+public class Parser {
     enum ParserError: Error {
         case error(String)
     }

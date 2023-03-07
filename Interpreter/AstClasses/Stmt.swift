@@ -1,12 +1,12 @@
 // swiftlint:disable all
-internal protocol Stmt {
+public protocol Stmt {
     func accept(visitor: StmtVisitor)
     func accept(visitor: StmtThrowVisitor) throws
     func accept(visitor: StmtStmtVisitor) -> Stmt
     func accept(visitor: StmtStringVisitor) -> String
 }
 
-internal protocol StmtVisitor {
+public protocol StmtVisitor {
     func visitClassStmt(stmt: ClassStmt) 
     func visitMethodStmt(stmt: MethodStmt) 
     func visitFunctionStmt(stmt: FunctionStmt) 
@@ -25,7 +25,7 @@ internal protocol StmtVisitor {
     func visitSetStmt(stmt: SetStmt) 
 }
 
-internal protocol StmtThrowVisitor {
+public protocol StmtThrowVisitor {
     func visitClassStmt(stmt: ClassStmt) throws 
     func visitMethodStmt(stmt: MethodStmt) throws 
     func visitFunctionStmt(stmt: FunctionStmt) throws 
@@ -44,7 +44,7 @@ internal protocol StmtThrowVisitor {
     func visitSetStmt(stmt: SetStmt) throws 
 }
 
-internal protocol StmtStmtVisitor {
+public protocol StmtStmtVisitor {
     func visitClassStmtStmt(stmt: ClassStmt) -> Stmt
     func visitMethodStmtStmt(stmt: MethodStmt) -> Stmt
     func visitFunctionStmtStmt(stmt: FunctionStmt) -> Stmt
@@ -63,7 +63,7 @@ internal protocol StmtStmtVisitor {
     func visitSetStmtStmt(stmt: SetStmt) -> Stmt
 }
 
-internal protocol StmtStringVisitor {
+public protocol StmtStringVisitor {
     func visitClassStmtString(stmt: ClassStmt) -> String
     func visitMethodStmtString(stmt: MethodStmt) -> String
     func visitFunctionStmtString(stmt: FunctionStmt) -> String
@@ -82,18 +82,18 @@ internal protocol StmtStringVisitor {
     func visitSetStmtString(stmt: SetStmt) -> String
 }
 
-internal class ClassStmt: Stmt {
-    var keyword: Token
-    var name: Token
-    var symbolTableIndex: Int?
-    var instanceThisSymbolTableIndex: Int?
-    var staticThisSymbolTableIndex: Int?
-    var scopeIndex: Int?
-    var templateParameters: [Token]?
-    var expandedTemplateParameters: [AstType]?
-    var superclass: AstClassType?
-    var methods: [MethodStmt]
-    var fields: [AstClassField]
+public class ClassStmt: Stmt {
+    public var keyword: Token
+    public var name: Token
+    public var symbolTableIndex: Int?
+    public var instanceThisSymbolTableIndex: Int?
+    public var staticThisSymbolTableIndex: Int?
+    public var scopeIndex: Int?
+    public var templateParameters: [Token]?
+    public var expandedTemplateParameters: [AstType]?
+    public var superclass: AstClassType?
+    public var methods: [MethodStmt]
+    public var fields: [AstClassField]
     
     init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField]) {
         self.keyword = keyword
@@ -122,25 +122,25 @@ internal class ClassStmt: Stmt {
         self.fields = objectToCopy.fields
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitClassStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitClassStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitClassStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitClassStmtString(stmt: self)
     }
 }
 
-internal class MethodStmt: Stmt {
-    var isStatic: Bool
-    var staticKeyword: Token?
-    var visibilityModifier: VisibilityModifier
-    var function: FunctionStmt
+public class MethodStmt: Stmt {
+    public var isStatic: Bool
+    public var staticKeyword: Token?
+    public var visibilityModifier: VisibilityModifier
+    public var function: FunctionStmt
     
     init(isStatic: Bool, staticKeyword: Token?, visibilityModifier: VisibilityModifier, function: FunctionStmt) {
         self.isStatic = isStatic
@@ -155,30 +155,30 @@ internal class MethodStmt: Stmt {
         self.function = objectToCopy.function
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitMethodStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitMethodStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitMethodStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitMethodStmtString(stmt: self)
     }
 }
 
-internal class FunctionStmt: Stmt {
-    var keyword: Token
-    var name: Token
-    var symbolTableIndex: Int?
-    var nameSymbolTableIndex: Int?
-    var scopeIndex: Int?
-    var params: [AstFunctionParam]
-    var annotation: AstType?
-    var body: [Stmt]
-    var endOfFunction: Token
+public class FunctionStmt: Stmt {
+    public var keyword: Token
+    public var name: Token
+    public var symbolTableIndex: Int?
+    public var nameSymbolTableIndex: Int?
+    public var scopeIndex: Int?
+    public var params: [AstFunctionParam]
+    public var annotation: AstType?
+    public var body: [Stmt]
+    public var endOfFunction: Token
     
     init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token) {
         self.keyword = keyword
@@ -203,22 +203,22 @@ internal class FunctionStmt: Stmt {
         self.endOfFunction = objectToCopy.endOfFunction
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitFunctionStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitFunctionStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitFunctionStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitFunctionStmtString(stmt: self)
     }
 }
 
-internal class ExpressionStmt: Stmt {
-    var expression: Expr
+public class ExpressionStmt: Stmt {
+    public var expression: Expr
     
     init(expression: Expr) {
         self.expression = expression
@@ -227,25 +227,25 @@ internal class ExpressionStmt: Stmt {
         self.expression = objectToCopy.expression
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitExpressionStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitExpressionStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitExpressionStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitExpressionStmtString(stmt: self)
     }
 }
 
-internal class IfStmt: Stmt {
-    var condition: Expr
-    var thenBranch: BlockStmt
-    var elseIfBranches: [IfStmt]
-    var elseBranch: BlockStmt?
+public class IfStmt: Stmt {
+    public var condition: Expr
+    public var thenBranch: BlockStmt
+    public var elseIfBranches: [IfStmt]
+    public var elseBranch: BlockStmt?
     
     init(condition: Expr, thenBranch: BlockStmt, elseIfBranches: [IfStmt], elseBranch: BlockStmt?) {
         self.condition = condition
@@ -260,22 +260,22 @@ internal class IfStmt: Stmt {
         self.elseBranch = objectToCopy.elseBranch
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitIfStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitIfStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitIfStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitIfStmtString(stmt: self)
     }
 }
 
-internal class OutputStmt: Stmt {
-    var expressions: [Expr]
+public class OutputStmt: Stmt {
+    public var expressions: [Expr]
     
     init(expressions: [Expr]) {
         self.expressions = expressions
@@ -284,22 +284,22 @@ internal class OutputStmt: Stmt {
         self.expressions = objectToCopy.expressions
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitOutputStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitOutputStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitOutputStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitOutputStmtString(stmt: self)
     }
 }
 
-internal class InputStmt: Stmt {
-    var expressions: [Expr]
+public class InputStmt: Stmt {
+    public var expressions: [Expr]
     
     init(expressions: [Expr]) {
         self.expressions = expressions
@@ -308,24 +308,24 @@ internal class InputStmt: Stmt {
         self.expressions = objectToCopy.expressions
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitInputStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitInputStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitInputStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitInputStmtString(stmt: self)
     }
 }
 
-internal class ReturnStmt: Stmt {
-    var keyword: Token
-    var value: Expr?
-    var isTerminator: Bool
+public class ReturnStmt: Stmt {
+    public var keyword: Token
+    public var value: Expr?
+    public var isTerminator: Bool
     
     init(keyword: Token, value: Expr?, isTerminator: Bool) {
         self.keyword = keyword
@@ -338,25 +338,25 @@ internal class ReturnStmt: Stmt {
         self.isTerminator = objectToCopy.isTerminator
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitReturnStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitReturnStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitReturnStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitReturnStmtString(stmt: self)
     }
 }
 
-internal class LoopFromStmt: Stmt {
-    var variable: VariableExpr
-    var lRange: Expr
-    var rRange: Expr
-    var body: BlockStmt
+public class LoopFromStmt: Stmt {
+    public var variable: VariableExpr
+    public var lRange: Expr
+    public var rRange: Expr
+    public var body: BlockStmt
     
     init(variable: VariableExpr, lRange: Expr, rRange: Expr, body: BlockStmt) {
         self.variable = variable
@@ -371,23 +371,23 @@ internal class LoopFromStmt: Stmt {
         self.body = objectToCopy.body
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitLoopFromStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitLoopFromStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitLoopFromStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitLoopFromStmtString(stmt: self)
     }
 }
 
-internal class WhileStmt: Stmt {
-    var expression: Expr
-    var body: BlockStmt
+public class WhileStmt: Stmt {
+    public var expression: Expr
+    public var body: BlockStmt
     
     init(expression: Expr, body: BlockStmt) {
         self.expression = expression
@@ -398,22 +398,22 @@ internal class WhileStmt: Stmt {
         self.body = objectToCopy.body
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitWhileStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitWhileStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitWhileStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitWhileStmtString(stmt: self)
     }
 }
 
-internal class BreakStmt: Stmt {
-    var keyword: Token
+public class BreakStmt: Stmt {
+    public var keyword: Token
     
     init(keyword: Token) {
         self.keyword = keyword
@@ -422,22 +422,22 @@ internal class BreakStmt: Stmt {
         self.keyword = objectToCopy.keyword
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitBreakStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitBreakStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitBreakStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitBreakStmtString(stmt: self)
     }
 }
 
-internal class ContinueStmt: Stmt {
-    var keyword: Token
+public class ContinueStmt: Stmt {
+    public var keyword: Token
     
     init(keyword: Token) {
         self.keyword = keyword
@@ -446,23 +446,23 @@ internal class ContinueStmt: Stmt {
         self.keyword = objectToCopy.keyword
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitContinueStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitContinueStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitContinueStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitContinueStmtString(stmt: self)
     }
 }
 
-internal class BlockStmt: Stmt {
-    var statements: [Stmt]
-    var scopeIndex: Int?
+public class BlockStmt: Stmt {
+    public var statements: [Stmt]
+    public var scopeIndex: Int?
     
     init(statements: [Stmt], scopeIndex: Int?) {
         self.statements = statements
@@ -473,22 +473,22 @@ internal class BlockStmt: Stmt {
         self.scopeIndex = objectToCopy.scopeIndex
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitBlockStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitBlockStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitBlockStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitBlockStmtString(stmt: self)
     }
 }
 
-internal class ExitStmt: Stmt {
-    var keyword: Token
+public class ExitStmt: Stmt {
+    public var keyword: Token
     
     init(keyword: Token) {
         self.keyword = keyword
@@ -497,22 +497,22 @@ internal class ExitStmt: Stmt {
         self.keyword = objectToCopy.keyword
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitExitStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitExitStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitExitStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitExitStmtString(stmt: self)
     }
 }
 
-internal class MultiSetStmt: Stmt {
-    var setStmts: [SetStmt]
+public class MultiSetStmt: Stmt {
+    public var setStmts: [SetStmt]
     
     init(setStmts: [SetStmt]) {
         self.setStmts = setStmts
@@ -521,24 +521,24 @@ internal class MultiSetStmt: Stmt {
         self.setStmts = objectToCopy.setStmts
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitMultiSetStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitMultiSetStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitMultiSetStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitMultiSetStmtString(stmt: self)
     }
 }
 
-internal class SetStmt: Stmt {
-    var left: Expr
-    var chained: [Expr]
-    var value: Expr
+public class SetStmt: Stmt {
+    public var left: Expr
+    public var chained: [Expr]
+    public var value: Expr
     
     init(left: Expr, chained: [Expr], value: Expr) {
         self.left = left
@@ -551,16 +551,16 @@ internal class SetStmt: Stmt {
         self.value = objectToCopy.value
     }
 
-    func accept(visitor: StmtVisitor) {
+    public func accept(visitor: StmtVisitor) {
         visitor.visitSetStmt(stmt: self)
     }
-    func accept(visitor: StmtThrowVisitor) throws {
+    public func accept(visitor: StmtThrowVisitor) throws {
         try visitor.visitSetStmt(stmt: self)
     }
-    func accept(visitor: StmtStmtVisitor) -> Stmt {
+    public func accept(visitor: StmtStmtVisitor) -> Stmt {
         visitor.visitSetStmtStmt(stmt: self)
     }
-    func accept(visitor: StmtStringVisitor) -> String {
+    public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitSetStmtString(stmt: self)
     }
 }

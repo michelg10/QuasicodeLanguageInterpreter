@@ -1,5 +1,5 @@
 // swiftlint:disable:next type_body_length
-class Resolver: ExprThrowVisitor, StmtVisitor {
+public class Resolver: ExprThrowVisitor, StmtVisitor {
     private enum FunctionType {
         case none, function, staticMethod, nonstaticMethod, initializer
     }
@@ -24,21 +24,21 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private var symbolTable: SymbolTables = .init()
     private var isInGlobalScope = false
     
-    func visitGroupingExpr(expr: GroupingExpr) throws {
+    public func visitGroupingExpr(expr: GroupingExpr) throws {
         try resolve(expr.expression)
     }
     
-    func visitLiteralExpr(expr: LiteralExpr) {
+    public func visitLiteralExpr(expr: LiteralExpr) {
         // nothing
     }
     
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
+    public func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws {
         for value in expr.values {
             try resolve(value)
         }
     }
     
-    func visitStaticClassExpr(expr: StaticClassExpr) throws {
+    public func visitStaticClassExpr(expr: StaticClassExpr) throws {
         let symbol = symbolTable.query(generateClassSignature(
             className: expr.classType.name.lexeme,
             templateAstTypes: expr.classType.templateArguments
@@ -47,7 +47,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         expr.classId = symbol!.id
     }
     
-    func visitThisExpr(expr: ThisExpr) throws {
+    public func visitThisExpr(expr: ThisExpr) throws {
         if currentClassStatus == nil || currentFunction != .nonstaticMethod && currentFunction != .staticMethod && currentFunction != .initializer {
             throw error(message: "Cannot use 'this' outside of a method", token: expr.keyword)
         }
@@ -59,7 +59,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         assert(expr.symbolTableIndex != nil, "'this' is undefined")
     }
     
-    func visitSuperExpr(expr: SuperExpr) throws {
+    public func visitSuperExpr(expr: SuperExpr) throws {
         if currentClassStatus?.classType != .subclass {
             if currentClassStatus == nil {
                 throw error(message: "'super' cannot be referenced outside of a class", token: expr.keyword)
@@ -109,7 +109,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitVariableExpr(expr: VariableExpr) {
+    public func visitVariableExpr(expr: VariableExpr) {
         if let existingSymbol = symbolTable.query(expr.name.lexeme) {
             if let symbol = existingSymbol as? VariableSymbol {
                 // uninit -> is a global, init it
@@ -149,12 +149,12 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitSubscriptExpr(expr: SubscriptExpr) throws {
+    public func visitSubscriptExpr(expr: SubscriptExpr) throws {
         try resolve(expr.expression)
         try resolve(expr.index)
     }
     
-    func visitCallExpr(expr: CallExpr) throws {
+    public func visitCallExpr(expr: CallExpr) throws {
         if expr.object != nil {
             var isSuperCall = false
             if expr.object is VariableExpr {
@@ -199,41 +199,41 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitGetExpr(expr: GetExpr) throws {
+    public func visitGetExpr(expr: GetExpr) throws {
         try resolve(expr.object)
     }
     
-    func visitUnaryExpr(expr: UnaryExpr) throws {
+    public func visitUnaryExpr(expr: UnaryExpr) throws {
         try resolve(expr.right)
     }
     
-    func visitCastExpr(expr: CastExpr) throws {
+    public func visitCastExpr(expr: CastExpr) throws {
         try resolve(expr.value)
     }
     
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws {
+    public func visitArrayAllocationExpr(expr: ArrayAllocationExpr) throws {
         for expression in expr.capacity {
             try resolve(expression)
         }
     }
     
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) throws {
+    public func visitClassAllocationExpr(expr: ClassAllocationExpr) throws {
         for expression in expr.arguments {
             try resolve(expression)
         }
     }
     
-    func visitBinaryExpr(expr: BinaryExpr) throws {
+    public func visitBinaryExpr(expr: BinaryExpr) throws {
         try resolve(expr.left)
         try resolve(expr.right)
     }
     
-    func visitLogicalExpr(expr: LogicalExpr) throws {
+    public func visitLogicalExpr(expr: LogicalExpr) throws {
         try resolve(expr.left)
         try resolve(expr.right)
     }
     
-    func visitVariableToSetExpr(expr: VariableToSetExpr) throws {
+    public func visitVariableToSetExpr(expr: VariableToSetExpr) throws {
         // first figure out if a variable is being declared
         // isFirstAssignment = nil -> unknown, needs to be computed
         // true -> already computed and the variable reference also has already been computed
@@ -280,11 +280,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitIsTypeExpr(expr: IsTypeExpr) throws {
+    public func visitIsTypeExpr(expr: IsTypeExpr) throws {
         try resolve(expr.left)
     }
     
-    func visitImplicitCastExpr(expr: ImplicitCastExpr) throws {
+    public func visitImplicitCastExpr(expr: ImplicitCastExpr) throws {
         assertionFailure("Implicit cast expression present in Resolver")
     }
     
@@ -305,7 +305,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         return symbolTableIndex
     }
     
-    func visitClassStmt(stmt: ClassStmt) {
+    public func visitClassStmt(stmt: ClassStmt) {
         guard stmt.symbolTableIndex != nil else {
             return
         }
@@ -381,7 +381,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitMethodStmt(stmt: MethodStmt) {
+    public func visitMethodStmt(stmt: MethodStmt) {
         let previousFunctionStatus = currentFunction
         if stmt.function.name.lexeme == currentClassStatus?.name {
             currentFunction = .initializer
@@ -486,14 +486,14 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         return symbolTableIndex
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) {
+    public func visitFunctionStmt(stmt: FunctionStmt) {
         let previousFunction = currentFunction
         currentFunction = .function
         resolveFunction(stmt: stmt)
         currentFunction = previousFunction
     }
     
-    func visitIfStmt(stmt: IfStmt) {
+    public func visitIfStmt(stmt: IfStmt) {
         catchErrorClosure {
             try resolve(stmt.condition)
         }
@@ -507,7 +507,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitOutputStmt(stmt: OutputStmt) {
+    public func visitOutputStmt(stmt: OutputStmt) {
         for expression in stmt.expressions {
             catchErrorClosure {
                 try resolve(expression)
@@ -515,7 +515,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitInputStmt(stmt: InputStmt) {
+    public func visitInputStmt(stmt: InputStmt) {
         for expression in stmt.expressions {
             catchErrorClosure {
                 try resolve(expression)
@@ -523,7 +523,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) {
+    public func visitReturnStmt(stmt: ReturnStmt) {
         if currentFunction == .none {
             if stmt.value != nil {
                 error(message: "Can't return a value from top-level code.", token: stmt.keyword)
@@ -541,7 +541,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) {
+    public func visitLoopFromStmt(stmt: LoopFromStmt) {
         let previousLoopState = isInLoop
         catchErrorClosure {
             let existingSymbol = symbolTable.query(stmt.variable.name.lexeme)
@@ -568,7 +568,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.body)
     }
     
-    func visitWhileStmt(stmt: WhileStmt) {
+    public func visitWhileStmt(stmt: WhileStmt) {
         let previousLoopState = isInLoop
         
         catchErrorClosure {
@@ -582,23 +582,23 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.body)
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
+    public func visitContinueStmt(stmt: ContinueStmt) {
         if !isInLoop {
             error(message: "Can't use 'continue' outside of loop", token: stmt.keyword)
         }
     }
     
-    func visitBreakStmt(stmt: BreakStmt) {
+    public func visitBreakStmt(stmt: BreakStmt) {
         if !isInLoop {
             error(message: "Can't use 'break' outside of loop", token: stmt.keyword)
         }
     }
     
-    func visitExitStmt(stmt: ExitStmt) {
+    public func visitExitStmt(stmt: ExitStmt) {
         // do nothing
     }
     
-    func visitMultiSetStmt(stmt: MultiSetStmt) {
+    public func visitMultiSetStmt(stmt: MultiSetStmt) {
         for setStmt in stmt.setStmts {
             catchErrorClosure {
                 try resolve(setStmt)
@@ -606,7 +606,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitSetStmt(stmt: SetStmt) {
+    public func visitSetStmt(stmt: SetStmt) {
         catchErrorClosure {
             try resolve(stmt.value)
         }
@@ -620,13 +620,13 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
+    public func visitExpressionStmt(stmt: ExpressionStmt) {
         catchErrorClosure {
             try resolve(stmt.expression)
         }
     }
     
-    func visitBlockStmt(stmt: BlockStmt) {
+    public func visitBlockStmt(stmt: BlockStmt) {
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()
         stmt.scopeIndex = symbolTable.createAndEnterScope()
         let previousInGlobalScope = isInGlobalScope

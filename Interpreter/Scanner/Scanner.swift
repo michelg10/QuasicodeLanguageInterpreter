@@ -1,5 +1,5 @@
 // swiftlint:disable:next type_body_length
-class Scanner {
+public class Scanner {
     private var source: String
     private var tokens: [Token] = []
     private var problems: [InterpreterProblem] = []
@@ -86,7 +86,7 @@ class Scanner {
         "end"      : .END
     ]
     
-    init(source: String) {
+    public init(source: String) {
         self.source = source
         self.start = source.startIndex
         self.current = self.start
@@ -100,7 +100,7 @@ class Scanner {
         return index == source.endIndex
     }
     
-    func scanTokens() -> ([Token], [InterpreterProblem]) {
+    public func scanTokens() -> ([Token], [InterpreterProblem]) {
         while !isAtEnd() {
             start = current
             startLocation = currentLocation

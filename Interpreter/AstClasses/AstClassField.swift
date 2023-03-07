@@ -1,6 +1,6 @@
 // swiftlint:disable all
 
-internal class AstClassField {
+public class AstClassField {
     init(isStatic: Bool, visibilityModifier: VisibilityModifier, name: Token, astType: AstType, initializer: Expr? = nil, symbolTableIndex: Int? = nil) {
         self.isStatic = isStatic
         self.visibilityModifier = visibilityModifier

@@ -1,5 +1,5 @@
 // swiftlint:disable:next type_body_length
-class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
+public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
     // type checker needs to know:
@@ -101,11 +101,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return QsAnyType()
     }
     
-    func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
+    public func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {
         return QsArray(contains: typeCheck(asttype.contains))
     }
     
-    func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
+    public func visitAstClassTypeQsType(asttype: AstClassType) -> QsType {
         let classSignature = generateClassSignature(className: asttype.name.lexeme, templateAstTypes: asttype.templateArguments)
         guard let symbol = symbolTable.queryAtGlobalOnly(classSignature) as? ClassSymbol else {
             return QsErrorType()
@@ -113,25 +113,25 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return QsClass(name: symbol.displayName, id: symbol.id)
     }
     
-    func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
+    public func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType {
         // shouldn't happen
         assertionFailure("AstTemplateType shouldn't exist in visited")
         return QsErrorType()
     }
     
-    func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
+    public func visitAstIntTypeQsType(asttype: AstIntType) -> QsType {
         return QsInt()
     }
     
-    func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
+    public func visitAstDoubleTypeQsType(asttype: AstDoubleType) -> QsType {
         return QsDouble()
     }
     
-    func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
+    public func visitAstBooleanTypeQsType(asttype: AstBooleanType) -> QsType {
         return QsBoolean()
     }
     
-    func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
+    public func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType {
         return QsAnyType()
     }
     
@@ -276,7 +276,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitGroupingExpr(expr: GroupingExpr) {
+    public func visitGroupingExpr(expr: GroupingExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -286,11 +286,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expr.expression.type
     }
     
-    func visitLiteralExpr(expr: LiteralExpr) {
+    public func visitLiteralExpr(expr: LiteralExpr) {
         // already done
     }
     
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    public func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -318,12 +318,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitStaticClassExpr(expr: StaticClassExpr) {
+    public func visitStaticClassExpr(expr: StaticClassExpr) {
         // handle it at its source (CallExprs and GetExprs)
         // should never be visited
     }
     
-    func visitThisExpr(expr: ThisExpr) {
+    public func visitThisExpr(expr: ThisExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -338,7 +338,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitSuperExpr(expr: SuperExpr) {
+    public func visitSuperExpr(expr: SuperExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             expr.type!.assignable = true
@@ -350,7 +350,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = symbol.type
     }
     
-    func visitVariableExpr(expr: VariableExpr) {
+    public func visitVariableExpr(expr: VariableExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             // IMPORTANT: whether the type of this expression is assignable depends on the actual property. be careful to set assignable here
@@ -399,7 +399,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitSubscriptExpr(expr: SubscriptExpr) {
+    public func visitSubscriptExpr(expr: SubscriptExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             expr.type!.assignable = true
@@ -480,7 +480,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     // swiftlint:disable:next function_body_length
-    func visitCallExpr(expr: CallExpr) {
+    public func visitCallExpr(expr: CallExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -731,7 +731,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         )
     }
     
-    func visitGetExpr(expr: GetExpr) {
+    public func visitGetExpr(expr: GetExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             // IMPORTANT: whether the type of this expression is assignable depends on the actual property. be careful to set assignable here
@@ -813,7 +813,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitUnaryExpr(expr: UnaryExpr) {
+    public func visitUnaryExpr(expr: UnaryExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -841,7 +841,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitCastExpr(expr: CastExpr) {
+    public func visitCastExpr(expr: CastExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -877,7 +877,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    public func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -890,7 +890,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expressionType
     }
     
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    public func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -932,7 +932,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.callsFunction = bestMatches[0]
     }
     
-    func visitBinaryExpr(expr: BinaryExpr) {
+    public func visitBinaryExpr(expr: BinaryExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -1031,7 +1031,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
 
     }
     
-    func visitLogicalExpr(expr: LogicalExpr) {
+    public func visitLogicalExpr(expr: LogicalExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -1074,7 +1074,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return nil
     }
     
-    func visitVariableToSetExpr(expr: VariableToSetExpr) {
+    public func visitVariableToSetExpr(expr: VariableToSetExpr) {
         defer {
             expr.fallbackToErrorType(assignable: true)
             expr.type!.assignable = true
@@ -1084,7 +1084,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = expr.to.type
     }
     
-    func visitIsTypeExpr(expr: IsTypeExpr) {
+    public func visitIsTypeExpr(expr: IsTypeExpr) {
         defer {
             expr.fallbackToErrorType(assignable: false)
             expr.type!.assignable = false
@@ -1094,11 +1094,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         expr.type = QsBoolean()
     }
     
-    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+    public func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         assertionFailure("Implicit cast expression should not be visited!")
     }
     
-    func visitClassStmt(stmt: ClassStmt) {
+    public func visitClassStmt(stmt: ClassStmt) {
         if stmt.symbolTableIndex == nil {
             return
         }
@@ -1179,12 +1179,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitMethodStmt(stmt: MethodStmt) {
+    public func visitMethodStmt(stmt: MethodStmt) {
         assertionFailure("visitMethodStmt should never be called!")
         // this should never be visited
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) {
+    public func visitFunctionStmt(stmt: FunctionStmt) {
         if stmt.scopeIndex == nil {
             return
         }
@@ -1213,11 +1213,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
+    public func visitExpressionStmt(stmt: ExpressionStmt) {
         typeCheck(stmt.expression)
     }
     
-    func visitIfStmt(stmt: IfStmt) {
+    public func visitIfStmt(stmt: IfStmt) {
         typeCheck(stmt.condition)
         assertType(
             expr: stmt.condition,
@@ -1233,13 +1233,13 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitOutputStmt(stmt: OutputStmt) {
+    public func visitOutputStmt(stmt: OutputStmt) {
         for expression in stmt.expressions {
             typeCheck(expression)
         }
     }
     
-    func visitInputStmt(stmt: InputStmt) {
+    public func visitInputStmt(stmt: InputStmt) {
         for expression in stmt.expressions {
             typeCheck(expression)
             assertType(
@@ -1260,7 +1260,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) {
+    public func visitReturnStmt(stmt: ReturnStmt) {
         if stmt.value != nil {
             typeCheck(stmt.value!)
         }
@@ -1287,7 +1287,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) {
+    public func visitLoopFromStmt(stmt: LoopFromStmt) {
         typeCheck(stmt.lRange)
         typeCheck(stmt.rRange)
         if stmt.variable.type == nil {
@@ -1311,7 +1311,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(stmt.body)
     }
     
-    func visitWhileStmt(stmt: WhileStmt) {
+    public func visitWhileStmt(stmt: WhileStmt) {
         typeCheck(stmt.expression)
         assertType(
             expr: stmt.expression,
@@ -1321,15 +1321,15 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(stmt.body)
     }
     
-    func visitBreakStmt(stmt: BreakStmt) {
+    public func visitBreakStmt(stmt: BreakStmt) {
         // nothing to do
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
+    public func visitContinueStmt(stmt: ContinueStmt) {
         // nothing to do
     }
     
-    func visitBlockStmt(stmt: BlockStmt) {
+    public func visitBlockStmt(stmt: BlockStmt) {
         let previousSymbolTablePosition = symbolTable.getCurrentTableId()
         symbolTable.gotoTable(stmt.scopeIndex!)
         defer {
@@ -1340,17 +1340,17 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func visitExitStmt(stmt: ExitStmt) {
+    public func visitExitStmt(stmt: ExitStmt) {
         // nothing to do
     }
     
-    func visitMultiSetStmt(stmt: MultiSetStmt) {
+    public func visitMultiSetStmt(stmt: MultiSetStmt) {
         for setStmt in stmt.setStmts {
             typeCheck(setStmt)
         }
     }
     
-    func visitSetStmt(stmt: SetStmt) {
+    public func visitSetStmt(stmt: SetStmt) {
         // valid set to types:
         // GetExpr, SubscriptExpr, VariableSetExpr (wrapping VariableExpr), VariableExpr (only in chained)
         typeCheck(stmt.value)

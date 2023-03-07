@@ -1,6 +1,6 @@
 // swiftlint:disable type_body_length
 /// A slow tree-walk interpreter for debugging purposes
-class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
+public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
 // swiftlint:enable type_body_length
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
     private var environment = Environment()
@@ -122,15 +122,15 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure("Unrecognized type \(Swift.type(of: value))")
     }
     
-    func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any? {
+    public func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any? {
         return try interpret(expr.expression)
     }
     
-    func visitLiteralExprOptionalAny(expr: LiteralExpr) -> Any? {
+    public func visitLiteralExprOptionalAny(expr: LiteralExpr) -> Any? {
         return expr.value
     }
     
-    func visitArrayLiteralExprOptionalAny(expr: ArrayLiteralExpr) throws -> Any? {
+    public func visitArrayLiteralExprOptionalAny(expr: ArrayLiteralExpr) throws -> Any? {
         var result: [Any?] = []
         for value in expr.values {
             result.append(try interpret(value))
@@ -139,22 +139,22 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return QsArrayReference(data: result)
     }
     
-    func visitStaticClassExprOptionalAny(expr: StaticClassExpr) -> Any? {
+    public func visitStaticClassExprOptionalAny(expr: StaticClassExpr) -> Any? {
         // TODO
         return nil
     }
     
-    func visitThisExprOptionalAny(expr: ThisExpr) -> Any? {
+    public func visitThisExprOptionalAny(expr: ThisExpr) -> Any? {
         // TODO
         return nil
     }
     
-    func visitSuperExprOptionalAny(expr: SuperExpr) -> Any? {
+    public func visitSuperExprOptionalAny(expr: SuperExpr) -> Any? {
         // TODO
         return nil
     }
     
-    func visitVariableExprOptionalAny(expr: VariableExpr) throws -> Any? {
+    public func visitVariableExprOptionalAny(expr: VariableExpr) throws -> Any? {
         let fetch = environment.fetch(symbolTableId: expr.symbolTableIndex!)
         
         guard let fetch = fetch else {
@@ -164,7 +164,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return fetch.value
     }
     
-    func visitSubscriptExprOptionalAny(expr: SubscriptExpr) throws -> Any? {
+    public func visitSubscriptExprOptionalAny(expr: SubscriptExpr) throws -> Any? {
         let indexedArray = try interpret(expr.expression) as! QsArrayReference
         let index = try interpret(expr.index) as! Int
         
@@ -175,12 +175,12 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return indexedArray[index]
     }
     
-    func visitCallExprOptionalAny(expr: CallExpr) -> Any? {
+    public func visitCallExprOptionalAny(expr: CallExpr) -> Any? {
         // TODO
         return nil
     }
     
-    func visitGetExprOptionalAny(expr: GetExpr) throws -> Any? {
+    public func visitGetExprOptionalAny(expr: GetExpr) throws -> Any? {
         // TODO: this, static class, or an object
         let value = try interpret(expr.object)
         if let value = value as? QsArrayReference {
@@ -190,7 +190,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitUnaryExprOptionalAny(expr: UnaryExpr) throws -> Any? {
+    public func visitUnaryExprOptionalAny(expr: UnaryExpr) throws -> Any? {
         let right = try interpret(expr.right)
         switch expr.opr.tokenType {
         case .MINUS:
@@ -213,7 +213,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitCastExprOptionalAny(expr: CastExpr) -> Any? {
+    public func visitCastExprOptionalAny(expr: CastExpr) -> Any? {
         // TODO
         return nil
     }
@@ -254,7 +254,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return getDefaultValue(ofType: type)
     }
     
-    func visitArrayAllocationExprOptionalAny(expr: ArrayAllocationExpr) throws -> Any? {
+    public func visitArrayAllocationExprOptionalAny(expr: ArrayAllocationExpr) throws -> Any? {
         var lengths: [Int] = []
         for lengthExpr in expr.capacity {
             let length = try interpret(lengthExpr) as! Int
@@ -263,7 +263,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return allocateArray(ofType: expr.type!, ofLengths: lengths)
     }
     
-    func visitClassAllocationExprOptionalAny(expr: ClassAllocationExpr) -> Any? {
+    public func visitClassAllocationExprOptionalAny(expr: ClassAllocationExpr) -> Any? {
         // TODO
         return nil
     }
@@ -346,7 +346,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure("Unrecognized type for equality comparison \(type(of: lhs)) and \(type(of: rhs))")
     }
     
-    func visitBinaryExprOptionalAny(expr: BinaryExpr) throws -> Any? {
+    public func visitBinaryExprOptionalAny(expr: BinaryExpr) throws -> Any? {
         let left = try interpret(expr.left)
         let right = try interpret(expr.right)
         switch expr.opr.tokenType {
@@ -448,7 +448,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure("This line should not be executed")
     }
     
-    func visitLogicalExprOptionalAny(expr: LogicalExpr) throws -> Any? {
+    public func visitLogicalExprOptionalAny(expr: LogicalExpr) throws -> Any? {
         let left = try interpret(expr.left) as! Bool
         
         // short-circuiting operators
@@ -470,12 +470,12 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure()
     }
     
-    func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
+    public func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
         // TODO: since type information is erased in the compiler / VM, "is type" expressions need to be computed at compile-time for every type *except* for anys and potentially polymorphic classes
         return nil
     }
     
-    func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any? {
+    public func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any? {
         // Supported casts
         // int -> double
         // some type -> any
@@ -494,28 +494,28 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return value
     }
     
-    func visitVariableToSetExprOptionalAny(expr: VariableToSetExpr) throws -> Any? {
+    public func visitVariableToSetExprOptionalAny(expr: VariableToSetExpr) throws -> Any? {
         preconditionFailure("VariableToSetExpr should be interpreted in the SetExpr")
         return nil
     }
     
-    func visitClassStmt(stmt: ClassStmt) throws {
+    public func visitClassStmt(stmt: ClassStmt) throws {
         // TODO
     }
     
-    func visitMethodStmt(stmt: MethodStmt) throws {
+    public func visitMethodStmt(stmt: MethodStmt) throws {
         // TODO
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) throws {
+    public func visitFunctionStmt(stmt: FunctionStmt) throws {
         // TODO
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) throws {
+    public func visitExpressionStmt(stmt: ExpressionStmt) throws {
         try interpret(stmt.expression)
     }
     
-    func visitIfStmt(stmt: IfStmt) throws {
+    public func visitIfStmt(stmt: IfStmt) throws {
         let condition = try interpret(stmt.condition) as! Bool
         if condition {
             try interpret(stmt.thenBranch)
@@ -573,7 +573,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure("Unrecognized type for stringify \(type(of: val))")
     }
     
-    func visitOutputStmt(stmt: OutputStmt) throws {
+    public func visitOutputStmt(stmt: OutputStmt) throws {
         for i in 0..<stmt.expressions.count {
             let result = try interpret(stmt.expressions[i])
             printToStdout(stringify(result))
@@ -585,7 +585,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         printToStdout("\n")
     }
     
-    func visitInputStmt(stmt: InputStmt) throws {
+    public func visitInputStmt(stmt: InputStmt) throws {
         for expression in stmt.expressions {
             let input = getStdin()
             if typesEqual(expression.type!, QsInt(), anyEqAny: true) {
@@ -620,11 +620,11 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) throws {
+    public func visitReturnStmt(stmt: ReturnStmt) throws {
         // TODO
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) throws {
+    public func visitLoopFromStmt(stmt: LoopFromStmt) throws {
         let lrange = try interpret(stmt.lRange) as! Int
         let rrange = try interpret(stmt.rRange) as! Int
         
@@ -641,7 +641,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitWhileStmt(stmt: WhileStmt) throws {
+    public func visitWhileStmt(stmt: WhileStmt) throws {
         while true {
             let condition = try interpret(stmt.expression)
             if (condition as! Bool) == false {
@@ -659,23 +659,23 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitBreakStmt(stmt: BreakStmt) throws {
+    public func visitBreakStmt(stmt: BreakStmt) throws {
         throw InterpreterInterruptSignal.breakLoop
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) throws {
+    public func visitContinueStmt(stmt: ContinueStmt) throws {
         throw InterpreterInterruptSignal.continueLoop
     }
     
-    func visitBlockStmt(stmt: BlockStmt) throws {
+    public func visitBlockStmt(stmt: BlockStmt) throws {
         try interpret(stmt.statements)
     }
     
-    func visitExitStmt(stmt: ExitStmt) throws {
+    public func visitExitStmt(stmt: ExitStmt) throws {
         throw InterpreterExitSignal.signal
     }
     
-    func visitMultiSetStmt(stmt: MultiSetStmt) throws {
+    public func visitMultiSetStmt(stmt: MultiSetStmt) throws {
         for setStmt in stmt.setStmts {
             try interpret(setStmt)
         }
@@ -700,7 +700,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func visitSetStmt(stmt: SetStmt) throws {
+    public func visitSetStmt(stmt: SetStmt) throws {
         let rhs = try interpret(stmt.value)
         for i in stmt.chained.indices.reversed() {
             try assignTo(lhs: stmt.chained[i], rhs: rhs)

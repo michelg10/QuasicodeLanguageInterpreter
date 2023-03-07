@@ -1,8 +1,8 @@
-internal protocol QsType {
+public protocol QsType {
     var assignable: Bool { get set }
 }
 
-internal class QsArray: QsType {
+public class QsArray: QsType {
     init(contains: QsType, assignable: Bool) {
         self.assignable = assignable
         self.contains = contains
@@ -12,17 +12,17 @@ internal class QsArray: QsType {
         self.contains = contains
     }
     
-    var assignable: Bool
-    let contains: QsType
+    public var assignable: Bool
+    public let contains: QsType
 }
 
-internal protocol QsNativeType: QsType {}
+public protocol QsNativeType: QsType {}
 
 internal func isNumericType(_ type: QsType) -> Bool {
     return type is QsInt || type is QsDouble
 }
 
-internal class QsInt: QsNativeType {
+public class QsInt: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -30,10 +30,10 @@ internal class QsInt: QsNativeType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    public var assignable: Bool
 }
 
-internal class QsDouble: QsNativeType {
+public class QsDouble: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -41,10 +41,10 @@ internal class QsDouble: QsNativeType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    public var assignable: Bool
 }
 
-internal class QsBoolean: QsNativeType {
+public class QsBoolean: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -52,10 +52,10 @@ internal class QsBoolean: QsNativeType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    public var assignable: Bool
 }
 
-internal class QsAnyType: QsType {
+public class QsAnyType: QsType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -63,11 +63,11 @@ internal class QsAnyType: QsType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    public var assignable: Bool
 }
 
 internal let builtinClassNames = ["Collection", "Stack", "Queue"]
-internal class QsClass: QsType {
+public class QsClass: QsType {
     init(name: String, id: Int, assignable: Bool) {
         self.assignable = assignable
         self.name = name
@@ -79,12 +79,12 @@ internal class QsClass: QsType {
         self.id = id
     }
     
-    var assignable: Bool
-    let name: String
-    let id: Int
+    public var assignable: Bool
+    public let name: String
+    public let id: Int
 }
 
-internal class QsErrorType: QsType {
+public class QsErrorType: QsType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -92,15 +92,15 @@ internal class QsErrorType: QsType {
         self.assignable = false
     }
     
-    var assignable: Bool
+    public var assignable: Bool
 }
 
-internal class QsVoidType: QsType {
+public class QsVoidType: QsType {
     init() {
         self.assignable = false
     }
     
-    var assignable: Bool {
+    public var assignable: Bool {
         get {
             false
         }

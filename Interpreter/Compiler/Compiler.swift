@@ -1,4 +1,4 @@
-class Compiler: ExprVisitor, StmtVisitor {
+public class Compiler: ExprVisitor, StmtVisitor {
     var compilingChunk: UnsafeMutablePointer<Chunk>!
     var symbolTable: SymbolTables = .init()
     var stringClass: QsType = QsVoidType()
@@ -9,7 +9,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         return compilingChunk
     }
     
-    func visitGroupingExpr(expr: GroupingExpr) {
+    public func visitGroupingExpr(expr: GroupingExpr) {
         compile(expr.expression)
     }
     
@@ -59,7 +59,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         writeExplicitlyTypedValueObjectToChunk(object: objString!, type: stringClass as! QsClass, expr: expr)
     }
     
-    func visitLiteralExpr(expr: LiteralExpr) {
+    public func visitLiteralExpr(expr: LiteralExpr) {
         // TODO: Strings
         switch expr.type! {
         case is QsInt:
@@ -108,39 +108,39 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
+    public func visitArrayLiteralExpr(expr: ArrayLiteralExpr) {
         
     }
     
-    func visitStaticClassExpr(expr: StaticClassExpr) {
+    public func visitStaticClassExpr(expr: StaticClassExpr) {
         
     }
     
-    func visitThisExpr(expr: ThisExpr) {
+    public func visitThisExpr(expr: ThisExpr) {
         
     }
     
-    func visitSuperExpr(expr: SuperExpr) {
+    public func visitSuperExpr(expr: SuperExpr) {
         
     }
     
-    func visitVariableExpr(expr: VariableExpr) {
+    public func visitVariableExpr(expr: VariableExpr) {
         
     }
     
-    func visitSubscriptExpr(expr: SubscriptExpr) {
+    public func visitSubscriptExpr(expr: SubscriptExpr) {
         
     }
     
-    func visitCallExpr(expr: CallExpr) {
+    public func visitCallExpr(expr: CallExpr) {
         
     }
     
-    func visitGetExpr(expr: GetExpr) {
+    public func visitGetExpr(expr: GetExpr) {
         
     }
     
-    func visitUnaryExpr(expr: UnaryExpr) {
+    public func visitUnaryExpr(expr: UnaryExpr) {
         compile(expr.right)
         switch expr.opr.tokenType {
         case .NOT:
@@ -158,19 +158,19 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitCastExpr(expr: CastExpr) {
+    public func visitCastExpr(expr: CastExpr) {
         
     }
     
-    func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
+    public func visitArrayAllocationExpr(expr: ArrayAllocationExpr) {
         
     }
     
-    func visitClassAllocationExpr(expr: ClassAllocationExpr) {
+    public func visitClassAllocationExpr(expr: ClassAllocationExpr) {
         
     }
     
-    func visitBinaryExpr(expr: BinaryExpr) {
+    public func visitBinaryExpr(expr: BinaryExpr) {
         compile(expr.left)
         compile(expr.right)
         let leftType = expr.left.type!
@@ -224,7 +224,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitLogicalExpr(expr: LogicalExpr) {
+    public func visitLogicalExpr(expr: LogicalExpr) {
         compile(expr.left)
         compile(expr.right)
         switch expr.opr.tokenType {
@@ -237,48 +237,48 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitVariableToSetExpr(expr: VariableToSetExpr) {
+    public func visitVariableToSetExpr(expr: VariableToSetExpr) {
         
     }
     
-    func visitIsTypeExpr(expr: IsTypeExpr) {
+    public func visitIsTypeExpr(expr: IsTypeExpr) {
         
     }
     
-    func visitImplicitCastExpr(expr: ImplicitCastExpr) {
+    public func visitImplicitCastExpr(expr: ImplicitCastExpr) {
         
     }
     
-    func visitClassStmt(stmt: ClassStmt) {
+    public func visitClassStmt(stmt: ClassStmt) {
         
     }
     
-    func visitMethodStmt(stmt: MethodStmt) {
+    public func visitMethodStmt(stmt: MethodStmt) {
         
     }
     
-    func visitFunctionStmt(stmt: FunctionStmt) {
+    public func visitFunctionStmt(stmt: FunctionStmt) {
         
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
+    public func visitExpressionStmt(stmt: ExpressionStmt) {
         compile(stmt.expression)
         writeInstructionToChunk(op: .OP_pop, expr: stmt.expression)
     }
     
-    func visitMultiSetStmt(stmt: MultiSetStmt) {
+    public func visitMultiSetStmt(stmt: MultiSetStmt) {
         
     }
     
-    func visitSetStmt(stmt: SetStmt) {
+    public func visitSetStmt(stmt: SetStmt) {
         
     }
     
-    func visitIfStmt(stmt: IfStmt) {
+    public func visitIfStmt(stmt: IfStmt) {
         
     }
     
-    func visitOutputStmt(stmt: OutputStmt) {
+    public func visitOutputStmt(stmt: OutputStmt) {
         for expr in stmt.expressions {
             compile(expr)
             let type = expr.type!
@@ -307,35 +307,35 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitInputStmt(stmt: InputStmt) {
+    public func visitInputStmt(stmt: InputStmt) {
         
     }
     
-    func visitReturnStmt(stmt: ReturnStmt) {
+    public func visitReturnStmt(stmt: ReturnStmt) {
         
     }
     
-    func visitLoopFromStmt(stmt: LoopFromStmt) {
+    public func visitLoopFromStmt(stmt: LoopFromStmt) {
         
     }
     
-    func visitWhileStmt(stmt: WhileStmt) {
+    public func visitWhileStmt(stmt: WhileStmt) {
         
     }
     
-    func visitBreakStmt(stmt: BreakStmt) {
+    public func visitBreakStmt(stmt: BreakStmt) {
         
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
+    public func visitContinueStmt(stmt: ContinueStmt) {
         
     }
     
-    func visitBlockStmt(stmt: BlockStmt) {
+    public func visitBlockStmt(stmt: BlockStmt) {
         
     }
     
-    func visitExitStmt(stmt: ExitStmt) {
+    public func visitExitStmt(stmt: ExitStmt) {
         
     }
     

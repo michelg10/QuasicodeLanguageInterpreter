@@ -1,4 +1,4 @@
-class SymbolTables {
+public class SymbolTables {
     private class SymbolTable {
         let id: Int
         var parent: SymbolTable?
@@ -140,7 +140,7 @@ class SymbolTables {
         return current.id
     }
     
-    func getAllMethods(methodName: String) -> [Int] {
+    public func getAllMethods(methodName: String) -> [Int] {
         let currentSymbolTableState = getCurrentTableId()
         var allMethods: [Int] = []
         while true {

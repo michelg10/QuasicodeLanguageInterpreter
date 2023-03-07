@@ -81,6 +81,7 @@
 		D00DBBC829221A0C00C9B247 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		D00DBBCA2922447900C9B247 /* DebugPrint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPrint.swift; sourceTree = "<group>"; };
 		D03777B429B714D500516B39 /* Builtins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Builtins.swift; sourceTree = "<group>"; };
+		D03777B829B7209F00516B39 /* Quasicode Interpreter */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "Quasicode Interpreter"; sourceTree = "<group>"; };
 		D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
@@ -270,6 +271,7 @@
 		D0DD7C1028179A1B00FBD20C = {
 			isa = PBXGroup;
 			children = (
+				D03777B829B7209F00516B39 /* Quasicode Interpreter */,
 				D06507AA299BDA6100D9B3EB /* .swiftlint.yml */,
 				D0DD7C1B28179A1B00FBD20C /* Interpreter */,
 				D0DD7C1A28179A1B00FBD20C /* Products */,
@@ -292,6 +294,7 @@
 				D0DD7C312818392A00FBD20C /* Scanner */,
 				D0087E9E283550A400B28BF3 /* SymbolTable */,
 				D0DD7C512819824B00FBD20C /* Parser */,
+				D0AA392E2827B8C300CF94ED /* Util */,
 				D0AA390E28217DED00CF94ED /* Templater */,
 				D0AA390528215C5E00CF94ED /* Resolver */,
 				D06A492E282FEA7A005DE578 /* TypeChecker */,
@@ -321,7 +324,6 @@
 			isa = PBXGroup;
 			children = (
 				D07B70F7281CC9FF003A672F /* Parser.swift */,
-				D0AA392E2827B8C300CF94ED /* Util */,
 			);
 			path = Parser;
 			sourceTree = "<group>";
