@@ -1,8 +1,8 @@
-protocol QsType {
+internal protocol QsType {
     var assignable: Bool { get set }
 }
 
-class QsArray: QsType {
+internal class QsArray: QsType {
     init(contains: QsType, assignable: Bool) {
         self.assignable = assignable
         self.contains = contains
@@ -16,13 +16,13 @@ class QsArray: QsType {
     let contains: QsType
 }
 
-protocol QsNativeType: QsType {}
+internal protocol QsNativeType: QsType {}
 
-func isNumericType(_ type: QsType) -> Bool {
+internal func isNumericType(_ type: QsType) -> Bool {
     return type is QsInt || type is QsDouble
 }
 
-class QsInt: QsNativeType {
+internal class QsInt: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -33,7 +33,7 @@ class QsInt: QsNativeType {
     var assignable: Bool
 }
 
-class QsDouble: QsNativeType {
+internal class QsDouble: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -44,7 +44,7 @@ class QsDouble: QsNativeType {
     var assignable: Bool
 }
 
-class QsBoolean: QsNativeType {
+internal class QsBoolean: QsNativeType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -55,7 +55,7 @@ class QsBoolean: QsNativeType {
     var assignable: Bool
 }
 
-class QsAnyType: QsType {
+internal class QsAnyType: QsType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -66,8 +66,8 @@ class QsAnyType: QsType {
     var assignable: Bool
 }
 
-let builtinClassNames = ["Collection", "Stack", "Queue"]
-class QsClass: QsType {
+internal let builtinClassNames = ["Collection", "Stack", "Queue"]
+internal class QsClass: QsType {
     init(name: String, id: Int, assignable: Bool) {
         self.assignable = assignable
         self.name = name
@@ -84,7 +84,7 @@ class QsClass: QsType {
     let id: Int
 }
 
-class QsErrorType: QsType {
+internal class QsErrorType: QsType {
     init(assignable: Bool) {
         self.assignable = assignable
     }
@@ -95,7 +95,7 @@ class QsErrorType: QsType {
     var assignable: Bool
 }
 
-class QsVoidType: QsType {
+internal class QsVoidType: QsType {
     init() {
         self.assignable = false
     }

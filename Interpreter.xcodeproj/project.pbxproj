@@ -12,6 +12,7 @@
 		D0087EA2283898FF00B28BF3 /* AstClassTypeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */; };
 		D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBC829221A0C00C9B247 /* Environment.swift */; };
 		D00DBBCB2922447900C9B247 /* DebugPrint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00DBBCA2922447900C9B247 /* DebugPrint.swift */; };
+		D03777B529B714D500516B39 /* Builtins.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03777B429B714D500516B39 /* Builtins.swift */; };
 		D047BE4528688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */; };
 		D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */; };
 		D052DEEE283B303600C060FE /* TypePrinter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052DEED283B303600C060FE /* TypePrinter.swift */; };
@@ -22,7 +23,7 @@
 		D0691C5F2877220500DA85F3 /* disassembler.c in Sources */ = {isa = PBXBuildFile; fileRef = D0691C5E2877220500DA85F3 /* disassembler.c */; };
 		D06A4930282FEACB005DE578 /* TypeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A492F282FEACB005DE578 /* TypeChecker.swift */; };
 		D06A4932283001F5005DE578 /* UnionFind.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06A4931283001F5005DE578 /* UnionFind.swift */; };
-		D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */; };
+		D06E655A28912C0200442105 /* AddStringClassToSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655928912C0200442105 /* AddStringClassToSymbolTable.swift */; };
 		D06E655C289181F600442105 /* AddBuiltinClassesToAst.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */; };
 		D06E65712892691100442105 /* GuaranteeReturnChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06E65702892691100442105 /* GuaranteeReturnChecker.swift */; };
 		D06E657528939C4000442105 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = D06E657428939C4000442105 /* object.c */; };
@@ -79,6 +80,7 @@
 		D0087EA1283898FF00B28BF3 /* AstClassTypeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstClassTypeSignature.swift; sourceTree = "<group>"; };
 		D00DBBC829221A0C00C9B247 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		D00DBBCA2922447900C9B247 /* DebugPrint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPrint.swift; sourceTree = "<group>"; };
+		D03777B429B714D500516B39 /* Builtins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Builtins.swift; sourceTree = "<group>"; };
 		D047BE4428688DA200200DD7 /* InstanceVariableInitializedInInitializerChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceVariableInitializedInInitializerChecker.swift; sourceTree = "<group>"; };
 		D052DEEB283B2AA500C060FE /* SymbolTablePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTablePrinter.swift; sourceTree = "<group>"; };
 		D052DEED283B303600C060FE /* TypePrinter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePrinter.swift; sourceTree = "<group>"; };
@@ -94,7 +96,7 @@
 		D0691C5E2877220500DA85F3 /* disassembler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = disassembler.c; sourceTree = "<group>"; };
 		D06A492F282FEACB005DE578 /* TypeChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeChecker.swift; sourceTree = "<group>"; };
 		D06A4931283001F5005DE578 /* UnionFind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionFind.swift; sourceTree = "<group>"; };
-		D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBuiltinClassesToSymbolTable.swift; sourceTree = "<group>"; };
+		D06E655928912C0200442105 /* AddStringClassToSymbolTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddStringClassToSymbolTable.swift; sourceTree = "<group>"; };
 		D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBuiltinClassesToAst.swift; sourceTree = "<group>"; };
 		D06E65702892691100442105 /* GuaranteeReturnChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuaranteeReturnChecker.swift; sourceTree = "<group>"; };
 		D06E6572289285B700442105 /* ExplicitlyTypedValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExplicitlyTypedValue.h; sourceTree = "<group>"; };
@@ -170,6 +172,16 @@
 				D0AA390A282166ED00CF94ED /* Symbol.swift */,
 			);
 			path = SymbolTable;
+			sourceTree = "<group>";
+		};
+		D03777B629B715E400516B39 /* Builtins */ = {
+			isa = PBXGroup;
+			children = (
+				D03777B429B714D500516B39 /* Builtins.swift */,
+				D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */,
+				D06E655928912C0200442105 /* AddStringClassToSymbolTable.swift */,
+			);
+			path = Builtins;
 			sourceTree = "<group>";
 		};
 		D062D66E291E63E000920A3E /* Interpreter */ = {
@@ -276,9 +288,7 @@
 			isa = PBXGroup;
 			children = (
 				D0DD7C1C28179A1B00FBD20C /* main.swift */,
-				D06E655B289181F600442105 /* AddBuiltinClassesToAst.swift */,
-				D06E655928912C0200442105 /* AddBuiltinClassesToSymbolTable.swift */,
-				D0AA392E2827B8C300CF94ED /* Util */,
+				D03777B629B715E400516B39 /* Builtins */,
 				D0DD7C312818392A00FBD20C /* Scanner */,
 				D0087E9E283550A400B28BF3 /* SymbolTable */,
 				D0DD7C512819824B00FBD20C /* Parser */,
@@ -311,6 +321,7 @@
 			isa = PBXGroup;
 			children = (
 				D07B70F7281CC9FF003A672F /* Parser.swift */,
+				D0AA392E2827B8C300CF94ED /* Util */,
 			);
 			path = Parser;
 			sourceTree = "<group>";
@@ -432,6 +443,7 @@
 				D07B70F6281A7EB4003A672F /* Types.swift in Sources */,
 				D0DD7C332818D98600FBD20C /* DebugPrintTokens.swift in Sources */,
 				D0AA391A2824231B00CF94ED /* TypeEquality.swift in Sources */,
+				D03777B529B714D500516B39 /* Builtins.swift in Sources */,
 				D00DBBC929221A0C00C9B247 /* Environment.swift in Sources */,
 				D0AA39162824229600CF94ED /* TypeHashValues.swift in Sources */,
 				D083CCA7285481E00029BF33 /* AstTypeToString.swift in Sources */,
@@ -448,7 +460,7 @@
 				D0832F7B2876BA550003B625 /* chunk.c in Sources */,
 				D06E657528939C4000442105 /* object.c in Sources */,
 				D052DEEC283B2AA500C060FE /* SymbolTablePrinter.swift in Sources */,
-				D06E655A28912C0200442105 /* AddBuiltinClassesToSymbolTable.swift in Sources */,
+				D06E655A28912C0200442105 /* AddStringClassToSymbolTable.swift in Sources */,
 				D0A83C462864C298006C291E /* FunctionAstTypeSignature.swift in Sources */,
 				D0DD7C532819847E00FBD20C /* Stmt.swift in Sources */,
 				D0AA3918282422A600CF94ED /* TypeHasher.swift in Sources */,

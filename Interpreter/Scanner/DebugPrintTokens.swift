@@ -1,4 +1,4 @@
-func debugPrintTokens(tokens: [Token]) {
+internal func debugPrintTokens(tokens: [Token]) {
     for i in 0..<tokens.count {
         print(tokens[i].tokenType, terminator: " ")
         if tokens[i].value != nil {

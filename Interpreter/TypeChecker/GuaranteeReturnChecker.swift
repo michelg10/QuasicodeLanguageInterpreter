@@ -1,4 +1,4 @@
-class GaurenteeReturnChecker: StmtThrowVisitor {
+internal class GaurenteeReturnChecker: StmtThrowVisitor {
     private var hasReturnedStack: [Bool] = []
     private var reportError: (() -> Void)
     

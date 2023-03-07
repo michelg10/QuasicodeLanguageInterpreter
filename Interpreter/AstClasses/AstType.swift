@@ -1,5 +1,5 @@
 // swiftlint:disable all
-protocol AstType {
+internal protocol AstType {
     func accept(visitor: AstTypeVisitor)
     func accept(visitor: AstTypeStringVisitor) -> String
     func accept(visitor: AstTypeAstTypeThrowVisitor) throws -> AstType
@@ -8,7 +8,7 @@ protocol AstType {
     var endLocation: InterpreterLocation { get set }
 }
 
-protocol AstTypeVisitor {
+internal protocol AstTypeVisitor {
     func visitAstArrayType(asttype: AstArrayType) 
     func visitAstClassType(asttype: AstClassType) 
     func visitAstTemplateTypeName(asttype: AstTemplateTypeName) 
@@ -18,7 +18,7 @@ protocol AstTypeVisitor {
     func visitAstAnyType(asttype: AstAnyType) 
 }
 
-protocol AstTypeStringVisitor {
+internal protocol AstTypeStringVisitor {
     func visitAstArrayTypeString(asttype: AstArrayType) -> String
     func visitAstClassTypeString(asttype: AstClassType) -> String
     func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String
@@ -28,7 +28,7 @@ protocol AstTypeStringVisitor {
     func visitAstAnyTypeString(asttype: AstAnyType) -> String
 }
 
-protocol AstTypeAstTypeThrowVisitor {
+internal protocol AstTypeAstTypeThrowVisitor {
     func visitAstArrayTypeAstType(asttype: AstArrayType) throws -> AstType
     func visitAstClassTypeAstType(asttype: AstClassType) throws -> AstType
     func visitAstTemplateTypeNameAstType(asttype: AstTemplateTypeName) throws -> AstType
@@ -38,7 +38,7 @@ protocol AstTypeAstTypeThrowVisitor {
     func visitAstAnyTypeAstType(asttype: AstAnyType) throws -> AstType
 }
 
-protocol AstTypeQsTypeVisitor {
+internal protocol AstTypeQsTypeVisitor {
     func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType
     func visitAstClassTypeQsType(asttype: AstClassType) -> QsType
     func visitAstTemplateTypeNameQsType(asttype: AstTemplateTypeName) -> QsType
@@ -48,7 +48,7 @@ protocol AstTypeQsTypeVisitor {
     func visitAstAnyTypeQsType(asttype: AstAnyType) -> QsType
 }
 
-class AstArrayType: AstType {
+internal class AstArrayType: AstType {
     var contains: AstType
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
@@ -78,7 +78,7 @@ class AstArrayType: AstType {
     }
 }
 
-class AstClassType: AstType {
+internal class AstClassType: AstType {
     var name: Token
     var templateArguments: [AstType]?
     var startLocation: InterpreterLocation
@@ -111,7 +111,7 @@ class AstClassType: AstType {
     }
 }
 
-class AstTemplateTypeName: AstType {
+internal class AstTemplateTypeName: AstType {
     var belongingClass: String
     var name: Token
     var startLocation: InterpreterLocation
@@ -144,7 +144,7 @@ class AstTemplateTypeName: AstType {
     }
 }
 
-class AstIntType: AstType {
+internal class AstIntType: AstType {
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
@@ -171,7 +171,7 @@ class AstIntType: AstType {
     }
 }
 
-class AstDoubleType: AstType {
+internal class AstDoubleType: AstType {
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
@@ -198,7 +198,7 @@ class AstDoubleType: AstType {
     }
 }
 
-class AstBooleanType: AstType {
+internal class AstBooleanType: AstType {
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     
@@ -225,7 +225,7 @@ class AstBooleanType: AstType {
     }
 }
 
-class AstAnyType: AstType {
+internal class AstAnyType: AstType {
     var startLocation: InterpreterLocation
     var endLocation: InterpreterLocation
     

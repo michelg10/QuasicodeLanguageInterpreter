@@ -1,4 +1,4 @@
-class VMInterface {
+internal class VMInterface {
     func run(chunk: UnsafeMutablePointer<Chunk>!, classesRuntimeIdToClassNameArray: [String]) {
         var classNamesLength = UnsafeMutablePointer<Int32>.allocate(capacity: classesRuntimeIdToClassNameArray.count)
         for i in 0..<classesRuntimeIdToClassNameArray.count {

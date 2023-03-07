@@ -1,4 +1,4 @@
-func typesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
+internal func typesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
     if lhs is AstArrayType {
         if rhs is AstArrayType {
             return typesEqual((lhs as! AstArrayType).contains, (rhs as! AstArrayType).contains)

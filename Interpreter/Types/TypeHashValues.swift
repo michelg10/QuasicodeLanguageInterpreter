@@ -1,4 +1,4 @@
-enum TypeHashValues {
+internal enum TypeHashValues {
     static let INT = 0
     static let DOUBLE = 1
     static let BOOLEAN = 2

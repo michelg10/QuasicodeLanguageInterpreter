@@ -1,5 +1,5 @@
 // i don't know what this is going to be used for but i already wrote it so... lets keep it for now
-struct MethodQsTypeSignature: Hashable {
+internal struct MethodQsTypeSignature: Hashable {
     let name: String
     let parameters: [QsType]
     

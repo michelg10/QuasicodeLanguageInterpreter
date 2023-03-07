@@ -1,4 +1,4 @@
-class AstTypeToString: AstTypeStringVisitor {
+internal class AstTypeToString: AstTypeStringVisitor {
     func visitAstTemplateTypeNameString(asttype: AstTemplateTypeName) -> String {
         return "<TemplateType \(asttype.belongingClass).\(asttype.name.lexeme)>"
     }
@@ -41,4 +41,4 @@ class AstTypeToString: AstTypeStringVisitor {
     }
 }
 
-let astTypeToStringSingleton = AstTypeToString()
+internal let astTypeToStringSingleton = AstTypeToString()

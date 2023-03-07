@@ -1,4 +1,4 @@
-struct AstFunctionParam {
+internal struct AstFunctionParam {
     var name: Token
     var astType: AstType?
     var initializer: Expr?

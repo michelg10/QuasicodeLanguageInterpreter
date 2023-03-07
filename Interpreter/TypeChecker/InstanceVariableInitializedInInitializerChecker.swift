@@ -1,4 +1,4 @@
-class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
+internal class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
     private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
     private var symbolTable: SymbolTables

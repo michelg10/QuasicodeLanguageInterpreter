@@ -1,4 +1,4 @@
-class UnionFind {
+internal class UnionFind {
     var parent: [Int]
     
     init(size: Int) {

@@ -1,9 +1,9 @@
-func createFunctionAstTypeSignature(functionStmt: FunctionStmt) -> String {
+internal func createFunctionAstTypeSignature(functionStmt: FunctionStmt) -> String {
     return createFunctionAstTypeSignature(functionName: functionStmt.name.lexeme, functionParams: functionStmt.params.map({ astFunctionParam in
         astFunctionParam.astType
     }))
 }
-func createFunctionAstTypeSignature(functionName: String, functionParams: [AstType?]) -> String {
+internal func createFunctionAstTypeSignature(functionName: String, functionParams: [AstType?]) -> String {
     var paramsName = ""
     for param in functionParams {
         if !paramsName.isEmpty {

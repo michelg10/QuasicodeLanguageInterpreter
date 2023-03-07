@@ -1,4 +1,4 @@
-enum ChunkInterface {
+internal enum ChunkInterface {
     static func writeInstructionToChunk(chunk: UnsafeMutablePointer<Chunk>!, op: OpCode, index: Int) {
         writeChunk(chunk, UInt8(op.rawValue), Int32(index))
     }

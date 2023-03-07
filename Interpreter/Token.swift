@@ -1,4 +1,4 @@
-struct Token {
+internal struct Token {
     let tokenType: TokenType
     let lexeme: String
     let startLocation: InterpreterLocation

@@ -1,5 +1,5 @@
 // swiftlint:disable all
-protocol Expr {
+internal protocol Expr {
     func accept(visitor: ExprVisitor)
     func accept(visitor: ExprThrowVisitor) throws
     func accept(visitor: ExprQsTypeThrowVisitor) throws -> QsType
@@ -12,7 +12,7 @@ protocol Expr {
     var endLocation: InterpreterLocation { get set }
 }
 
-protocol ExprVisitor {
+internal protocol ExprVisitor {
     func visitGroupingExpr(expr: GroupingExpr) 
     func visitLiteralExpr(expr: LiteralExpr) 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) 
@@ -34,7 +34,7 @@ protocol ExprVisitor {
     func visitImplicitCastExpr(expr: ImplicitCastExpr) 
 }
 
-protocol ExprThrowVisitor {
+internal protocol ExprThrowVisitor {
     func visitGroupingExpr(expr: GroupingExpr) throws 
     func visitLiteralExpr(expr: LiteralExpr) throws 
     func visitArrayLiteralExpr(expr: ArrayLiteralExpr) throws 
@@ -56,7 +56,7 @@ protocol ExprThrowVisitor {
     func visitImplicitCastExpr(expr: ImplicitCastExpr) throws 
 }
 
-protocol ExprQsTypeThrowVisitor {
+internal protocol ExprQsTypeThrowVisitor {
     func visitGroupingExprQsType(expr: GroupingExpr) throws -> QsType
     func visitLiteralExprQsType(expr: LiteralExpr) throws -> QsType
     func visitArrayLiteralExprQsType(expr: ArrayLiteralExpr) throws -> QsType
@@ -78,7 +78,7 @@ protocol ExprQsTypeThrowVisitor {
     func visitImplicitCastExprQsType(expr: ImplicitCastExpr) throws -> QsType
 }
 
-protocol ExprExprThrowVisitor {
+internal protocol ExprExprThrowVisitor {
     func visitGroupingExprExpr(expr: GroupingExpr) throws -> Expr
     func visitLiteralExprExpr(expr: LiteralExpr) throws -> Expr
     func visitArrayLiteralExprExpr(expr: ArrayLiteralExpr) throws -> Expr
@@ -100,7 +100,7 @@ protocol ExprExprThrowVisitor {
     func visitImplicitCastExprExpr(expr: ImplicitCastExpr) throws -> Expr
 }
 
-protocol ExprStringVisitor {
+internal protocol ExprStringVisitor {
     func visitGroupingExprString(expr: GroupingExpr) -> String
     func visitLiteralExprString(expr: LiteralExpr) -> String
     func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String
@@ -122,7 +122,7 @@ protocol ExprStringVisitor {
     func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String
 }
 
-protocol ExprOptionalAnyThrowVisitor {
+internal protocol ExprOptionalAnyThrowVisitor {
     func visitGroupingExprOptionalAny(expr: GroupingExpr) throws -> Any?
     func visitLiteralExprOptionalAny(expr: LiteralExpr) throws -> Any?
     func visitArrayLiteralExprOptionalAny(expr: ArrayLiteralExpr) throws -> Any?
@@ -144,7 +144,7 @@ protocol ExprOptionalAnyThrowVisitor {
     func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
 }
 
-class GroupingExpr: Expr {
+internal class GroupingExpr: Expr {
     var expression: Expr
     var type: QsType?
     var startLocation: InterpreterLocation
@@ -189,7 +189,7 @@ class GroupingExpr: Expr {
     }
 }
 
-class LiteralExpr: Expr {
+internal class LiteralExpr: Expr {
     var value: Any?
     var type: QsType?
     var startLocation: InterpreterLocation
@@ -234,7 +234,7 @@ class LiteralExpr: Expr {
     }
 }
 
-class ArrayLiteralExpr: Expr {
+internal class ArrayLiteralExpr: Expr {
     var values: [Expr]
     var type: QsType?
     var startLocation: InterpreterLocation
@@ -279,7 +279,7 @@ class ArrayLiteralExpr: Expr {
     }
 }
 
-class StaticClassExpr: Expr {
+internal class StaticClassExpr: Expr {
     var classType: AstClassType
     var classId: Int?
     var type: QsType?
@@ -327,7 +327,7 @@ class StaticClassExpr: Expr {
     }
 }
 
-class ThisExpr: Expr {
+internal class ThisExpr: Expr {
     var keyword: Token
     var symbolTableIndex: Int?
     var type: QsType?
@@ -375,7 +375,7 @@ class ThisExpr: Expr {
     }
 }
 
-class SuperExpr: Expr {
+internal class SuperExpr: Expr {
     var keyword: Token
     var property: Token
     var propertyId: Int?
@@ -426,7 +426,7 @@ class SuperExpr: Expr {
     }
 }
 
-class VariableExpr: Expr {
+internal class VariableExpr: Expr {
     var name: Token
     var symbolTableIndex: Int?
     var type: QsType?
@@ -474,7 +474,7 @@ class VariableExpr: Expr {
     }
 }
 
-class SubscriptExpr: Expr {
+internal class SubscriptExpr: Expr {
     var expression: Expr
     var index: Expr
     var type: QsType?
@@ -522,7 +522,7 @@ class SubscriptExpr: Expr {
     }
 }
 
-class CallExpr: Expr {
+internal class CallExpr: Expr {
     var object: Expr?
     var property: Token
     var paren: Token
@@ -582,7 +582,7 @@ class CallExpr: Expr {
     }
 }
 
-class GetExpr: Expr {
+internal class GetExpr: Expr {
     var object: Expr
     var property: Token
     var propertyId: Int?
@@ -633,7 +633,7 @@ class GetExpr: Expr {
     }
 }
 
-class UnaryExpr: Expr {
+internal class UnaryExpr: Expr {
     var opr: Token
     var right: Expr
     var type: QsType?
@@ -681,7 +681,7 @@ class UnaryExpr: Expr {
     }
 }
 
-class CastExpr: Expr {
+internal class CastExpr: Expr {
     var toType: AstType
     var value: Expr
     var type: QsType?
@@ -729,7 +729,7 @@ class CastExpr: Expr {
     }
 }
 
-class ArrayAllocationExpr: Expr {
+internal class ArrayAllocationExpr: Expr {
     var contains: AstType
     var capacity: [Expr]
     var type: QsType?
@@ -777,7 +777,7 @@ class ArrayAllocationExpr: Expr {
     }
 }
 
-class ClassAllocationExpr: Expr {
+internal class ClassAllocationExpr: Expr {
     var classType: AstClassType
     var arguments: [Expr]
     var callsFunction: Int?
@@ -828,7 +828,7 @@ class ClassAllocationExpr: Expr {
     }
 }
 
-class BinaryExpr: Expr {
+internal class BinaryExpr: Expr {
     var left: Expr
     var opr: Token
     var right: Expr
@@ -879,7 +879,7 @@ class BinaryExpr: Expr {
     }
 }
 
-class LogicalExpr: Expr {
+internal class LogicalExpr: Expr {
     var left: Expr
     var opr: Token
     var right: Expr
@@ -930,7 +930,7 @@ class LogicalExpr: Expr {
     }
 }
 
-class VariableToSetExpr: Expr {
+internal class VariableToSetExpr: Expr {
     var to: VariableExpr
     var annotationColon: Token?
     var annotation: AstType?
@@ -984,7 +984,7 @@ class VariableToSetExpr: Expr {
     }
 }
 
-class IsTypeExpr: Expr {
+internal class IsTypeExpr: Expr {
     var left: Expr
     var keyword: Token
     var right: AstType
@@ -1038,7 +1038,7 @@ class IsTypeExpr: Expr {
     }
 }
 
-class ImplicitCastExpr: Expr {
+internal class ImplicitCastExpr: Expr {
     var expression: Expr
     var type: QsType?
     var startLocation: InterpreterLocation

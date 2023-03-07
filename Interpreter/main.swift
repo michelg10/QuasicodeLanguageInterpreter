@@ -36,7 +36,7 @@ if true {
     // initialize the symbol table and put in all the default classes
     var symbolTable: SymbolTables = .init()
     if INCLUDE_STRING {
-        addStringClassToSymbolTable(symbolTable)
+        Builtins.addStringClassToSymbolTable(symbolTable)
     }
     let stringClassIndex = INCLUDE_STRING ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
     
@@ -45,7 +45,7 @@ if true {
     let (stmts, parseErrors) = parser.parse()
     var ast = stmts
     if INCLUDE_BUILTIN_CLASSES {
-        ast = addBuiltinClassesToAst(ast)
+        ast = Builtins.addBuiltinClassesToAst(ast)
     }
     let astPrinter = AstPrinter()
     if DEBUG {

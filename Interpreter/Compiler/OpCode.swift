@@ -1,5 +1,5 @@
 // swiftlint:disable all
-enum OpCode: Int {
+internal enum OpCode: Int {
     case OP_return
     case OP_true
     case OP_false

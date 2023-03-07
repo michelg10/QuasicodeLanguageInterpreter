@@ -1,5 +1,5 @@
 // swiftlint:disable type_body_length
-class AstPrinter: ExprStringVisitor, StmtStringVisitor {
+internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
 // swiftlint:enable type_body_length
     var printWithTypes = false
     

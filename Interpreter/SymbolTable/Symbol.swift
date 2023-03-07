@@ -1,22 +1,22 @@
-protocol Symbol {
+internal protocol Symbol {
     var id: Int { get set }
     var belongsToTable: Int { get set }
     var name: String { get }
 }
-protocol FunctionLikeSymbol: Symbol {
+internal protocol FunctionLikeSymbol: Symbol {
     var returnType: QsType { get set }
     var paramRange: ClosedRange<Int> { get }
     var functionParams: [FunctionParam] { get set }
 }
 
-enum VariableStatus {
+internal enum VariableStatus {
     case uninit, initing, globalIniting, fieldIniting, finishedInit
 }
-enum VariableType {
+internal enum VariableType {
     case global, local, instance, staticVar
 }
 
-class VariableSymbol: Symbol {
+internal class VariableSymbol: Symbol {
     init(type: QsType? = nil, name: String, variableStatus: VariableStatus, variableType: VariableType) {
         self.id = -1
         self.belongsToTable = -1
@@ -33,7 +33,7 @@ class VariableSymbol: Symbol {
     var variableStatus: VariableStatus
     var variableType: VariableType
 }
-class GlobalVariableSymbol: VariableSymbol {
+internal class GlobalVariableSymbol: VariableSymbol {
     init(type: QsType? = nil, name: String, globalDefiningSetExpr: SetStmt, variableStatus: VariableStatus) {
         self.globalDefiningSetExpr = globalDefiningSetExpr
         super.init(type: type, name: name, variableStatus: variableStatus, variableType: .global)
@@ -41,7 +41,7 @@ class GlobalVariableSymbol: VariableSymbol {
     
     var globalDefiningSetExpr: SetStmt
 }
-class FunctionNameSymbol: Symbol {
+internal class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope
     init(isForMethods: Bool, name: String, belongingFunctions: [Int]) {
         self.id = -1
@@ -58,7 +58,7 @@ class FunctionNameSymbol: Symbol {
     let name: String
     var belongingFunctions: [Int]
 }
-func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
+internal func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
     var lowerBound = functionStmt.params.count
     for i in 0..<functionStmt.params.count {
         let index = functionStmt.params.count - i - 1
@@ -68,11 +68,11 @@ func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
     }
     return lowerBound...functionStmt.params.count
 }
-struct FunctionParam {
+internal struct FunctionParam {
     var name: String
     var type: QsType
 }
-class FunctionSymbol: FunctionLikeSymbol {
+internal class FunctionSymbol: FunctionLikeSymbol {
     init(name: String, functionStmt: FunctionStmt, returnType: QsType) {
         self.id = -1
         self.belongsToTable = -1
@@ -101,7 +101,7 @@ class FunctionSymbol: FunctionLikeSymbol {
     let paramRange: ClosedRange<Int>
     var returnType: QsType
 }
-class MethodSymbol: FunctionLikeSymbol {
+internal class MethodSymbol: FunctionLikeSymbol {
     init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool, isConstructor: Bool) {
         self.id = -1
         self.belongsToTable = -1
@@ -158,7 +158,7 @@ class MethodSymbol: FunctionLikeSymbol {
     var finishedInit: Bool
     let isConstructor: Bool
 }
-class ClassChain {
+internal class ClassChain {
     init(upperClass: Int?, depth: Int, classStmt: ClassStmt, parentOf: [Int]) {
         self.upperClass = upperClass
         self.parentOf = parentOf
@@ -169,7 +169,7 @@ class ClassChain {
     var depth: Int
     var parentOf: [Int]
 }
-class ClassSymbol: Symbol {
+internal class ClassSymbol: Symbol {
     init(
         name: String,
         displayName: String,
@@ -237,7 +237,7 @@ class ClassSymbol: Symbol {
     }
     
 }
-class ClassNameSymbol: Symbol {
+internal class ClassNameSymbol: Symbol {
     init(name: String) {
         self.id = -1
         self.belongsToTable = -1

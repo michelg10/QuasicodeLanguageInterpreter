@@ -1,12 +1,12 @@
 // swiftlint:disable all
-protocol Stmt {
+internal protocol Stmt {
     func accept(visitor: StmtVisitor)
     func accept(visitor: StmtThrowVisitor) throws
     func accept(visitor: StmtStmtVisitor) -> Stmt
     func accept(visitor: StmtStringVisitor) -> String
 }
 
-protocol StmtVisitor {
+internal protocol StmtVisitor {
     func visitClassStmt(stmt: ClassStmt) 
     func visitMethodStmt(stmt: MethodStmt) 
     func visitFunctionStmt(stmt: FunctionStmt) 
@@ -25,7 +25,7 @@ protocol StmtVisitor {
     func visitSetStmt(stmt: SetStmt) 
 }
 
-protocol StmtThrowVisitor {
+internal protocol StmtThrowVisitor {
     func visitClassStmt(stmt: ClassStmt) throws 
     func visitMethodStmt(stmt: MethodStmt) throws 
     func visitFunctionStmt(stmt: FunctionStmt) throws 
@@ -44,7 +44,7 @@ protocol StmtThrowVisitor {
     func visitSetStmt(stmt: SetStmt) throws 
 }
 
-protocol StmtStmtVisitor {
+internal protocol StmtStmtVisitor {
     func visitClassStmtStmt(stmt: ClassStmt) -> Stmt
     func visitMethodStmtStmt(stmt: MethodStmt) -> Stmt
     func visitFunctionStmtStmt(stmt: FunctionStmt) -> Stmt
@@ -63,7 +63,7 @@ protocol StmtStmtVisitor {
     func visitSetStmtStmt(stmt: SetStmt) -> Stmt
 }
 
-protocol StmtStringVisitor {
+internal protocol StmtStringVisitor {
     func visitClassStmtString(stmt: ClassStmt) -> String
     func visitMethodStmtString(stmt: MethodStmt) -> String
     func visitFunctionStmtString(stmt: FunctionStmt) -> String
@@ -82,7 +82,7 @@ protocol StmtStringVisitor {
     func visitSetStmtString(stmt: SetStmt) -> String
 }
 
-class ClassStmt: Stmt {
+internal class ClassStmt: Stmt {
     var keyword: Token
     var name: Token
     var symbolTableIndex: Int?
@@ -136,7 +136,7 @@ class ClassStmt: Stmt {
     }
 }
 
-class MethodStmt: Stmt {
+internal class MethodStmt: Stmt {
     var isStatic: Bool
     var staticKeyword: Token?
     var visibilityModifier: VisibilityModifier
@@ -169,7 +169,7 @@ class MethodStmt: Stmt {
     }
 }
 
-class FunctionStmt: Stmt {
+internal class FunctionStmt: Stmt {
     var keyword: Token
     var name: Token
     var symbolTableIndex: Int?
@@ -217,7 +217,7 @@ class FunctionStmt: Stmt {
     }
 }
 
-class ExpressionStmt: Stmt {
+internal class ExpressionStmt: Stmt {
     var expression: Expr
     
     init(expression: Expr) {
@@ -241,7 +241,7 @@ class ExpressionStmt: Stmt {
     }
 }
 
-class IfStmt: Stmt {
+internal class IfStmt: Stmt {
     var condition: Expr
     var thenBranch: BlockStmt
     var elseIfBranches: [IfStmt]
@@ -274,7 +274,7 @@ class IfStmt: Stmt {
     }
 }
 
-class OutputStmt: Stmt {
+internal class OutputStmt: Stmt {
     var expressions: [Expr]
     
     init(expressions: [Expr]) {
@@ -298,7 +298,7 @@ class OutputStmt: Stmt {
     }
 }
 
-class InputStmt: Stmt {
+internal class InputStmt: Stmt {
     var expressions: [Expr]
     
     init(expressions: [Expr]) {
@@ -322,7 +322,7 @@ class InputStmt: Stmt {
     }
 }
 
-class ReturnStmt: Stmt {
+internal class ReturnStmt: Stmt {
     var keyword: Token
     var value: Expr?
     var isTerminator: Bool
@@ -352,7 +352,7 @@ class ReturnStmt: Stmt {
     }
 }
 
-class LoopFromStmt: Stmt {
+internal class LoopFromStmt: Stmt {
     var variable: VariableExpr
     var lRange: Expr
     var rRange: Expr
@@ -385,7 +385,7 @@ class LoopFromStmt: Stmt {
     }
 }
 
-class WhileStmt: Stmt {
+internal class WhileStmt: Stmt {
     var expression: Expr
     var body: BlockStmt
     
@@ -412,7 +412,7 @@ class WhileStmt: Stmt {
     }
 }
 
-class BreakStmt: Stmt {
+internal class BreakStmt: Stmt {
     var keyword: Token
     
     init(keyword: Token) {
@@ -436,7 +436,7 @@ class BreakStmt: Stmt {
     }
 }
 
-class ContinueStmt: Stmt {
+internal class ContinueStmt: Stmt {
     var keyword: Token
     
     init(keyword: Token) {
@@ -460,7 +460,7 @@ class ContinueStmt: Stmt {
     }
 }
 
-class BlockStmt: Stmt {
+internal class BlockStmt: Stmt {
     var statements: [Stmt]
     var scopeIndex: Int?
     
@@ -487,7 +487,7 @@ class BlockStmt: Stmt {
     }
 }
 
-class ExitStmt: Stmt {
+internal class ExitStmt: Stmt {
     var keyword: Token
     
     init(keyword: Token) {
@@ -511,7 +511,7 @@ class ExitStmt: Stmt {
     }
 }
 
-class MultiSetStmt: Stmt {
+internal class MultiSetStmt: Stmt {
     var setStmts: [SetStmt]
     
     init(setStmts: [SetStmt]) {
@@ -535,7 +535,7 @@ class MultiSetStmt: Stmt {
     }
 }
 
-class SetStmt: Stmt {
+internal class SetStmt: Stmt {
     var left: Expr
     var chained: [Expr]
     var value: Expr

@@ -1,4 +1,4 @@
-func hashTypeIntoHasher(_ value: AstType, _ hasher: inout Hasher) {
+internal func hashTypeIntoHasher(_ value: AstType, _ hasher: inout Hasher) {
     switch value {
     case is AstIntType:
         hasher.combine(TypeHashValues.INT)

@@ -1,4 +1,4 @@
-func printType(_ value: QsType?) -> String {
+internal func printType(_ value: QsType?) -> String {
     if value == nil {
         return "nil"
     }

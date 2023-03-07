@@ -1,4 +1,4 @@
-func hashTypeIntoHasher(_ value: QsType, _ hasher: inout Hasher) {
+internal func hashTypeIntoHasher(_ value: QsType, _ hasher: inout Hasher) {
     // reserve non-negative numbers for class IDs
     switch value {
     case is QsInt:

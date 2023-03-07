@@ -1,9 +1,9 @@
-struct StoredVariable {
+internal struct StoredVariable {
     var name: String // for debugging purposes
     var value: Any?
 }
 
-class Environment {
+internal class Environment {
     private var variables: [Int : StoredVariable] = [:]
     
     func add(symbolTableId: Int, name: String, value: Any?) {

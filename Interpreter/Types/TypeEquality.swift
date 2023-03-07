@@ -1,4 +1,4 @@
-func typesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
+internal func typesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
     if lhs is QsErrorType || rhs is QsErrorType {
         return false
     }

@@ -1,4 +1,4 @@
-func printSymbol(symbol: Symbol) -> [String] {
+internal func printSymbol(symbol: Symbol) -> [String] {
     var result = ""
     var symbolType = ""
     switch symbol {
@@ -28,19 +28,19 @@ func printSymbol(symbol: Symbol) -> [String] {
     }
     return [String(symbol.id), String(symbol.belongsToTable), String(symbol.name), symbolType, result]
 }
-func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
+internal func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String {
     printVariableInfo(symbol)
 }
-func printVariableInfo(_ symbol: VariableSymbol) -> String {
+internal func printVariableInfo(_ symbol: VariableSymbol) -> String {
     "type: \(printType(symbol.type)), status: \(symbol.variableStatus), variableType: \(symbol.variableType)"
 }
-func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
+internal func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
     "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
 }
-func debugClosedIntRangeToString(_ range: ClosedRange<Int>) -> String {
+internal func debugClosedIntRangeToString(_ range: ClosedRange<Int>) -> String {
     "\(range.lowerBound)...\(range.upperBound)"
 }
-func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> String {
+internal func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> String {
     "[" + functionParams.reduce(into: "", { result, functionParam in
         if !result.isEmpty {
             result += ", "
@@ -48,12 +48,12 @@ func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> String {
         result += "\(functionParam.name): \(printType(functionParam.type))"
     }) + "]"
 }
-func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
+internal func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
     "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
     "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
     "returnType: \(printType(symbol.returnType))"
 }
-func printMethodInfo(_ symbol: MethodSymbol) -> String {
+internal func printMethodInfo(_ symbol: MethodSymbol) -> String {
     "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
     "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
     "returnType: \(printType(symbol.returnType)), " +
@@ -64,7 +64,7 @@ func printMethodInfo(_ symbol: MethodSymbol) -> String {
     "finishedInit: \(symbol.finishedInit), " +
     "isConstructor: \(symbol.isConstructor)"
 }
-func printClassInfo(_ symbol: ClassSymbol) -> String {
+internal func printClassInfo(_ symbol: ClassSymbol) -> String {
     "displayName: \(symbol.displayName), " +
     "nonSignatureName: \(symbol.nonSignatureName), " +
     "runtimeId: \(symbol.runtimeId), " +
@@ -73,6 +73,6 @@ func printClassInfo(_ symbol: ClassSymbol) -> String {
     "upperClass: \(stringifyOptionalInt(symbol.upperClass)), " +
     "classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
 }
-func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
+internal func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
     ""
 }

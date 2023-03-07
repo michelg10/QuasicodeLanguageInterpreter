@@ -1,4 +1,4 @@
-func pruneNils<T>(_ array: [T?]) -> [T] {
+internal func pruneNils<T>(_ array: [T?]) -> [T] {
     var result: [T] = []
     result.reserveCapacity(array.count)
     for item in array where item != nil {
