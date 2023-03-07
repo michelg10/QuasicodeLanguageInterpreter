@@ -301,7 +301,7 @@ class Parser {
             return exitStatement()
         }
         
-        return try expressionStatement()
+        return try expressionOrSetStatement()
     }
     
     private func ifStatement() throws -> Stmt {
@@ -334,13 +334,19 @@ class Parser {
     }
     
     private func outputStatement() throws -> Stmt {
-        let expressions = try commaSeparatedExpressions()
+        var expressions: [Expr] = []
+        repeat {
+            expressions.append(try expression())
+        } while match(types: .COMMA)
         try consume(type: .EOL, message: "Expect end-of-line after output statement")
         return OutputStmt(expressions: expressions)
     }
     
     private func inputStatement() throws -> Stmt {
-        let expressions = try commaSeparatedExpressions()
+        var expressions: [Expr] = []
+        repeat {
+            expressions.append(try writableExpression())
+        } while match(types: .COMMA)
         try consume(type: .EOL, message: "Expect end-of-line after input statement")
         return InputStmt(expressions: expressions)
     }
@@ -440,18 +446,85 @@ class Parser {
         return ExitStmt(keyword: keyword)
     }
     
-    private func expressionStatement() throws -> Stmt {
+    private func expressionOrSetStatement() throws -> Stmt {
         let expr = try expression()
+        if match(types: .EOL) {
+            return ExpressionStmt(expression: expr)
+        } else if checkTokenType(isAnyOf: [.COLON, .EQUAL]) {
+            // it's a assignment statement
+            return try multiSetStatement(continueWithLeft: expr)
+        }
         try consume(type: .EOL, message: "Expect end-of-line after expression")
         return ExpressionStmt(expression: expr)
     }
     
-    private func commaSeparatedExpressions() throws -> [Expr] {
-        var expressions: [Expr] = []
-        repeat {
-            expressions.append(try expression())
-        } while match(types: .COMMA)
-        return expressions
+    private func multiSetStatement(continueWithLeft: Expr?) throws -> Stmt {
+        let singleStmt = try setStatement(continueWithLeft: continueWithLeft)
+        if match(types: .COMMA) {
+            var setStmts: [SetStmt] = [singleStmt]
+            repeat {
+                setStmts.append(try setStatement(continueWithLeft: nil))
+            } while (match(types: .COMMA))
+            return MultiSetStmt(setStmts: setStmts)
+        } else {
+            return singleStmt
+        }
+    }
+    
+    private func setStatement(continueWithLeft: Expr?) throws -> SetStmt {
+        var leftExpr: Expr
+        if continueWithLeft != nil {
+            leftExpr = continueWithLeft!
+        } else {
+            leftExpr = try writableExpression()
+        }
+        
+        var annotation: AstType?
+        var annotationColon: Token?
+        if match(types: .COLON) {
+            annotationColon = previous()
+            annotation = try typeSignature(matchArray: true, optional: false)
+        }
+        
+        try consume(type: .EQUAL, message: "Expect '='")
+        var chains: [Expr] = []
+        var value: Expr?
+        while true {
+            let nextExpr = try expression()
+            if value == nil {
+                value = nextExpr
+            } else {
+                chains.append(value!)
+                value = nextExpr
+            }
+            
+            if !match(types: .EQUAL) {
+                // convert a VariableExpr to a VariableToSetExpr if it is on the lhs of a set statement
+                if leftExpr is VariableExpr {
+                    var endLocation = leftExpr.endLocation
+                    if annotationColon != nil {
+                        endLocation = annotationColon!.endLocation
+                    }
+                    if annotation != nil {
+                        endLocation = annotation!.endLocation
+                    }
+                    leftExpr = VariableToSetExpr(
+                        to: leftExpr as! VariableExpr,
+                        annotationColon: annotationColon,
+                        annotation: annotation,
+                        isFirstAssignment: nil,
+                        type: nil,
+                        startLocation: leftExpr.startLocation,
+                        endLocation: endLocation
+                    )
+                } else {
+                    if annotation != nil || annotationColon != nil {
+                        error(message: "Cannot retype expression", token: annotationColon!)
+                    }
+                }
+                return SetStmt(left: leftExpr, chained: chains, value: value!)
+            }
+        }
     }
     
     private func block(additionalEndMarkers: [TokenType]) -> BlockStmt {
@@ -468,74 +541,16 @@ class Parser {
     }
     
     private func expression() throws -> Expr {
-        return try assign()
+        try or()
     }
     
-    private func assign() throws -> Expr {
-        let expr = try or()
-        
-        var annotation: AstType?
-        var annotationColon: Token?
-        if match(types: .COLON) {
-            annotationColon = previous()
-            annotation = try typeSignature(matchArray: true, optional: false)
-        }
-        
-        if match(types: .EQUAL) {
-            let equals = previous()
-            let value = try expression()
-            
-            if let expr = expr as? VariableExpr {
-                return AssignExpr(
-                    to: expr,
-                    annotationColon: annotationColon,
-                    annotation: annotation,
-                    value: value,
-                    isFirstAssignment: nil,
-                    type: nil,
-                    startLocation: expr.startLocation,
-                    endLocation: .init(end: previous())
-                )
-            }
-            
-            if let expr = expr as? SubscriptExpr {
-                if annotationColon != nil {
-                    error(message: "Cannot annotate type for subscript expression", token: annotationColon!)
-                }
-                
-                return SubscriptSetExpr(
-                    expression: expr.expression,
-                    index: expr.index,
-                    value: value,
-                    type: nil,
-                    startLocation: expr.startLocation,
-                    endLocation: .init(end: previous())
-                )
-            }
-            if let expr = expr as? GetExpr {
-                if annotationColon != nil {
-                    error(message: "Cannot annotate type for field", token: annotationColon!)
-                }
-                
-                return PropertySetExpr(
-                    object: expr.object,
-                    property: expr.property,
-                    propertyId: expr.propertyId,
-                    value: value,
-                    type: nil,
-                    startLocation: expr.startLocation,
-                    endLocation: .init(end: previous())
-                )
-            }
-            
-            throw error(message: "Cannot assign to value ", token: equals)
-        } else {
-            if annotation != nil {
-                throw error(message: "Expect '=' after type annotation", token: peek())
-            }
-        }
-        
-        return expr
+    private func writableExpression() throws -> Expr {
+        // This does not guarantee a writable expression.
+        // However, using this when the syntax demands a writable expression should make parsing faster and have the parser spit out better errors
+        // since any operator above secondary is read-only,
+        // simply limiting writable expressions to secondary() eliminates many
+        // redundant calls.
+        try secondary()
     }
     
     private func or() throws -> Expr {
@@ -867,6 +882,7 @@ class Parser {
                     endLocation: property.endLocation
                 )
             }
+            
             return VariableExpr(
                 name: previous(),
                 symbolTableIndex: nil,

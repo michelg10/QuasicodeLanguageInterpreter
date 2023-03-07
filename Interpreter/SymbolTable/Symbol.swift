@@ -34,12 +34,12 @@ class VariableSymbol: Symbol {
     var variableType: VariableType
 }
 class GlobalVariableSymbol: VariableSymbol {
-    init(type: QsType? = nil, name: String, globalDefiningAssignExpr: AssignExpr, variableStatus: VariableStatus) {
-        self.globalDefiningAssignExpr = globalDefiningAssignExpr
+    init(type: QsType? = nil, name: String, globalDefiningSetExpr: SetStmt, variableStatus: VariableStatus) {
+        self.globalDefiningSetExpr = globalDefiningSetExpr
         super.init(type: type, name: name, variableStatus: variableStatus, variableType: .global)
     }
     
-    var globalDefiningAssignExpr: AssignExpr
+    var globalDefiningSetExpr: SetStmt
 }
 class FunctionNameSymbol: Symbol {
     // Represents a collection of functions underneath the same name, in the same scope

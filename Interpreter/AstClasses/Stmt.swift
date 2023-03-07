@@ -21,6 +21,8 @@ protocol StmtVisitor {
     func visitContinueStmt(stmt: ContinueStmt) 
     func visitBlockStmt(stmt: BlockStmt) 
     func visitExitStmt(stmt: ExitStmt) 
+    func visitMultiSetStmt(stmt: MultiSetStmt) 
+    func visitSetStmt(stmt: SetStmt) 
 }
 
 protocol StmtThrowVisitor {
@@ -38,6 +40,8 @@ protocol StmtThrowVisitor {
     func visitContinueStmt(stmt: ContinueStmt) throws 
     func visitBlockStmt(stmt: BlockStmt) throws 
     func visitExitStmt(stmt: ExitStmt) throws 
+    func visitMultiSetStmt(stmt: MultiSetStmt) throws 
+    func visitSetStmt(stmt: SetStmt) throws 
 }
 
 protocol StmtStmtVisitor {
@@ -55,6 +59,8 @@ protocol StmtStmtVisitor {
     func visitContinueStmtStmt(stmt: ContinueStmt) -> Stmt
     func visitBlockStmtStmt(stmt: BlockStmt) -> Stmt
     func visitExitStmtStmt(stmt: ExitStmt) -> Stmt
+    func visitMultiSetStmtStmt(stmt: MultiSetStmt) -> Stmt
+    func visitSetStmtStmt(stmt: SetStmt) -> Stmt
 }
 
 protocol StmtStringVisitor {
@@ -72,6 +78,8 @@ protocol StmtStringVisitor {
     func visitContinueStmtString(stmt: ContinueStmt) -> String
     func visitBlockStmtString(stmt: BlockStmt) -> String
     func visitExitStmtString(stmt: ExitStmt) -> String
+    func visitMultiSetStmtString(stmt: MultiSetStmt) -> String
+    func visitSetStmtString(stmt: SetStmt) -> String
 }
 
 class ClassStmt: Stmt {
@@ -500,6 +508,60 @@ class ExitStmt: Stmt {
     }
     func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitExitStmtString(stmt: self)
+    }
+}
+
+class MultiSetStmt: Stmt {
+    var setStmts: [SetStmt]
+    
+    init(setStmts: [SetStmt]) {
+        self.setStmts = setStmts
+    }
+    init(_ objectToCopy: MultiSetStmt) {
+        self.setStmts = objectToCopy.setStmts
+    }
+
+    func accept(visitor: StmtVisitor) {
+        visitor.visitMultiSetStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitMultiSetStmt(stmt: self)
+    }
+    func accept(visitor: StmtStmtVisitor) -> Stmt {
+        visitor.visitMultiSetStmtStmt(stmt: self)
+    }
+    func accept(visitor: StmtStringVisitor) -> String {
+        visitor.visitMultiSetStmtString(stmt: self)
+    }
+}
+
+class SetStmt: Stmt {
+    var left: Expr
+    var chained: [Expr]
+    var value: Expr
+    
+    init(left: Expr, chained: [Expr], value: Expr) {
+        self.left = left
+        self.chained = chained
+        self.value = value
+    }
+    init(_ objectToCopy: SetStmt) {
+        self.left = objectToCopy.left
+        self.chained = objectToCopy.chained
+        self.value = objectToCopy.value
+    }
+
+    func accept(visitor: StmtVisitor) {
+        visitor.visitSetStmt(stmt: self)
+    }
+    func accept(visitor: StmtThrowVisitor) throws {
+        try visitor.visitSetStmt(stmt: self)
+    }
+    func accept(visitor: StmtStmtVisitor) -> Stmt {
+        visitor.visitSetStmtStmt(stmt: self)
+    }
+    func accept(visitor: StmtStringVisitor) -> String {
+        visitor.visitSetStmtString(stmt: self)
     }
 }
 

@@ -237,15 +237,7 @@ class Compiler: ExprVisitor, StmtVisitor {
         }
     }
     
-    func visitPropertySetExpr(expr: PropertySetExpr) {
-        
-    }
-    
-    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
-        
-    }
-    
-    func visitAssignExpr(expr: AssignExpr) {
+    func visitVariableToSetExpr(expr: VariableToSetExpr) {
         
     }
     
@@ -272,6 +264,14 @@ class Compiler: ExprVisitor, StmtVisitor {
     func visitExpressionStmt(stmt: ExpressionStmt) {
         compile(stmt.expression)
         writeInstructionToChunk(op: .OP_pop, expr: stmt.expression)
+    }
+    
+    func visitMultiSetStmt(stmt: MultiSetStmt) {
+        
+    }
+    
+    func visitSetStmt(stmt: SetStmt) {
+        
     }
     
     func visitIfStmt(stmt: IfStmt) {

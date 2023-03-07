@@ -95,8 +95,12 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             }
             return verifyIsType(value[0], type: type.contains)
         }
-        if value == nil && type is QsVoidType {
-            return .pass
+        if value == nil {
+            if type is QsVoidType {
+                return .pass
+            } else {
+                return .fail
+            }
         }
         // TODO: verify classes
         preconditionFailure("Unrecognized type \(Swift.type(of: value))")
@@ -364,7 +368,7 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             preconditionFailure("Unrecognized type for comparison")
         case .MINUS, .SLASH, .STAR, .DIV, .MOD, .PLUS:
             // IMPORTANT: Integer division by zero
-            if left is Int && right is Int {
+            if left is Int {
                 let left = left as! Int
                 let right = right as! Int
                 switch expr.opr.tokenType {
@@ -390,20 +394,10 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
                     preconditionFailure("Switch should be exhaustive")
                 }
             }
-            if left is Double || right is Double {
-                // promote both operands to double
-                var lhs: Double
-                var rhs: Double
-                if left is Int {
-                    lhs = Double(left as! Int)
-                } else {
-                    lhs = left as! Double
-                }
-                if right is Int {
-                    rhs = Double(right as! Int)
-                } else {
-                    rhs = right as! Double
-                }
+            if left is Double {
+                // the type checker should've already promoted an operand to double if the other is double
+                var lhs = left as! Double
+                var rhs = right as! Double
                 
                 // perform the operation
                 switch expr.opr.tokenType {
@@ -455,29 +449,32 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure()
     }
     
-    func visitPropertySetExprOptionalAny(expr: PropertySetExpr) throws -> Any? {
-        // TODO
-        return nil
-    }
-    
-    func visitSubscriptSetExprOptionalAny(expr: SubscriptSetExpr) throws -> Any? {
-        // TODO
-        return nil
-    }
-    
-    func visitAssignExprOptionalAny(expr: AssignExpr) throws -> Any? {
-        let value = try interpret(expr.value)
-        environment.add(symbolTableId: expr.to.symbolTableIndex!, name: expr.to.name.lexeme, value: value)
-        return value
-    }
-    
     func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
         // TODO: since type information is erased in the compiler / VM, "is type" expressions need to be computed at compile-time for every type *except* for anys and potentially polymorphic classes
         return nil
     }
     
-    func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) -> Any? {
-        // TODO
+    func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any? {
+        // Supported casts
+        // int -> double
+        // some type -> any
+        // TODO: subclass -> superclass
+        var value = try interpret(expr.expression)
+        if typesEqual(expr.type!, QsDouble(), anyEqAny: true) {
+            if value is Int {
+                value = Double(value as! Int)
+                return value
+            }
+        } else if typesEqual(expr.type!, QsAnyType(), anyEqAny: true) {
+            // do nothing
+            return value
+        }
+        preconditionFailure("Unsupported implicit type cast \(printType(expr.expression.type)) -> \(printType(expr.type))")
+        return value
+    }
+    
+    func visitVariableToSetExprOptionalAny(expr: VariableToSetExpr) throws -> Any? {
+        preconditionFailure("VariableToSetExpr should be interpreted in the SetExpr")
         return nil
     }
     
@@ -610,6 +607,38 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     func visitExitStmt(stmt: ExitStmt) throws {
         throw InterpreterExitSignal.signal
+    }
+    
+    func visitMultiSetStmt(stmt: MultiSetStmt) throws {
+        for setStmt in stmt.setStmts {
+            try interpret(setStmt)
+        }
+    }
+    
+    func visitSetStmt(stmt: SetStmt) throws {
+        let rhs = try interpret(stmt.value)
+        func setTo(lhs: Expr, rhs: Any?) throws {
+            if lhs is GetExpr {
+                // TODO
+            } else if lhs is SubscriptExpr {
+                let lhs = lhs as! SubscriptExpr
+                let lhsObject = try interpret(lhs.expression) as! QsArrayReference
+                let lhsIndex = try interpret(lhs.index) as! Int
+                lhsObject[lhsIndex] = rhs
+            } else if lhs is VariableToSetExpr {
+                let lhs = lhs as! VariableToSetExpr
+                environment.add(symbolTableId: lhs.to.symbolTableIndex!, name: lhs.to.name.lexeme, value: rhs)
+            } else if lhs is VariableExpr {
+                let lhs = lhs as! VariableExpr
+                environment.add(symbolTableId: lhs.symbolTableIndex!, name: lhs.name.lexeme, value: rhs)
+            } else {
+                preconditionFailure("Unrecognized assignable expression \(type(of: lhs))")
+            }
+        }
+        for i in stmt.chained.indices.reversed() {
+            try setTo(lhs: stmt.chained[i], rhs: rhs)
+        }
+        try setTo(lhs: stmt.left, rhs: rhs)
     }
     
     private func interpret(_ expr: Expr) throws -> Any? {

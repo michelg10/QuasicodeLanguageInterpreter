@@ -30,9 +30,6 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     private func indentBlockStmts(blockStmts: [Stmt]) -> String {
         var result = ""
         for blockStmt in blockStmts {
-            if !result.isEmpty {
-                result += "\n"
-            }
             let newRow = printAst(blockStmt)
             let newRowLines = newRow.split(separator: "\n", omittingEmptySubsequences: false)
             for newRowLine in newRowLines {
@@ -231,37 +228,14 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitPropertySetExprString(expr: PropertySetExpr) -> String {
+    func visitVariableToSetExprString(expr: VariableToSetExpr) -> String {
         parenthesize(
-            name: "PropertySet",
-            additionalProperties: [
-                ("property", expr.property.lexeme),
-                ("propertyId", stringifyOptionalInt(expr.propertyId))
-            ] + generateAdditionalTypePropertyArray(expr),
-            exprs: expr.object,
-            expr.value
-        )
-    }
-    
-    func visitSubscriptSetExprString(expr: SubscriptSetExpr) -> String {
-        parenthesize(
-            name: "ArraySet",
-            additionalProperties: generateAdditionalTypePropertyArray(expr),
-            exprs: expr.expression,
-            expr.index,
-            expr.value
-        )
-    }
-    
-    func visitAssignExprString(expr: AssignExpr) -> String {
-        parenthesize(
-            name: "Assign",
+            name: "VariableToSet",
             additionalProperties: [
                 ("type", astTypeToString(astType: expr.annotation)),
                 ("isFirstAssignment", expr.isFirstAssignment == nil ? "nil" : stringifyBoolean(expr.isFirstAssignment!))
             ] + generateAdditionalTypePropertyArray(expr),
-            exprs: expr.to,
-            expr.value
+            exprs: expr.to
         )
     }
     
@@ -336,6 +310,17 @@ class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     func visitMethodStmtString(stmt: MethodStmt) -> String {
         "(Method \(stmt.isStatic ? "static" : "nostatic") \(stmt.visibilityModifier == .PUBLIC ? "public" : "private") \(printAst(stmt.function)))"
+    }
+    
+    func visitMultiSetStmtString(stmt: MultiSetStmt) -> String {
+        "(MultiSet {\n" + indentBlockStmts(blockStmts: stmt.setStmts) + "})"
+    }
+    
+    func visitSetStmtString(stmt: SetStmt) -> String {
+        var exprs = stmt.chained
+        exprs.insert(stmt.left, at: 0)
+        exprs.append(stmt.value)
+        return parenthesize(name: "Set", exprs: exprs)
     }
     
     private func astTypeToString(astType: AstType?) -> String {

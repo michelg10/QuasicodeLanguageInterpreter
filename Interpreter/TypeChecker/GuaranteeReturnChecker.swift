@@ -27,6 +27,14 @@ class GaurenteeReturnChecker: StmtThrowVisitor {
         // do nothing
     }
     
+    func visitMultiSetStmt(stmt: MultiSetStmt) throws {
+        // do nothing
+    }
+    
+    func visitSetStmt(stmt: SetStmt) throws {
+        // do nothing
+    }
+    
     func visitIfStmt(stmt: IfStmt) throws {
         func processBranch(_ stmt: BlockStmt) {
             do {

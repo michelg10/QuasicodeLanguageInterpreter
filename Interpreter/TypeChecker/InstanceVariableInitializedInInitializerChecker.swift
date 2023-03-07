@@ -222,6 +222,53 @@ class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVis
         throw AnalysisInterrupts.programExitInterrupt
     }
     
+    func visitMultiSetStmt(stmt: MultiSetStmt) throws {
+        for setStmt in stmt.setStmts {
+            try markVariables(setStmt)
+        }
+    }
+    
+    func visitSetStmt(stmt: SetStmt) throws {
+        // possible expressions to set to: VariableToSetExpr, GetExpr, SubscriptExpr, SuperExpr
+        // TODO: Implement this for SuperExprs because these are *super* (haha) messed up right now
+        
+        func markSet(expr: Expr) {
+            if expr is VariableToSetExpr {
+                let expr = expr as! VariableToSetExpr
+                markSet(expr: expr.to)
+            } else if expr is VariableExpr {
+                let expr = expr as! VariableExpr
+                if expr.symbolTableIndex != nil {
+                    let symbol = symbolTable.getSymbol(id: expr.symbolTableIndex!) as! VariableSymbol
+                    if symbol.variableType == .instance {
+                        markAsInitialized(symbol.id)
+                    }
+                }
+            } else if expr is GetExpr {
+                let expr = expr as! GetExpr
+                if expr.object is ThisExpr {
+                    markAsInitialized(expr.propertyId!)
+                } else {
+                    markVariables(expr.object)
+                }
+            } else if expr is SubscriptExpr {
+                markVariables(expr)
+            } else if expr is SuperExpr {
+                // TODO: Implement this
+            } else {
+                preconditionFailure("Expected SetStmt to set to an expression of type VariableToSetExpr, VariableExpr, GetExpr, SubscriptExpr, or SuperExpr, instead got \(type(of: expr)).")
+            }
+        }
+        
+        markVariables(stmt.value)
+        
+        for chained in stmt.chained {
+            markSet(expr: chained)
+        }
+        markSet(expr: stmt.left)
+    }
+    
+    
     func visitGroupingExpr(expr: GroupingExpr) {
         markVariables(expr.expression)
     }
@@ -329,29 +376,9 @@ class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVis
         restoreState(state: state)
     }
     
-    func visitPropertySetExpr(expr: PropertySetExpr) {
-        if expr.object is ThisExpr {
-            markAsInitialized(expr.propertyId!)
-        } else {
-            markVariables(expr.object)
-        }
-        markVariables(expr.value)
-    }
-    
-    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
-        markVariables(expr.expression)
-        markVariables(expr.index)
-        markVariables(expr.value)
-    }
-    
-    func visitAssignExpr(expr: AssignExpr) {
-        markVariables(expr.value)
-        if expr.to.symbolTableIndex != nil {
-            let symbol = symbolTable.getSymbol(id: expr.to.symbolTableIndex!) as! VariableSymbol
-            if symbol.variableType == .instance {
-                markAsInitialized(symbol.id)
-            }
-        }
+    func visitVariableToSetExpr(expr: VariableToSetExpr) {
+        // this shouldn't happen because everything should be handled by the SetExpr
+        preconditionFailure("VariableToSetExpr should not be visited: Should've been handled by the SetExpr!")
     }
     
     func visitIsTypeExpr(expr: IsTypeExpr) {

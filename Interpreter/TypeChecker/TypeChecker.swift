@@ -1035,7 +1035,9 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         guard let symbol = symbolTable.getSymbol(id: variable.symbolTableIndex!) as? VariableSymbol else {
             return
         }
-        symbol.type = type
+        var typeCopy = type
+        typeCopy.assignable = true
+        symbol.type = typeCopy
         variable.type = type
     }
     
@@ -1052,76 +1054,14 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return nil
     }
     
-//    func visitSetExpr(expr: SetExpr) {
-//        defer {
-//            expr.fallbackToErrorType(assignable: false)
-//            expr.type!.assignable = false
-//        }
-//        typeCheck(expr.value)
-//        typeCheck(expr.to)
-//
-//        if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
-//            return
-//        }
-//
-//        // assignment can be to: fields within classes
-//        if assertType(expr: expr.value, errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'", typeAssertions: .isSubTypeOf(expr.to.type!)) {
-//            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
-//        }
-//        expr.type = expr.to.type!
-//    }
-    
-    func visitPropertySetExpr(expr: PropertySetExpr) {
-        // TODO: fill in
-    }
-    
-    func visitSubscriptSetExpr(expr: SubscriptSetExpr) {
-        // TODO: fill in
-    }
-    
-    func visitAssignExpr(expr: AssignExpr) {
+    func visitVariableToSetExpr(expr: VariableToSetExpr) {
         defer {
-            expr.fallbackToErrorType(assignable: false)
-            expr.type!.assignable = false
+            expr.fallbackToErrorType(assignable: true)
+            expr.type!.assignable = true
         }
         
-        typeCheck(expr.value)
         typeCheck(expr.to)
-        
-        if !expr.isFirstAssignment! { // type is not know yet if it is first assignment
-            if !assertType(expr: expr.to, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable) {
-                // this shouldn't be possible but... just in case constants are added in later on?
-                return
-            }
-        }
-        
-        if expr.isFirstAssignment! {
-            if expr.annotation != nil {
-                let variableType = typeCheck(expr.annotation!)
-                typeVariable(variable: expr.to, type: variableType)
-            } else {
-                // infer type
-                // do not allow void to be assigned to a variable!
-                if expr.value.type is QsVoidType {
-                    error(message: "Type '\(printType(expr.value.type))' cannot be assigned to a variable", on: expr.value)
-                    typeVariable(variable: expr.to, type: QsErrorType())
-                } else {
-                    typeVariable(variable: expr.to, type: expr.value.type!)
-                    
-                    expr.type = expr.to.type!
-                }
-                return
-            }
-        }
-        
-        expr.type = expr.to.type!
-        if assertType(
-            expr: expr.value,
-            errorMessage: "Type '\(printType(expr.value.type!))' cannot be cast to '\(printType(expr.to.type!))'",
-            typeAssertions: .isSubTypeOf(expr.to.type!)
-        ) {
-            implicitlyCastExprOfSubTypeToType(expr: &expr.value, toType: expr.to.type!, reportError: true)
-        }
+        expr.type = expr.to.type
     }
     
     func visitIsTypeExpr(expr: IsTypeExpr) {
@@ -1382,6 +1322,48 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // nothing to do
     }
     
+    func visitMultiSetStmt(stmt: MultiSetStmt) {
+        for setStmt in stmt.setStmts {
+            typeCheck(setStmt)
+        }
+    }
+    
+    func visitSetStmt(stmt: SetStmt) {
+        // valid set to types:
+        // GetExpr, SubscriptExpr, VariableSetExpr (wrapping VariableExpr), VariableExpr (only in chained)
+        typeCheck(stmt.value)
+        
+        if stmt.left is VariableToSetExpr {
+            let left = stmt.left as! VariableToSetExpr
+            if left.isFirstAssignment! {
+                if left.annotation != nil {
+                    let variableType = typeCheck(left.annotation!)
+                    typeVariable(variable: left.to, type: variableType)
+                } else {
+                    // type inference
+                    // do not allow void to be assigned to a variable!
+                    if stmt.value.type is QsVoidType {
+                        error(message: "Type '\(printType(stmt.value.type))' cannot be assigned to a variable", on: stmt.value)
+                        typeVariable(variable: left.to, type: QsErrorType())
+                    } else {
+                        typeVariable(variable: left.to, type: stmt.value.type!)
+                    }
+                }
+            }
+        }
+        typeCheck(stmt.left)
+        assertType(expr: stmt.left, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
+        if assertType(expr: stmt.value, errorMessage: "Type '\(printType(stmt.value.type!))' cannot be cast to '\(printType(stmt.left.type!))'", typeAssertions: .isSubTypeOf(stmt.left.type!)) {
+            implicitlyCastExprOfSubTypeToType(expr: &stmt.value, toType: stmt.left.type!, reportError: true)
+        }
+        
+        for i in stmt.chained.indices {
+            typeCheck(stmt.chained[i])
+            assertType(expr: stmt.chained[i], errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
+            assertType(expr: stmt.chained[i], errorMessage: "lvalues in chained equality expressions must be of the same type", typeAssertions: .isType(stmt.left.type!))
+        }
+    }
+    
     private func typeCheck(_ stmt: Stmt) {
         stmt.accept(visitor: self)
     }
@@ -1465,7 +1447,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     private func typeGlobal(id: Int) {
         let globalVariableSymbol = symbolTable.getSymbol(id: id) as! GlobalVariableSymbol
         globalVariableSymbol.variableStatus = .globalIniting
-        typeCheck(globalVariableSymbol.globalDefiningAssignExpr)
+        typeCheck(globalVariableSymbol.globalDefiningSetExpr)
         globalVariableSymbol.variableStatus = .finishedInit
     }
     

@@ -174,6 +174,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                 try resolve(expr.object!)
             }
         }
+        // FIXME: Fix and streamline super calls because it's super confusing right now with some of the super calls being handled by VariableExprs and others handled by SuperExprs
         if expr.property.lexeme == "super" {
             if currentClassStatus?.classType != .subclass {
                 if currentClassStatus?.classType == .baseClass {
@@ -232,23 +233,11 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         try resolve(expr.right)
     }
     
-    func visitPropertySetExpr(expr: PropertySetExpr) throws {
-        try resolve(expr.object)
-        try resolve(expr.value)
-    }
-    
-    func visitSubscriptSetExpr(expr: SubscriptSetExpr) throws {
-        try resolve(expr.expression)
-        try resolve(expr.index)
-        try resolve(expr.value)
-    }
-    
-    func visitAssignExpr(expr: AssignExpr) throws {
-        // first figure out if it is a variable declaration (is first assignment)
-        
-        // isFirstAssignment being nil means that it needs to be computed.
-        // true means that its already been computed and that the value must've already been resolved
-        // false means that its already been computed, but the value might've not been resolved.
+    func visitVariableToSetExpr(expr: VariableToSetExpr) throws {
+        // first figure out if a variable is being declared
+        // isFirstAssignment = nil -> unknown, needs to be computed
+        // true -> already computed and the variable reference also has already been computed
+        // false -> already computed, but the variable reference might have not been computed
         if expr.isFirstAssignment == nil {
             if let existingSymbol = symbolTable.query(expr.to.name.lexeme) {
                 if !(existingSymbol is VariableSymbol) {
@@ -261,33 +250,33 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
                         assertionFailure("Unexpected symbol type!")
                         error(message: "Cannot assign to value", token: expr.to.name)
                     }
-                    
-                    try resolve(expr.value)
+
                     return
                 }
                 expr.isFirstAssignment = false
             } else {
                 expr.isFirstAssignment = true
             }
-            
+
             if expr.isFirstAssignment! {
                 // define the variable but set it as unusable
-                
+
                 let associatedSymbol = VariableSymbol(name: expr.to.name.lexeme, variableStatus: .initing, variableType: .local)
                 expr.to.symbolTableIndex = symbolTable.addToSymbolTable(symbol: associatedSymbol)
                 defer {
                     associatedSymbol.variableStatus = .finishedInit
                 }
-                try resolve(expr.value)
             } else {
                 if expr.annotation != nil {
                     error(message: "Cannot retype variable after first assignment", token: expr.annotationColon!)
                 }
                 try resolve(expr.to)
-                try resolve(expr.value)
             }
-        } else if expr.isFirstAssignment == false {
-            try resolve(expr.value)
+        } else {
+            if expr.to.symbolTableIndex == nil {
+                preconditionFailure("Expected variable reference to be properly resolved if isFirstAssignment is computed on its enclosing VariableToSet expression.")
+//                try resolve(expr.to)
+            }
         }
     }
     
@@ -504,12 +493,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         currentFunction = previousFunction
     }
     
-    func visitExpressionStmt(stmt: ExpressionStmt) {
-        catchErrorClosure {
-            try resolve(stmt.expression)
-        }
-    }
-    
     func visitIfStmt(stmt: IfStmt) {
         catchErrorClosure {
             try resolve(stmt.condition)
@@ -599,15 +582,47 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(stmt.body)
     }
     
+    func visitContinueStmt(stmt: ContinueStmt) {
+        if !isInLoop {
+            error(message: "Can't use 'continue' outside of loop", token: stmt.keyword)
+        }
+    }
+    
     func visitBreakStmt(stmt: BreakStmt) {
         if !isInLoop {
             error(message: "Can't use 'break' outside of loop", token: stmt.keyword)
         }
     }
     
-    func visitContinueStmt(stmt: ContinueStmt) {
-        if !isInLoop {
-            error(message: "Can't use 'continue' outside of loop", token: stmt.keyword)
+    func visitExitStmt(stmt: ExitStmt) {
+        // do nothing
+    }
+    
+    func visitMultiSetStmt(stmt: MultiSetStmt) {
+        for setStmt in stmt.setStmts {
+            catchErrorClosure {
+                try resolve(setStmt)
+            }
+        }
+    }
+    
+    func visitSetStmt(stmt: SetStmt) {
+        catchErrorClosure {
+            try resolve(stmt.value)
+        }
+        for chain in stmt.chained.reversed() {
+            catchErrorClosure {
+                try resolve(chain)
+            }
+        }
+        catchErrorClosure {
+            try resolve(stmt.left)
+        }
+    }
+    
+    func visitExpressionStmt(stmt: ExpressionStmt) {
+        catchErrorClosure {
+            try resolve(stmt.expression)
         }
     }
     
@@ -621,10 +636,6 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
             symbolTable.gotoTable(previousSymbolTableIndex)
         }
         resolve(stmt.statements)
-    }
-    
-    func visitExitStmt(stmt: ExitStmt) {
-        // do nothing
     }
     
     private func error(message: String, token: Token) -> ResolverError {
@@ -719,7 +730,7 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
         let symbol = symbolTable.getSymbol(id: index) as! GlobalVariableSymbol
         symbol.variableStatus = .globalIniting
         catchErrorClosure {
-            try resolve(symbol.globalDefiningAssignExpr.value)
+            try resolve(symbol.globalDefiningSetExpr.value)
         }
         symbol.variableStatus = .finishedInit
     }
@@ -727,27 +738,36 @@ class Resolver: ExprThrowVisitor, StmtVisitor {
     private func eagerDefineGlobalVariables(statements: [Stmt]) {
         // two passes. one finding all the global defining set expressions and another traversal
         var globalVariableIndexes: [Int] = []
-        for statement in statements {
-            guard let expressionStmt = statement as? ExpressionStmt else {
-                continue
-            }
-            guard let assignExpr = expressionStmt.expression as? AssignExpr else {
-                continue
-            }
-            
-            if let existingSymbol = symbolTable.query(assignExpr.to.name.lexeme) {
-                assignExpr.isFirstAssignment = false
-                if !(existingSymbol is VariableSymbol) {
-                    error(message: "Invalid redeclaration of \(existingSymbol.name)", token: assignExpr.to.name)
-                    continue
+        
+        for statement in statements where statement is MultiSetStmt || statement is SetStmt {
+            var variableToSetExprs: [(VariableToSetExpr, SetStmt)] = []
+            if let statement = statement as? MultiSetStmt {
+                for setStmt in statement.setStmts {
+                    if let variableExpr = setStmt.left as? VariableToSetExpr {
+                        variableToSetExprs.append((variableExpr, setStmt))
+                    }
                 }
-                assignExpr.to.symbolTableIndex = existingSymbol.id
-            } else {
-                assignExpr.isFirstAssignment = true
-                assignExpr.to.symbolTableIndex = symbolTable.addToSymbolTable(
-                    symbol: GlobalVariableSymbol(name: assignExpr.to.name.lexeme, globalDefiningAssignExpr: assignExpr, variableStatus: .uninit)
-                )
-                globalVariableIndexes.append(assignExpr.to.symbolTableIndex!)
+            }
+            if let statement = statement as? SetStmt {
+                if let variableExpr = statement.left as? VariableToSetExpr {
+                    variableToSetExprs.append((variableExpr, statement))
+                }
+            }
+            for variableToSetExpr in variableToSetExprs {
+                if let existingSymbol = symbolTable.query(variableToSetExpr.0.to.name.lexeme) {
+                    variableToSetExpr.0.isFirstAssignment = false
+                    if !(existingSymbol is VariableSymbol) {
+                        error(message: "Invalid redeclaration of \(existingSymbol.name)", token: variableToSetExpr.0.to.name)
+                        continue
+                    }
+                    variableToSetExpr.0.to.symbolTableIndex = existingSymbol.id
+                } else {
+                    variableToSetExpr.0.isFirstAssignment = true
+                    variableToSetExpr.0.to.symbolTableIndex = symbolTable.addToSymbolTable(
+                        symbol: GlobalVariableSymbol(name: variableToSetExpr.0.to.name.lexeme, globalDefiningSetExpr: variableToSetExpr.1, variableStatus: .uninit)
+                    )
+                    globalVariableIndexes.append(variableToSetExpr.0.to.symbolTableIndex!)
+                }
             }
         }
         
