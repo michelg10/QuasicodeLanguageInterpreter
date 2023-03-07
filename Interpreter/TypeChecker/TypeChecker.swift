@@ -141,6 +141,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         case isArray
         case isString
         case isType(QsType)
+        case isOfTypes([QsType])
         case isSubTypeOf(QsType)
         case isSuperTypeOf(QsType)
     }
@@ -181,6 +182,22 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 if !typesEqual(expr.type!, qsType, anyEqAny: true) {
+                    if errorMessage != nil {
+                        error(message: errorMessage!, on: expr)
+                    }
+                    return false
+                }
+            case .isOfTypes(let qsTypes):
+                var assertionPass = false
+                for qsType in qsTypes {
+                    if qsType is QsErrorType {
+                        continue
+                    }
+                    if typesEqual(expr.type!, qsType, anyEqAny: true) {
+                        assertionPass = true
+                    }
+                }
+                if !assertionPass {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -235,6 +252,11 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // attempted implicit casts may fail for casting to and from array types
         // the rules for implicitly casting arrays are: casting single elements are OK, just not arrays
         
+        if typesEqual(expr.type!, toType, anyEqAny: true) {
+            // nothing needs to be done
+            return true
+        }
+        
         if let toType = toType as? QsArray {
             if let expr = expr as? ArrayLiteralExpr {
                 var canCast = true
@@ -249,9 +271,7 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return false
             }
         } else {
-            if !typesEqual(expr.type!, toType, anyEqAny: true) {
-                expr = ImplicitCastExpr(expression: expr, type: toType, startLocation: expr.startLocation, endLocation: expr.endLocation)
-            }
+            expr = ImplicitCastExpr(expression: expr, type: toType, startLocation: expr.startLocation, endLocation: expr.endLocation)
             return true
         }
     }
@@ -1230,10 +1250,12 @@ class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             assertType(
                 expr: expression,
                 errorMessage: "Cannot input to type '\(printType(expression.type!))'",
-                typeAssertions: .isType(QsInt()),
-                .isType(QsAnyType()),
-                .isType(QsDouble()),
-                .isString
+                typeAssertions: .isOfTypes([
+                    QsInt(),
+                    QsAnyType(),
+                    QsDouble(),
+                    getStringType()
+                ])
             )
         }
     }
