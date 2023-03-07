@@ -15,7 +15,7 @@ if true {
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
     // swiftlint:disable:next all
-    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test12.qs")
+    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test13.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test11.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/line continuations/4.qsc")
@@ -118,6 +118,6 @@ if true {
     } else {
         print("----- Interpreter -----")
         let interpreter = Interpreter()
-        interpreter.execute(ast)
+        interpreter.execute(ast, symbolTable: symbolTable)
     }
 }

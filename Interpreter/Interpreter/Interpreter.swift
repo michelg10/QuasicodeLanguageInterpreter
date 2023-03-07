@@ -17,6 +17,11 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         case signal
     }
     
+    private enum InterpreterInterruptSignal: Error {
+        case breakLoop
+        case continueLoop
+    }
+    
     enum TypeVerificationResult {
         case verificationWithQsErrorType
         case pass
@@ -579,7 +584,13 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         for i in lrange...rrange {
             environment.add(symbolTableId: stmt.variable.symbolTableIndex!, name: stmt.variable.name.lexeme, value: i)
             
-            try interpret(stmt.body)
+            do {
+                try interpret(stmt.body)
+            } catch InterpreterInterruptSignal.continueLoop {
+                continue
+            } catch InterpreterInterruptSignal.breakLoop {
+                break
+            }
         }
     }
     
@@ -589,16 +600,24 @@ class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             if (condition as! Bool) == false {
                 break
             }
-            try interpret(stmt.body)
+            do {
+                try interpret(stmt.body)
+            } catch InterpreterInterruptSignal.continueLoop {
+                continue
+            } catch InterpreterInterruptSignal.breakLoop {
+                break
+            } catch {
+                throw error
+            }
         }
     }
     
     func visitBreakStmt(stmt: BreakStmt) throws {
-        // TODO
+        throw InterpreterInterruptSignal.breakLoop
     }
     
     func visitContinueStmt(stmt: ContinueStmt) throws {
-        // TODO
+        throw InterpreterInterruptSignal.continueLoop
     }
     
     func visitBlockStmt(stmt: BlockStmt) throws {
