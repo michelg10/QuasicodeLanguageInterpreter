@@ -100,25 +100,36 @@ public class Scanner {
         return index == source.endIndex
     }
     
-    public func scanTokens() -> ([Token], [InterpreterProblem]) {
+    public func scanTokens(debugPrint: Bool = false) -> ([Token], [InterpreterProblem]) {
+        if debugPrint {
+            print("----- Scanner -----")
+        }
         while !isAtEnd() {
             start = current
             startLocation = currentLocation
             scanToken()
         }
         
-        tokens.append(.init(
-            tokenType: .EOL,
-            lexeme: "",
-            start: .init(index: source.count),
-            end: .init(index: source.count)
-        ))
+        if tokens.last?.tokenType != .EOL {
+            tokens.append(.init(
+                tokenType: .EOL,
+                lexeme: "",
+                start: .init(index: source.count),
+                end: .init(index: source.count)
+            ))
+        }
         tokens.append(.init(
             tokenType: .EOF,
             lexeme: "",
             start: .init(index: source.count),
             end: .init(index: source.count)
         ))
+        if debugPrint {
+            print("Scanned tokens")
+            debugPrintTokens(tokens: tokens)
+            print("\nErrors")
+            print(problems)
+        }
         return (tokens, problems)
     }
     

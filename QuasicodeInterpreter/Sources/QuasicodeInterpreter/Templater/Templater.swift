@@ -1,5 +1,7 @@
 // swiftlint:disable:next type_body_length
 public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThrowVisitor {
+    public init() {}
+    
     enum TemplaterError: Error {
         case error(String)
     }
@@ -598,7 +600,10 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
         }
     }
     
-    func expandClasses(statements: [Stmt]) -> ([Stmt], [InterpreterProblem]) {
+    public func expandClasses(statements: [Stmt], debugPrint: Bool = false) -> ([Stmt], [InterpreterProblem]) {
+        if debugPrint {
+            print("----- Templater -----")
+        }
         self.statements = statements
         problems = []
         classes = [:]
@@ -612,6 +617,12 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
         expandClasses(statements)
         
         eraseClasses(&self.statements)
+        if debugPrint {
+            print("Templated AST")
+            print(astPrinterSingleton.printAst(self.statements, printWithTypes: false))
+            print("\nErrors")
+            print(problems)
+        }
         return (self.statements, problems)
     }
     

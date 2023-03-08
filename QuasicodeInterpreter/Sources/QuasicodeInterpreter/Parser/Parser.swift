@@ -15,7 +15,7 @@ public class Parser {
     private var stringClassIndex: Int
     private var builtinClasses: [String]
     
-    init(tokens: [Token], stringClassIndex: Int, builtinClasses: [String]) {
+    public init(tokens: [Token], stringClassIndex: Int, builtinClasses: [String]) {
         self.tokens = tokens
         self.stringClassIndex = stringClassIndex
         self.builtinClasses = builtinClasses
@@ -42,17 +42,31 @@ public class Parser {
         }
     }
     
-    func parse() -> ([Stmt], [InterpreterProblem]) {
+    public func parse(addBuiltinclassesToAst: Bool, debugPrint: Bool = false) -> ([Stmt], [InterpreterProblem]) {
+        if debugPrint {
+            print("----- Parser -----")
+        }
         current = 0
         classNames = Set(builtinClasses)
         parseUserDefinedTypes()
         current = 0
         var statements: [Stmt] = []
+        
+        if addBuiltinclassesToAst {
+            statements = Builtins.addBuiltinClassesToAst(statements)
+        }
+        
         isInGlobalScope = true
         while !isAtEnd() {
             if let newDeclaration = declaration() {
                 statements.append(newDeclaration)
             }
+        }
+        
+        if debugPrint {
+            print("Parsed AST")
+            print(astPrinterSingleton.printAst(statements, printWithTypes: false))
+            print("\nErrors", problems)
         }
         
         return (statements, problems)

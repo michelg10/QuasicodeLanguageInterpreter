@@ -2,7 +2,10 @@
 /// A slow tree-walk interpreter for debugging purposes
 public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
 // swiftlint:enable type_body_length
+    public init() {}
+    
     let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
+    var doDebugPrint = false
     private var environment = Environment()
     
     private var stringClassId = -1
@@ -712,7 +715,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         let result = try expr.accept(visitor: self)
         if verifyTypeCheck {
             let verificationResult = verifyIsType(result, type: expr.type!)
-            if verificationResult != .pass {
+            if verificationResult != .pass && doDebugPrint {
                 debugPrint(purpose: "Type checker verification", "Type verification failure")
                 preconditionFailure()
             }
@@ -730,11 +733,15 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    func execute(_ stmts: [Stmt], symbolTable: SymbolTables) {
+    public func execute(_ stmts: [Stmt], symbolTable: SymbolTables, debugPrint: Bool = false) {
+        if debugPrint {
+            print("----- Interpreter -----")
+        }
+        doDebugPrint = debugPrint
+        
         stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         self.environment = Environment()
         for stmt in stmts {
-            // TODO: error handling, user i/o
             do {
                 try interpret(stmt)
             } catch let error {

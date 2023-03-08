@@ -1,5 +1,7 @@
 // swiftlint:disable:next type_body_length
 public class Resolver: ExprThrowVisitor, StmtVisitor {
+    public init() {}
+    
     private enum FunctionType {
         case none, function, staticMethod, nonstaticMethod, initializer
     }
@@ -963,7 +965,10 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables) -> [InterpreterProblem] {
+    public func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables, debugPrint: Bool = false) -> [InterpreterProblem] {
+        if debugPrint {
+            print("----- Resolver -----")
+        }
         self.symbolTable = symbolTable
         
         isInGlobalScope = true
@@ -978,6 +983,14 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
         resolve(statements)
         
         symbolTable = self.symbolTable
+        if debugPrint {
+            print("Resolved AST")
+            print(astPrinterSingleton.printAst(statements, printWithTypes: false))
+            print("Symbol table")
+            symbolTable.printTable()
+            print("\nErrors")
+            print(problems)
+        }
         return problems
     }
 }

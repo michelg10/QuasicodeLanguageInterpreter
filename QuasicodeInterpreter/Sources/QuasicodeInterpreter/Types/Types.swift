@@ -66,7 +66,7 @@ public class QsAnyType: QsType {
     public var assignable: Bool
 }
 
-internal let builtinClassNames = ["Collection", "Stack", "Queue"]
+public let builtinClassNames = ["Collection", "Stack", "Queue"]
 public class QsClass: QsType {
     init(name: String, id: Int, assignable: Bool) {
         self.assignable = assignable

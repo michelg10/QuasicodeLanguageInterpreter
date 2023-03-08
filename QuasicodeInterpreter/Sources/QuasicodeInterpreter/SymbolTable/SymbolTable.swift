@@ -57,7 +57,7 @@ public class SymbolTables {
         return result
     }
     
-    init() {
+    public init() {
         current = .init(parent: nil, id: 0)
         tables.append(current)
     }

@@ -3,7 +3,7 @@
 // TODO: Probably put all of these into external files with Quasicode-native (or implement them in Swift) implementations
 
 extension Builtins {
-    static func addBuiltinClassesToAst(_ ast: [Stmt]) -> [Stmt] {
+    public static func addBuiltinClassesToAst(_ ast: [Stmt]) -> [Stmt] {
         // swiftlint:enable function_body_length
         struct MethodDescription {
             struct FunctionParam {

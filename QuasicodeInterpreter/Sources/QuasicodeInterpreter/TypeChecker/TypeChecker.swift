@@ -1,5 +1,8 @@
+// swiftlint:disable file_length
 // swiftlint:disable:next type_body_length
 public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
+    public init() {}
+    
     private var problems: [InterpreterProblem] = []
     private var symbolTable: SymbolTables = .init()
     // type checker needs to know:
@@ -1487,7 +1490,11 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables) -> [InterpreterProblem] {
+    public func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables, debugPrint: Bool = false) -> [InterpreterProblem] {
+        if debugPrint {
+            print("----- Type Checker -----")
+        }
+        
         self.symbolTable = symbolTables
         stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         
@@ -1500,6 +1507,16 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         symbolTables = self.symbolTable
+        
+        if debugPrint {
+            print("Type checked AST")
+            print(astPrinterSingleton.printAst(statements, printWithTypes: true))
+            print("Symbol table")
+            symbolTable.printTable()
+            print("\nErrors")
+            print(problems)
+        }
+        
         return problems
     }
     

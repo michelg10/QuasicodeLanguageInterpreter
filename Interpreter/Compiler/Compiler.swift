@@ -1,3 +1,4 @@
+/*
 public class Compiler: ExprVisitor, StmtVisitor {
     var compilingChunk: UnsafeMutablePointer<Chunk>!
     var symbolTable: SymbolTables = .init()
@@ -368,3 +369,4 @@ public class Compiler: ExprVisitor, StmtVisitor {
         return compilingChunk
     }
 }
+*/

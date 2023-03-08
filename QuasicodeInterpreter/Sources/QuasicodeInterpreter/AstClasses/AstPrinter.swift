@@ -1,6 +1,10 @@
+internal let astPrinterSingleton = AstPrinter()
+
 // swiftlint:disable type_body_length
-internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
+public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
 // swiftlint:enable type_body_length
+    public init() {}
+    
     var printWithTypes = false
     
     private func parenthesize(name: String, additionalProperties: [(String, String)] = [], exprs: [Expr]) -> String {
@@ -82,11 +86,11 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return []
     }
     
-    func visitGroupingExprString(expr: GroupingExpr) -> String {
+    public func visitGroupingExprString(expr: GroupingExpr) -> String {
         parenthesize(name: "Group", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.expression)
     }
     
-    func visitLiteralExprString(expr: LiteralExpr) -> String {
+    public func visitLiteralExprString(expr: LiteralExpr) -> String {
         if expr.value == nil {
             return "nil"
         }
@@ -105,35 +109,35 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return "[Literal of unknown type]"
     }
     
-    func visitThisExprString(expr: ThisExpr) -> String {
+    public func visitThisExprString(expr: ThisExpr) -> String {
         parenthesize(name: "ThisExpr", additionalProperties: generateAdditionalTypePropertyArray(expr))
     }
     
-    func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String {
+    public func visitArrayLiteralExprString(expr: ArrayLiteralExpr) -> String {
         parenthesize(name: "ArrayLiteral", additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.values)
     }
     
-    func visitStaticClassExprString(expr: StaticClassExpr) -> String {
+    public func visitStaticClassExprString(expr: StaticClassExpr) -> String {
         parenthesize(name: "StaticClass", additionalProperties: [
             ("class", printAst(expr.classType)),
             ("classId", stringifyOptionalInt(expr.classId))
         ] + generateAdditionalTypePropertyArray(expr))
     }
     
-    func visitSuperExprString(expr: SuperExpr) -> String {
+    public func visitSuperExprString(expr: SuperExpr) -> String {
         parenthesize(name: "super", additionalProperties: [
             ("property", expr.property.lexeme),
             ("propertyId", stringifyOptionalInt(expr.propertyId))
         ] + generateAdditionalTypePropertyArray(expr))
     }
     
-    func visitVariableExprString(expr: VariableExpr) -> String {
+    public func visitVariableExprString(expr: VariableExpr) -> String {
         parenthesize(name: expr.name.lexeme, additionalProperties: [
             ("index", stringifyOptionalInt(expr.symbolTableIndex))
         ] + generateAdditionalTypePropertyArray(expr))
     }
     
-    func visitSubscriptExprString(expr: SubscriptExpr) -> String {
+    public func visitSubscriptExprString(expr: SubscriptExpr) -> String {
         parenthesize(
             name: "Subscript",
             additionalProperties: [] + generateAdditionalTypePropertyArray(expr),
@@ -142,7 +146,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitCallExprString(expr: CallExpr) -> String {
+    public func visitCallExprString(expr: CallExpr) -> String {
         var callsFunction = "none"
         if expr.uniqueFunctionCall != nil {
             callsFunction = "Unique<\(expr.uniqueFunctionCall!)>"
@@ -165,7 +169,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitGetExprString(expr: GetExpr) -> String {
+    public func visitGetExprString(expr: GetExpr) -> String {
         parenthesize(
             name: "Get",
             additionalProperties: [
@@ -176,11 +180,11 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitUnaryExprString(expr: UnaryExpr) -> String {
+    public func visitUnaryExprString(expr: UnaryExpr) -> String {
         parenthesize(name: expr.opr.lexeme, additionalProperties: generateAdditionalTypePropertyArray(expr), exprs: expr.right)
     }
     
-    func visitCastExprString(expr: CastExpr) -> String {
+    public func visitCastExprString(expr: CastExpr) -> String {
         parenthesize(
             name: "cast",
             additionalProperties: [
@@ -190,7 +194,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitArrayAllocationExprString(expr: ArrayAllocationExpr) -> String {
+    public func visitArrayAllocationExprString(expr: ArrayAllocationExpr) -> String {
         parenthesize(
             name: "ArrayAllocate",
             additionalProperties: [
@@ -200,7 +204,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String {
+    public func visitClassAllocationExprString(expr: ClassAllocationExpr) -> String {
         parenthesize(
             name: "ClassAllocate",
             additionalProperties: [
@@ -210,7 +214,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitBinaryExprString(expr: BinaryExpr) -> String {
+    public func visitBinaryExprString(expr: BinaryExpr) -> String {
         parenthesize(
             name:expr.opr.lexeme,
             additionalProperties: generateAdditionalTypePropertyArray(expr),
@@ -219,7 +223,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitLogicalExprString(expr: LogicalExpr) -> String {
+    public func visitLogicalExprString(expr: LogicalExpr) -> String {
         parenthesize(
             name: expr.opr.lexeme,
             additionalProperties: generateAdditionalTypePropertyArray(expr),
@@ -228,7 +232,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitVariableToSetExprString(expr: VariableToSetExpr) -> String {
+    public func visitVariableToSetExprString(expr: VariableToSetExpr) -> String {
         parenthesize(
             name: "VariableToSet",
             additionalProperties: [
@@ -239,7 +243,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitIsTypeExprString(expr: IsTypeExpr) -> String {
+    public func visitIsTypeExprString(expr: IsTypeExpr) -> String {
         parenthesize(
             name: "IsType",
             additionalProperties: [
@@ -250,7 +254,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
+    public func visitImplicitCastExprString(expr: ImplicitCastExpr) -> String {
         parenthesize(
             name: "ImplicitCast",
             additionalProperties: [
@@ -268,7 +272,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         "= \(field.initializer == nil ? "NoInit" : printAst(field.initializer!))"
     }
     
-    func visitClassStmtString(stmt: ClassStmt) -> String {
+    public func visitClassStmtString(stmt: ClassStmt) -> String {
         let templateParametersDescription = stmt.templateParameters == nil ? "none" : stmt.templateParameters!.reduce(into: "", { result, token in
             if result.isEmpty {
                 result = token.lexeme
@@ -308,15 +312,15 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return result
     }
     
-    func visitMethodStmtString(stmt: MethodStmt) -> String {
+    public func visitMethodStmtString(stmt: MethodStmt) -> String {
         "(Method \(stmt.isStatic ? "static" : "nostatic") \(stmt.visibilityModifier == .PUBLIC ? "public" : "private") \(printAst(stmt.function)))"
     }
     
-    func visitMultiSetStmtString(stmt: MultiSetStmt) -> String {
+    public func visitMultiSetStmtString(stmt: MultiSetStmt) -> String {
         "(MultiSet {\n" + indentBlockStmts(blockStmts: stmt.setStmts) + "})"
     }
     
-    func visitSetStmtString(stmt: SetStmt) -> String {
+    public func visitSetStmtString(stmt: SetStmt) -> String {
         var exprs = stmt.chained
         exprs.insert(stmt.left, at: 0)
         exprs.append(stmt.value)
@@ -346,7 +350,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return "(" + result + ")"
     }
     
-    func visitFunctionStmtString(stmt: FunctionStmt) -> String {
+    public func visitFunctionStmtString(stmt: FunctionStmt) -> String {
         "(Function{" +
             "returns \(stmt.annotation == nil ? "Void" : astTypeToString(astType: stmt.annotation))}" +
             "{" +
@@ -358,7 +362,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
             "\(encapsulateBlock(stmts: stmt.body, scopeIndex: stmt.scopeIndex)))"
     }
     
-    func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
+    public func visitExpressionStmtString(stmt: ExpressionStmt) -> String {
         parenthesize(name: "Expression", exprs: stmt.expression)
     }
     
@@ -385,25 +389,25 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         return result
     }
     
-    func visitIfStmtString(stmt: IfStmt) -> String {
+    public func visitIfStmtString(stmt: IfStmt) -> String {
         "(\(ifStmt(stmt: stmt, isElseIf: false)))"
     }
     
-    func visitOutputStmtString(stmt: OutputStmt) -> String {
+    public func visitOutputStmtString(stmt: OutputStmt) -> String {
         parenthesize(
             name: "Output",
             exprs: stmt.expressions
         )
     }
     
-    func visitInputStmtString(stmt: InputStmt) -> String {
+    public func visitInputStmtString(stmt: InputStmt) -> String {
         parenthesize(
             name: "Input",
             exprs: stmt.expressions
         )
     }
     
-    func visitReturnStmtString(stmt: ReturnStmt) -> String {
+    public func visitReturnStmtString(stmt: ReturnStmt) -> String {
         if stmt.value == nil {
             return parenthesize(name: "Return")
         }
@@ -413,7 +417,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {
+    public func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {
         parenthesizeBlock(
             name: "LoopFrom",
             exprs: [stmt.variable, stmt.lRange, stmt.rRange],
@@ -421,7 +425,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitWhileStmtString(stmt: WhileStmt) -> String {
+    public func visitWhileStmtString(stmt: WhileStmt) -> String {
         parenthesizeBlock(
             name: "While",
             exprs: [stmt.expression],
@@ -429,26 +433,26 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
     }
     
-    func visitBreakStmtString(stmt: BreakStmt) -> String {
+    public func visitBreakStmtString(stmt: BreakStmt) -> String {
         parenthesize(
             name: "Break"
         )
     }
     
-    func visitContinueStmtString(stmt: ContinueStmt) -> String {
+    public func visitContinueStmtString(stmt: ContinueStmt) -> String {
         parenthesize(
             name: "Continue"
         )
     }
     
-    func visitBlockStmtString(stmt: BlockStmt) -> String {
+    public func visitBlockStmtString(stmt: BlockStmt) -> String {
         encapsulateBlock(
             stmts: stmt.statements,
             scopeIndex: stmt.scopeIndex
         )
     }
     
-    func visitExitStmtString(stmt: ExitStmt) -> String {
+    public func visitExitStmtString(stmt: ExitStmt) -> String {
         parenthesize(
             name: "Exit"
         )
@@ -466,7 +470,7 @@ internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         stmt.accept(visitor: self)
     }
     
-    func printAst(_ stmts: [Stmt], printWithTypes: Bool) -> String {
+    public func printAst(_ stmts: [Stmt], printWithTypes: Bool) -> String {
         self.printWithTypes = printWithTypes
         var result = ""
         for stmt in stmts {
