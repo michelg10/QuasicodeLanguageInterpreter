@@ -2,7 +2,15 @@ public enum InterpreterProblemType {
     case error, warning, breakpoint
 }
 
-public struct InterpreterLocation {
+public struct InterpreterLocation: Equatable, Comparable {
+    public static func < (lhs: InterpreterLocation, rhs: InterpreterLocation) -> Bool {
+        return lhs.index < rhs.index
+    }
+    
+    public static func == (lhs: InterpreterLocation, rhs: InterpreterLocation) -> Bool {
+        return lhs.index == rhs.index
+    }
+    
     var index: Int
     var row: Int
     var column: Int
