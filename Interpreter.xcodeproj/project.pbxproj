@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D014072129D411DD00379905 /* QuasicodeInterpreter in Frameworks */ = {isa = PBXBuildFile; productRef = D014072029D411DD00379905 /* QuasicodeInterpreter */; };
 		D0DD7C1D28179A1B00FBD20C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0DD7C1C28179A1B00FBD20C /* main.swift */; };
-		D0ED30E729B856B300853B41 /* QuasicodeInterpreter in Frameworks */ = {isa = PBXBuildFile; productRef = D0ED30E629B856B300853B41 /* QuasicodeInterpreter */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -45,7 +45,7 @@
 		D03777D229B7794500516B39 /* VM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VM.h; sourceTree = "<group>"; };
 		D03777D329B7794500516B39 /* OpCode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpCode.h; sourceTree = "<group>"; };
 		D06507AA299BDA6100D9B3EB /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
-		D092DDFD29B8561B006535AF /* QuasicodeInterpreter */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = QuasicodeInterpreter; sourceTree = "<group>"; };
+		D06B91AA29D411AA0000DA76 /* QuasicodeInterpreter */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = QuasicodeInterpreter; sourceTree = "<group>"; };
 		D0DD7C1928179A1B00FBD20C /* Interpreter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Interpreter; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0DD7C1C28179A1B00FBD20C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -55,7 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0ED30E729B856B300853B41 /* QuasicodeInterpreter in Frameworks */,
+				D014072129D411DD00379905 /* QuasicodeInterpreter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,11 +96,19 @@
 			path = VM;
 			sourceTree = "<group>";
 		};
+		D06B91A929D411AA0000DA76 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				D06B91AA29D411AA0000DA76 /* QuasicodeInterpreter */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		D0DD7C1028179A1B00FBD20C = {
 			isa = PBXGroup;
 			children = (
+				D06B91A929D411AA0000DA76 /* Packages */,
 				D06507AA299BDA6100D9B3EB /* .swiftlint.yml */,
-				D092DDFD29B8561B006535AF /* QuasicodeInterpreter */,
 				D0DD7C1B28179A1B00FBD20C /* Interpreter */,
 				D0DD7C1A28179A1B00FBD20C /* Products */,
 				D0ED30E529B856B300853B41 /* Frameworks */,
@@ -151,7 +159,7 @@
 			);
 			name = Interpreter;
 			packageProductDependencies = (
-				D0ED30E629B856B300853B41 /* QuasicodeInterpreter */,
+				D014072029D411DD00379905 /* QuasicodeInterpreter */,
 			);
 			productName = Interpreter;
 			productReference = D0DD7C1928179A1B00FBD20C /* Interpreter */;
@@ -407,11 +415,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D092DDFE29B8566A006535AF /* QuasicodeInterpreter */ = {
+		D014072029D411DD00379905 /* QuasicodeInterpreter */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = QuasicodeInterpreter;
 		};
-		D0ED30E629B856B300853B41 /* QuasicodeInterpreter */ = {
+		D092DDFE29B8566A006535AF /* QuasicodeInterpreter */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = QuasicodeInterpreter;
 		};

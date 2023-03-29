@@ -24,7 +24,7 @@ if true {
     let start = DispatchTime.now()
     
     let scanner = QuasicodeInterpreter.Scanner(source: toInterpret)
-    let (tokens, scanErrors) = scanner.scanTokens(debugPrint: false)
+    let (tokens, scanErrors) = scanner.scanTokens(debugPrint: true)
     
     // initialize the symbol table and put in all the default classes
     var symbolTable: SymbolTables = .init()

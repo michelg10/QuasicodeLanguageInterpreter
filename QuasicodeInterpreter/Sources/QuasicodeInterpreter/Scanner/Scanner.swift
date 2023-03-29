@@ -193,8 +193,10 @@ public class Scanner {
                         advance() // consume the \n and keep on going
                     }
                 }
+                addToken(type: .COMMENT)
             } else if match(expected: "*") {
                 blockComment()
+                addToken(type: .COMMENT)
             } else {
                 addToken(type: .SLASH)
             }
@@ -237,7 +239,7 @@ public class Scanner {
             }
         }
         
-        if isAtEnd() {
+        if isAtEnd() && blockCommentLevel != 0 {
             problems.append(.init(message: "Unterminated '/*' comment", start: startingCommentLocation, end: startingCommentLocation))
             return
         }

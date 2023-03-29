@@ -32,6 +32,9 @@ internal enum TokenType {
     // Classes
     case CLASS, EXTENDS, PRIVATE, PUBLIC, STATIC, THIS, SUPER
     
+    // Comments
+    case COMMENT
+    
     // Other
     case END
     

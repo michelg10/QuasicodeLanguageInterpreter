@@ -16,7 +16,9 @@ public class Parser {
     private var builtinClasses: [String]
     
     public init(tokens: [Token], stringClassIndex: Int, builtinClasses: [String]) {
-        self.tokens = tokens
+        self.tokens = tokens.filter { token in
+            token.tokenType != .COMMENT
+        }
         self.stringClassIndex = stringClassIndex
         self.builtinClasses = builtinClasses
     }
