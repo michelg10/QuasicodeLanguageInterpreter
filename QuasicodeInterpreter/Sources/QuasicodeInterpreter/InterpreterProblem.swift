@@ -4,17 +4,30 @@ public enum InterpreterProblemType {
 
 public struct InterpreterLocation {
     var index: Int
-    init(index: Int) {
+    var row: Int
+    var column: Int
+    var logicalRow: Int
+    var logicalColumn: Int
+    
+    init(index: Int, row: Int, column: Int, logicalRow: Int, logicalColumn: Int) {
         self.index = index
+        self.row = row
+        self.column = column
+        self.logicalRow = logicalRow
+        self.logicalColumn = logicalColumn
     }
     init(start: Token) {
-        index = start.startLocation.index
+        self = start.startLocation
     }
     init(end: Token) {
-        index = end.endLocation.index
+        self = end.endLocation
     }
     static func dub() -> InterpreterLocation {
-        return .init(index: -1)
+        return .init(index: -1, row: -1, column: -1, logicalRow: -1, logicalColumn: -1)
+    }
+    
+    func offsetByOnSameLine(_ offset: Int) -> InterpreterLocation {
+        return .init(index: index + offset, row: row, column: column + offset, logicalRow: logicalRow, logicalColumn: logicalColumn + offset)
     }
 }
 

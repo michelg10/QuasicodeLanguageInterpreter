@@ -4,9 +4,9 @@ public class Scanner {
     private var tokens: [Token] = []
     private var problems: [InterpreterProblem] = []
     private var start: String.Index
-    private var startLocation: InterpreterLocation = .init(index: 0)
+    private var startLocation: InterpreterLocation = .init(index: 0, row: 1, column: 1, logicalRow: 1, logicalColumn: 1)
     private var current: String.Index
-    private var currentLocation: InterpreterLocation = .init(index: 0)
+    private var currentLocation: InterpreterLocation = .init(index: 0, row: 1, column: 1, logicalRow: 1, logicalColumn: 1)
     
     /// Saves the current location state of the interpreter
     private struct LocationState {
@@ -110,23 +110,24 @@ public class Scanner {
             scanToken()
         }
         
+        let endOfDocumentLocation: InterpreterLocation = .init(index: source.count, row: startLocation.row + 1, column: 1, logicalRow: startLocation.logicalRow + 1, logicalColumn: 1)
         if tokens.last?.tokenType != .EOL {
             tokens.append(.init(
                 tokenType: .EOL,
                 lexeme: "",
-                start: .init(index: source.count),
-                end: .init(index: source.count)
+                start: endOfDocumentLocation,
+                end: endOfDocumentLocation
             ))
         }
         tokens.append(.init(
             tokenType: .EOF,
             lexeme: "",
-            start: .init(index: source.count),
-            end: .init(index: source.count)
+            start: endOfDocumentLocation,
+            end: endOfDocumentLocation
         ))
         if debugPrint {
             print("Scanned tokens")
-            debugPrintTokens(tokens: tokens)
+            debugPrintTokens(tokens: tokens, printLocation: true)
             print("\nErrors")
             print(problems)
         }
@@ -148,7 +149,7 @@ public class Scanner {
         if peek()! != "\n" {
             problems.append(.init(message: "Expected end-of-line after line continuation", start: currentLocation, end: currentLocation))
         } else {
-            advance()
+            advance(doLogicalLineIncrement: false)
         }
     }
     
@@ -224,7 +225,7 @@ public class Scanner {
     }
     
     private func blockComment() {
-        let startingCommentLocation: InterpreterLocation = .init(index: currentLocation.index - 2)
+        let startingCommentLocation: InterpreterLocation = currentLocation.offsetByOnSameLine(-2)
         var blockCommentLevel = 1
         while blockCommentLevel > 0 && !isAtEnd() {
             let currentCharacter = advance()
@@ -294,16 +295,17 @@ public class Scanner {
     }
     
     private func string() {
-        let startingQuoteLocation: InterpreterLocation = .init(index: currentLocation.index - 1)
+        let startingQuoteLocation: InterpreterLocation = currentLocation.offsetByOnSameLine(-1)
         var value = ""
         while peek() != "\"" && !isAtEnd() {
             let currentCharacter = advance()
             if currentCharacter == "\\" {
                 if isAtEnd() {
+                    let problemLocation: InterpreterLocation = currentLocation.offsetByOnSameLine(-1)
                     problems.append(.init(
                         message: "Empty escape sequence",
-                        start: .init(index: currentLocation.index - 1),
-                        end: .init(index: currentLocation.index - 1)
+                        start: problemLocation,
+                        end: problemLocation
                     ))
                     return
                 }
@@ -338,8 +340,8 @@ public class Scanner {
                     // error!
                     problems.append(.init(
                         message: "Invalid escape sequence \"\\\(next)\"",
-                        start: .init(index: currentLocation.index - 2),
-                        end: .init(index: currentLocation.index - 1)
+                        start: currentLocation.offsetByOnSameLine(-2),
+                        end: currentLocation.offsetByOnSameLine(-1)
                     ))
                 }
             } else {
@@ -435,12 +437,22 @@ public class Scanner {
         return true
     }
     
-    private func advance() -> Character {
+    private func advance(doLogicalLineIncrement: Bool = true) -> Character {
         let value = source[current]
         current = source.index(current, offsetBy: 1)
         
         if !isAtEnd() {
             currentLocation.index += 1
+            currentLocation.column += 1
+            currentLocation.logicalColumn += 1
+            if value == "\n" {
+                currentLocation.row += 1
+                currentLocation.column = 1
+                if doLogicalLineIncrement {
+                    currentLocation.logicalRow += 1
+                    currentLocation.logicalColumn = 1
+                }
+            }
         }
         
         return value
