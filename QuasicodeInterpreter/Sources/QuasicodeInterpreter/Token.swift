@@ -1,8 +1,8 @@
 public struct Token {
     public let tokenType: TokenType
     public let lexeme: String
-    public let startLocation: InterpreterLocation
-    public let endLocation: InterpreterLocation
+    private(set) public var startLocation: InterpreterLocation
+    private(set) public var endLocation: InterpreterLocation
     let value: Any?
     
     public func isDummy() -> Bool {
@@ -15,6 +15,11 @@ public struct Token {
     
     public func containsLocation(_ location: InterpreterLocation) -> Bool {
         return startLocation <= location && location < endLocation
+    }
+    
+    public mutating func shiftLocation(by shift: Int) {
+        self.startLocation.index += shift
+        self.endLocation.index += shift
     }
     
     public init(tokenType: TokenType, lexeme: String, start: InterpreterLocation, end: InterpreterLocation, value: Any? = nil) {

@@ -146,52 +146,64 @@ public class Parser {
         var staticKeyword: Token?
         
         while !checkTokenType(is: .END) && !isAtEnd() {
-            var visibilityModifer: VisibilityModifier?
-            var isStatic: Bool?
-            
-            while match(types: .PUBLIC, .PRIVATE, .STATIC) {
-                switch previous().tokenType {
-                case .PUBLIC:
-                    if visibilityModifer != nil {
-                        throw error(message: "Repeated visibility modifier", token: previous())
+            do {
+                var startLocation: InterpreterLocation?
+                var visibilityModifer: VisibilityModifier?
+                var isStatic: Bool?
+                
+                while match(types: .PUBLIC, .PRIVATE, .STATIC) {
+                    if startLocation == nil {
+                        startLocation = previous().startLocation
                     }
-                    visibilityModifer = .PUBLIC
-                case .PRIVATE:
-                    if visibilityModifer != nil {
-                        throw error(message: "Repeated visibility modifier", token: previous())
+                    switch previous().tokenType {
+                    case .PUBLIC:
+                        if visibilityModifer != nil {
+                            throw error(message: "Repeated visibility modifier", token: previous())
+                        }
+                        visibilityModifer = .PUBLIC
+                    case .PRIVATE:
+                        if visibilityModifer != nil {
+                            throw error(message: "Repeated visibility modifier", token: previous())
+                        }
+                        visibilityModifer = .PRIVATE
+                    case .STATIC:
+                        if isStatic != nil {
+                            throw error(message: "Repeated static modifier", token: previous())
+                        }
+                        staticKeyword = previous()
+                        isStatic = true
+                    default:
+                        continue
                     }
-                    visibilityModifer = .PRIVATE
-                case .STATIC:
-                    if isStatic != nil {
-                        throw error(message: "Repeated static modifier", token: previous())
-                    }
-                    staticKeyword = previous()
-                    isStatic = true
-                default:
-                    continue
                 }
-            }
-            
-            if isStatic == nil {
-                isStatic = false
-            }
-            if visibilityModifer == nil {
-                visibilityModifer = .PUBLIC
-            }
-            
-            if match(types: .FUNCTION) {
-                let function = try functionDeclaration()
-                let method: MethodStmt = .init(
-                    isStatic: isStatic!,
-                    staticKeyword: staticKeyword,
-                    visibilityModifier: visibilityModifer!,
-                    function: function as! FunctionStmt
-                )
-                methods.append(method)
-            } else if match(types: .IDENTIFIER) {
-                let fieldName = previous()
-                var initializer: Expr?
-                do {
+                
+                if isStatic == nil {
+                    isStatic = false
+                }
+                if visibilityModifer == nil {
+                    visibilityModifer = .PUBLIC
+                }
+                
+                if match(types: .FUNCTION) {
+                    if startLocation == nil {
+                        startLocation = previous().startLocation
+                    }
+                    let function = try functionDeclaration()
+                    let method: MethodStmt = .init(
+                        isStatic: isStatic!,
+                        staticKeyword: staticKeyword,
+                        visibilityModifier: visibilityModifer!,
+                        function: function as! FunctionStmt,
+                        startLocation: startLocation!,
+                        endLocation: function.endLocation
+                    )
+                    methods.append(method)
+                } else if match(types: .IDENTIFIER) {
+                    if startLocation == nil {
+                        startLocation = previous().startLocation
+                    }
+                    let fieldName = previous()
+                    var initializer: Expr?
                     try consume(type: .COLON, message: "Expect type annotation for field declaration")
                     guard let typeAnnotation = try typeSignature(matchArray: true, optional: false) else {
                         throw ParserError.error("Expected non-nil")
@@ -208,22 +220,26 @@ public class Parser {
                         name: fieldName,
                         astType: typeAnnotation,
                         initializer: initializer,
-                        symbolTableIndex: nil
+                        symbolTableIndex: nil,
+                        startLocation: startLocation!,
+                        endLocation: previous().endLocation
                     )
                     try consume(type: .EOL, message: "Expect end-of-line after field declaration")
                     fields.append(field)
-                } catch {
-                    synchronize()
+                } else if match(types: .EOL) {
+                    if isStatic != nil || visibilityModifer != nil {
+                        throw error(message: "Expect method or field declaration", token: peek())
+                    }
+                } else {
+                    throw error(message: "Expect method or field declaration", token: peek())
                 }
-            } else if match(types: .EOL) {
-                // ignore
-            } else {
-                throw error(message: "Expect method or field declaration", token: peek())
+            } catch {
+                synchronize()
             }
         }
         
         try consume(type: .END, message: "Expect 'end class' after class declaration")
-        try consume(type: .CLASS, message: "Expect 'end class' after class declaration")
+        let endOfStmt = try consume(type: .CLASS, message: "Expect 'end class' after class declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end class'")
         
         let result = ClassStmt(
@@ -238,7 +254,9 @@ public class Parser {
             expandedTemplateParameters: nil,
             superclass: superclass,
             methods: methods,
-            fields: fields
+            fields: fields,
+            startLocation: keyword.startLocation,
+            endLocation: endOfStmt.endLocation
         )
         return result
     }
@@ -275,8 +293,8 @@ public class Parser {
         // MARK: Function body
         let body = block(additionalEndMarkers: [])
         
-        let endOfFunction = try consume(type: .END, message: "Expect 'end function' after function declaration")
-        try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
+        try consume(type: .END, message: "Expect 'end function' after function declaration")
+        let endOfFunction = try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
         return FunctionStmt(
@@ -288,7 +306,9 @@ public class Parser {
             params: parameters,
             annotation: functionType,
             body: body.statements,
-            endOfFunction: endOfFunction
+            endOfFunction: endOfFunction,
+            startLocation: keyword.startLocation,
+            endLocation: endOfFunction.endLocation
         )
     }
     
@@ -322,6 +342,7 @@ public class Parser {
     }
     
     private func ifStatement() throws -> Stmt {
+        let startOfStatement = previous()
         let condition = try expression()
         try consume(type: .THEN, message: "Expect 'then' after if condition")
         try consume(type: .EOL, message: "Expect end-of-line after if condition")
@@ -330,12 +351,13 @@ public class Parser {
         var elseBranch: BlockStmt?
         
         while match(types: .ELSE) {
+            let startOfStmt = previous().startLocation
             if match(types: .IF) {
                 let condition = try expression()
                 try consume(type: .THEN, message: "Expect 'then' after if condition")
                 try consume(type: .EOL, message: "Expect end-of-line after if condition")
                 let thisElseIfBranch = block(additionalEndMarkers: [.ELSE])
-                elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil))
+                elseIfBranches.append(.init(condition: condition, thenBranch: thisElseIfBranch, elseIfBranches: [], elseBranch: nil, startLocation: startOfStmt, endLocation: thisElseIfBranch.endLocation))
             } else {
                 try consume(type: .EOL, message: "Expect end-of-line after else")
                 elseBranch = block(additionalEndMarkers: [.ELSE])
@@ -344,28 +366,32 @@ public class Parser {
         }
         
         try consume(type: .END, message: "Expect 'end if' after if statement")
-        try consume(type: .IF, message: "Expect 'end if' after if statement")
+        let endOfStatement = try consume(type: .IF, message: "Expect 'end if' after if statement")
         try consume(type: .EOL, message: "Expect end-of-line after 'end if'")
         
-        return IfStmt(condition: condition, thenBranch: thenBranch, elseIfBranches: elseIfBranches, elseBranch: elseBranch)
+        return IfStmt(condition: condition, thenBranch: thenBranch, elseIfBranches: elseIfBranches, elseBranch: elseBranch, startLocation: startOfStatement.startLocation, endLocation: endOfStatement.endLocation)
     }
     
     private func outputStatement() throws -> Stmt {
+        let startOfStatement = previous()
         var expressions: [Expr] = []
         repeat {
             expressions.append(try expression())
         } while match(types: .COMMA)
+        let endOfStatement = previous()
         try consume(type: .EOL, message: "Expect end-of-line after output statement")
-        return OutputStmt(expressions: expressions)
+        return OutputStmt(expressions: expressions, startLocation: startOfStatement.startLocation, endLocation: endOfStatement.endLocation)
     }
     
     private func inputStatement() throws -> Stmt {
+        let startOfStatement = previous()
         var expressions: [Expr] = []
         repeat {
             expressions.append(try writableExpression())
         } while match(types: .COMMA)
+        let endOfStatement = previous()
         try consume(type: .EOL, message: "Expect end-of-line after input statement")
-        return InputStmt(expressions: expressions)
+        return InputStmt(expressions: expressions, startLocation: startOfStatement.startLocation, endLocation: endOfStatement.endLocation)
     }
     
     private func returnStatement() throws -> Stmt {
@@ -376,12 +402,15 @@ public class Parser {
             value = try expression()
         }
         
+        let endOfStatement = previous()
+        
         try consume(type: .EOL, message: "Expect end-of-line after return statement")
-        return ReturnStmt(keyword: keyword, value: value, isTerminator: false)
+        return ReturnStmt(keyword: keyword, value: value, isTerminator: false, startLocation: keyword.startLocation, endLocation: endOfStatement.endLocation)
     }
     
     private func loopStatement() throws -> Stmt {
         var stmt: Stmt?
+        let startOfStatement = previous()
         if match(types: .WHILE, .UNTIL) {
             stmt = try whileLoop()
         } else {
@@ -390,6 +419,8 @@ public class Parser {
         
         try consume(type: .END, message: "Expect 'end loop' after loop statement")
         try consume(type: .LOOP, message: "Expect 'end loop' after loop statement")
+        stmt?.startLocation = startOfStatement.startLocation
+        stmt?.endLocation = previous().endLocation
         try consume(type: .EOL, message: "Expect end-of-line after 'end loop'")
         
         return stmt!
@@ -420,7 +451,8 @@ public class Parser {
         
         let body = block(additionalEndMarkers: [])
         
-        return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, body: body)
+        // startLocation and endLocation should be handled by loopStatement()
+        return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, body: body, startLocation: .dub(), endLocation: .dub())
     }
     
     private func whileLoop() throws -> Stmt {
@@ -445,34 +477,35 @@ public class Parser {
         }
         let body = block(additionalEndMarkers: [])
         
-        return WhileStmt(expression: condition, isDesugaredUntil: whileOrUntil.tokenType == .UNTIL, body: body)
+        // startLocation and endLocation should be handled by loopStatement()
+        return WhileStmt(expression: condition, isDesugaredUntil: whileOrUntil.tokenType == .UNTIL, body: body, startLocation: .dub(), endLocation: .dub())
     }
     
     private func continueStatement() -> Stmt {
         let keyword = previous()
-        return ContinueStmt(keyword: keyword)
+        return ContinueStmt(keyword: keyword, startLocation: keyword.startLocation, endLocation: keyword.endLocation)
     }
     
     private func breakStatement() -> Stmt {
         let keyword = previous()
-        return BreakStmt(keyword: keyword)
+        return BreakStmt(keyword: keyword, startLocation: keyword.startLocation, endLocation: keyword.endLocation)
     }
     
     private func exitStatement() -> Stmt {
         let keyword = previous()
-        return ExitStmt(keyword: keyword)
+        return ExitStmt(keyword: keyword, startLocation: keyword.startLocation, endLocation: keyword.endLocation)
     }
     
     private func expressionOrSetStatement() throws -> Stmt {
         let expr = try expression()
         if match(types: .EOL) {
-            return ExpressionStmt(expression: expr)
+            return ExpressionStmt(expression: expr, startLocation: expr.startLocation, endLocation: expr.endLocation)
         } else if checkTokenType(isAnyOf: [.COLON, .EQUAL]) {
             // it's a assignment statement
             return try multiSetStatement(continueWithLeft: expr)
         }
         try consume(type: .EOL, message: "Expect end-of-line after expression")
-        return ExpressionStmt(expression: expr)
+        return ExpressionStmt(expression: expr, startLocation: expr.startLocation, endLocation: expr.endLocation)
     }
     
     private func multiSetStatement(continueWithLeft: Expr?) throws -> Stmt {
@@ -482,7 +515,7 @@ public class Parser {
             repeat {
                 setStmts.append(try setStatement(continueWithLeft: nil))
             } while (match(types: .COMMA))
-            return MultiSetStmt(setStmts: setStmts)
+            return MultiSetStmt(setStmts: setStmts, startLocation: setStmts.first!.startLocation, endLocation: setStmts.last!.endLocation)
         } else {
             return singleStmt
         }
@@ -539,7 +572,7 @@ public class Parser {
                         error(message: "Cannot retype expression", token: annotationColon!)
                     }
                 }
-                return SetStmt(left: leftExpr, chained: chains, value: value!)
+                return SetStmt(left: leftExpr, chained: chains, value: value!, startLocation: leftExpr.startLocation, endLocation: value!.endLocation)
             }
         }
     }
@@ -548,13 +581,22 @@ public class Parser {
         let previousIsInGlobalScope = isInGlobalScope
         isInGlobalScope = true
         var statements: [Stmt] = []
+        let startToken = peek()
         while !checkTokenType(isAnyOf: additionalEndMarkers) && !checkTokenType(is: .END) && !isAtEnd() {
             if let toInsert = declaration() {
                 statements.append(toInsert)
             }
         }
         isInGlobalScope = previousIsInGlobalScope
-        return .init(statements: statements, scopeIndex: nil)
+        let endToken = previous()
+        
+        let stmtStartLocation = statements.first?.startLocation ?? startToken.startLocation
+        let stmtEndLocation = statements.last?.endLocation ?? endToken.endLocation
+        
+        assert(stmtStartLocation == startToken.startLocation)
+        assert(stmtEndLocation == endToken.endLocation)
+        
+        return .init(statements: statements, scopeIndex: nil, startLocation: stmtStartLocation, endLocation: stmtEndLocation)
     }
     
     private func expression() throws -> Expr {

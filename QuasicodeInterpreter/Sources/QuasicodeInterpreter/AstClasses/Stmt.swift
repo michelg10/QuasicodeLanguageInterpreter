@@ -4,6 +4,8 @@ public protocol Stmt {
     func accept(visitor: StmtThrowVisitor) throws
     func accept(visitor: StmtStmtVisitor) -> Stmt
     func accept(visitor: StmtStringVisitor) -> String
+    var startLocation: InterpreterLocation { get set }
+    var endLocation: InterpreterLocation { get set }
 }
 
 public protocol StmtVisitor {
@@ -95,8 +97,10 @@ public class ClassStmt: Stmt {
     public var superclass: AstClassType?
     public var methods: [MethodStmt]
     public var fields: [AstClassField]
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token, name: Token, builtin: Bool, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField]) {
+    init(keyword: Token, name: Token, builtin: Bool, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.name = name
         self.builtin = builtin
@@ -109,6 +113,8 @@ public class ClassStmt: Stmt {
         self.superclass = superclass
         self.methods = methods
         self.fields = fields
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
@@ -123,6 +129,8 @@ public class ClassStmt: Stmt {
         self.superclass = objectToCopy.superclass
         self.methods = objectToCopy.methods
         self.fields = objectToCopy.fields
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -144,18 +152,24 @@ public class MethodStmt: Stmt {
     public var staticKeyword: Token?
     public var visibilityModifier: VisibilityModifier
     public var function: FunctionStmt
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(isStatic: Bool, staticKeyword: Token?, visibilityModifier: VisibilityModifier, function: FunctionStmt) {
+    init(isStatic: Bool, staticKeyword: Token?, visibilityModifier: VisibilityModifier, function: FunctionStmt, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.isStatic = isStatic
         self.staticKeyword = staticKeyword
         self.visibilityModifier = visibilityModifier
         self.function = function
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: MethodStmt) {
         self.isStatic = objectToCopy.isStatic
         self.staticKeyword = objectToCopy.staticKeyword
         self.visibilityModifier = objectToCopy.visibilityModifier
         self.function = objectToCopy.function
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -182,8 +196,10 @@ public class FunctionStmt: Stmt {
     public var annotation: AstType?
     public var body: [Stmt]
     public var endOfFunction: Token
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token) {
+    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.name = name
         self.symbolTableIndex = symbolTableIndex
@@ -193,6 +209,8 @@ public class FunctionStmt: Stmt {
         self.annotation = annotation
         self.body = body
         self.endOfFunction = endOfFunction
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: FunctionStmt) {
         self.keyword = objectToCopy.keyword
@@ -204,6 +222,8 @@ public class FunctionStmt: Stmt {
         self.annotation = objectToCopy.annotation
         self.body = objectToCopy.body
         self.endOfFunction = objectToCopy.endOfFunction
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -222,12 +242,18 @@ public class FunctionStmt: Stmt {
 
 public class ExpressionStmt: Stmt {
     public var expression: Expr
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(expression: Expr) {
+    init(expression: Expr, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ExpressionStmt) {
         self.expression = objectToCopy.expression
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -249,18 +275,24 @@ public class IfStmt: Stmt {
     public var thenBranch: BlockStmt
     public var elseIfBranches: [IfStmt]
     public var elseBranch: BlockStmt?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(condition: Expr, thenBranch: BlockStmt, elseIfBranches: [IfStmt], elseBranch: BlockStmt?) {
+    init(condition: Expr, thenBranch: BlockStmt, elseIfBranches: [IfStmt], elseBranch: BlockStmt?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.condition = condition
         self.thenBranch = thenBranch
         self.elseIfBranches = elseIfBranches
         self.elseBranch = elseBranch
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: IfStmt) {
         self.condition = objectToCopy.condition
         self.thenBranch = objectToCopy.thenBranch
         self.elseIfBranches = objectToCopy.elseIfBranches
         self.elseBranch = objectToCopy.elseBranch
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -279,12 +311,18 @@ public class IfStmt: Stmt {
 
 public class OutputStmt: Stmt {
     public var expressions: [Expr]
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(expressions: [Expr]) {
+    init(expressions: [Expr], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expressions = expressions
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: OutputStmt) {
         self.expressions = objectToCopy.expressions
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -303,12 +341,18 @@ public class OutputStmt: Stmt {
 
 public class InputStmt: Stmt {
     public var expressions: [Expr]
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(expressions: [Expr]) {
+    init(expressions: [Expr], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expressions = expressions
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: InputStmt) {
         self.expressions = objectToCopy.expressions
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -329,16 +373,22 @@ public class ReturnStmt: Stmt {
     public var keyword: Token
     public var value: Expr?
     public var isTerminator: Bool
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token, value: Expr?, isTerminator: Bool) {
+    init(keyword: Token, value: Expr?, isTerminator: Bool, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.value = value
         self.isTerminator = isTerminator
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ReturnStmt) {
         self.keyword = objectToCopy.keyword
         self.value = objectToCopy.value
         self.isTerminator = objectToCopy.isTerminator
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -360,18 +410,24 @@ public class LoopFromStmt: Stmt {
     public var lRange: Expr
     public var rRange: Expr
     public var body: BlockStmt
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(variable: VariableExpr, lRange: Expr, rRange: Expr, body: BlockStmt) {
+    init(variable: VariableExpr, lRange: Expr, rRange: Expr, body: BlockStmt, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.variable = variable
         self.lRange = lRange
         self.rRange = rRange
         self.body = body
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: LoopFromStmt) {
         self.variable = objectToCopy.variable
         self.lRange = objectToCopy.lRange
         self.rRange = objectToCopy.rRange
         self.body = objectToCopy.body
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -392,16 +448,22 @@ public class WhileStmt: Stmt {
     public var expression: Expr
     public var isDesugaredUntil: Bool
     public var body: BlockStmt
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(expression: Expr, isDesugaredUntil: Bool, body: BlockStmt) {
+    init(expression: Expr, isDesugaredUntil: Bool, body: BlockStmt, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.expression = expression
         self.isDesugaredUntil = isDesugaredUntil
         self.body = body
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: WhileStmt) {
         self.expression = objectToCopy.expression
         self.isDesugaredUntil = objectToCopy.isDesugaredUntil
         self.body = objectToCopy.body
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -420,12 +482,18 @@ public class WhileStmt: Stmt {
 
 public class BreakStmt: Stmt {
     public var keyword: Token
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token) {
+    init(keyword: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: BreakStmt) {
         self.keyword = objectToCopy.keyword
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -444,12 +512,18 @@ public class BreakStmt: Stmt {
 
 public class ContinueStmt: Stmt {
     public var keyword: Token
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token) {
+    init(keyword: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ContinueStmt) {
         self.keyword = objectToCopy.keyword
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -469,14 +543,20 @@ public class ContinueStmt: Stmt {
 public class BlockStmt: Stmt {
     public var statements: [Stmt]
     public var scopeIndex: Int?
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(statements: [Stmt], scopeIndex: Int?) {
+    init(statements: [Stmt], scopeIndex: Int?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.statements = statements
         self.scopeIndex = scopeIndex
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: BlockStmt) {
         self.statements = objectToCopy.statements
         self.scopeIndex = objectToCopy.scopeIndex
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -495,12 +575,18 @@ public class BlockStmt: Stmt {
 
 public class ExitStmt: Stmt {
     public var keyword: Token
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(keyword: Token) {
+    init(keyword: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: ExitStmt) {
         self.keyword = objectToCopy.keyword
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -519,12 +605,18 @@ public class ExitStmt: Stmt {
 
 public class MultiSetStmt: Stmt {
     public var setStmts: [SetStmt]
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(setStmts: [SetStmt]) {
+    init(setStmts: [SetStmt], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.setStmts = setStmts
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: MultiSetStmt) {
         self.setStmts = objectToCopy.setStmts
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {
@@ -545,16 +637,22 @@ public class SetStmt: Stmt {
     public var left: Expr
     public var chained: [Expr]
     public var value: Expr
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
-    init(left: Expr, chained: [Expr], value: Expr) {
+    init(left: Expr, chained: [Expr], value: Expr, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
         self.chained = chained
         self.value = value
+        self.startLocation = startLocation
+        self.endLocation = endLocation
     }
     init(_ objectToCopy: SetStmt) {
         self.left = objectToCopy.left
         self.chained = objectToCopy.chained
         self.value = objectToCopy.value
+        self.startLocation = objectToCopy.startLocation
+        self.endLocation = objectToCopy.endLocation
     }
 
     public func accept(visitor: StmtVisitor) {

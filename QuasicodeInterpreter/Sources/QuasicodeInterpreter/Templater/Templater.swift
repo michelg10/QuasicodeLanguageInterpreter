@@ -593,9 +593,11 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
                 params: [],
                 annotation: nil,
                 body: [],
-                endOfFunction: .dummyToken(tokenType: .END, lexeme: "end")
+                endOfFunction: .dummyToken(tokenType: .FUNCTION, lexeme: "function"),
+                startLocation: .dub(),
+                endLocation: .dub()
             )
-            let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt)
+            let newMethodStmt = MethodStmt(isStatic: false, staticKeyword: nil, visibilityModifier: .PUBLIC, function: newFunctionStmt, startLocation: .dub(), endLocation: .dub())
             classStmt.methods.append(newMethodStmt)
         }
     }

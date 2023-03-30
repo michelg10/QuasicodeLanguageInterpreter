@@ -41,7 +41,9 @@ extension Builtins {
                     params: params,
                     annotation: method.annotation,
                     body: [],
-                    endOfFunction: .dummyToken(tokenType: .END, lexeme: "end")
+                    endOfFunction: .dummyToken(tokenType: .FUNCTION, lexeme: "function"),
+                    startLocation: .dub(),
+                    endLocation: .dub()
                 )
                 
                 methodStmts.append(
@@ -49,7 +51,9 @@ extension Builtins {
                         isStatic: method.isStatic,
                         staticKeyword: method.isStatic ? .dummyToken(tokenType: .STATIC, lexeme: "static") : nil,
                         visibilityModifier: method.visibilityModifier,
-                        function: correspondingFunctionStmt
+                        function: correspondingFunctionStmt,
+                        startLocation: .dub(),
+                        endLocation: .dub()
                     )
                 )
             }
@@ -68,7 +72,9 @@ extension Builtins {
                 expandedTemplateParameters: nil,
                 superclass: nil,
                 methods: methodStmts,
-                fields: []
+                fields: [],
+                startLocation: .dub(),
+                endLocation: .dub()
             )
         }
         
