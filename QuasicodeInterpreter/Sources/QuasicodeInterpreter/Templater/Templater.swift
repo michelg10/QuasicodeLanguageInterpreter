@@ -566,7 +566,7 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
         }
     }
     
-    private func eraseClasses(_ statements: inout [Stmt]) {
+    private func eraseNonTemplatedClasses(_ statements: inout [Stmt]) {
         statements.removeAll { stmt in
             guard let stmt = stmt as? ClassStmt else {
                 return false
@@ -618,7 +618,7 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
         
         expandClasses(statements)
         
-        eraseClasses(&self.statements)
+        eraseNonTemplatedClasses(&self.statements)
         if debugPrint {
             print("Templated AST")
             print(astPrinterSingleton.printAst(self.statements, printWithTypes: false))
