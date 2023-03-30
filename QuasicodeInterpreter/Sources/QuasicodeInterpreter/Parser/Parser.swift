@@ -148,7 +148,7 @@ public class Parser {
         while !checkTokenType(is: .END) && !isAtEnd() {
             do {
                 var startLocation: InterpreterLocation?
-                var visibilityModifer: VisibilityModifier?
+                var visibilityModifier: VisibilityModifier?
                 var isStatic: Bool?
                 
                 while match(types: .PUBLIC, .PRIVATE, .STATIC) {
@@ -157,15 +157,15 @@ public class Parser {
                     }
                     switch previous().tokenType {
                     case .PUBLIC:
-                        if visibilityModifer != nil {
+                        if visibilityModifier != nil {
                             throw error(message: "Repeated visibility modifier", token: previous())
                         }
-                        visibilityModifer = .PUBLIC
+                        visibilityModifier = .PUBLIC
                     case .PRIVATE:
-                        if visibilityModifer != nil {
+                        if visibilityModifier != nil {
                             throw error(message: "Repeated visibility modifier", token: previous())
                         }
-                        visibilityModifer = .PRIVATE
+                        visibilityModifier = .PRIVATE
                     case .STATIC:
                         if isStatic != nil {
                             throw error(message: "Repeated static modifier", token: previous())
@@ -177,12 +177,8 @@ public class Parser {
                     }
                 }
                 
-                if isStatic == nil {
-                    isStatic = false
-                }
-                if visibilityModifer == nil {
-                    visibilityModifer = .PUBLIC
-                }
+                let defaultedIsStatic = isStatic ?? false
+                let defaultedVisibilityModifier = visibilityModifier ?? .PUBLIC
                 
                 if match(types: .FUNCTION) {
                     if startLocation == nil {
@@ -190,9 +186,9 @@ public class Parser {
                     }
                     let function = try functionDeclaration()
                     let method: MethodStmt = .init(
-                        isStatic: isStatic!,
+                        isStatic: defaultedIsStatic,
                         staticKeyword: staticKeyword,
-                        visibilityModifier: visibilityModifer!,
+                        visibilityModifier: defaultedVisibilityModifier,
                         function: function as! FunctionStmt,
                         startLocation: startLocation!,
                         endLocation: function.endLocation
@@ -211,12 +207,12 @@ public class Parser {
                     if match(types: .EQUAL) {
                         initializer = try expression()
                     }
-                    if isStatic! && initializer == nil {
+                    if defaultedIsStatic && initializer == nil {
                         error(message: "Static field requires an initial value", token: fieldName)
                     }
                     let field = AstClassField(
-                        isStatic: isStatic!,
-                        visibilityModifier: visibilityModifer!,
+                        isStatic: defaultedIsStatic,
+                        visibilityModifier: defaultedVisibilityModifier,
                         name: fieldName,
                         astType: typeAnnotation,
                         initializer: initializer,
@@ -227,7 +223,7 @@ public class Parser {
                     try consume(type: .EOL, message: "Expect end-of-line after field declaration")
                     fields.append(field)
                 } else if match(types: .EOL) {
-                    if isStatic != nil || visibilityModifer != nil {
+                    if isStatic != nil || visibilityModifier != nil {
                         throw error(message: "Expect method or field declaration", token: peek())
                     }
                 } else {
