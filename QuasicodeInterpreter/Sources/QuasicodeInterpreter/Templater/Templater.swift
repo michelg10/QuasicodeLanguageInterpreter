@@ -587,6 +587,7 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
             let newFunctionStmt = FunctionStmt(
                 keyword: .dummyToken(tokenType: .FUNCTION, lexeme: "function"),
                 name: classStmt.name,
+                endToken: .dummyToken(tokenType: .END, lexeme: "end"),
                 symbolTableIndex: nil,
                 nameSymbolTableIndex: nil,
                 scopeIndex: nil,

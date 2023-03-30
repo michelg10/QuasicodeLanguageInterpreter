@@ -290,13 +290,14 @@ public class Parser {
         // MARK: Function body
         let body = block(additionalEndMarkers: [])
         
-        try consume(type: .END, message: "Expect 'end function' after function declaration")
+        let endToken = try consume(type: .END, message: "Expect 'end function' after function declaration")
         let endOfFunction = try consume(type: .FUNCTION, message: "Expect 'end function' after function declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end function'")
 
         return FunctionStmt(
             keyword: keyword,
             name: name,
+            endToken: endToken,
             symbolTableIndex: nil,
             nameSymbolTableIndex: nil,
             scopeIndex: nil,
@@ -586,10 +587,12 @@ public class Parser {
         }
         isInGlobalScope = previousIsInGlobalScope
         
+        let justBeyondEndOfStatements = previous().endLocation
+        
         let stmtStartLocation = statements.first?.startLocation ?? startToken.startLocation
         let stmtEndLocation = statements.last?.endLocation ?? previous().endLocation
         
-        return .init(statements: statements, scopeIndex: nil, startLocation: stmtStartLocation, endLocation: stmtEndLocation)
+        return .init(statements: statements, scopeIndex: nil, justBeyondEndOfStatements: justBeyondEndOfStatements, startLocation: stmtStartLocation, endLocation: stmtEndLocation)
     }
     
     private func expression() throws -> Expr {

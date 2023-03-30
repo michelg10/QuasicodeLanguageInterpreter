@@ -192,6 +192,7 @@ public class MethodStmt: Stmt {
 public class FunctionStmt: Stmt {
     public var keyword: Token
     public var name: Token
+    public var endToken: Token
     public var symbolTableIndex: Int?
     public var nameSymbolTableIndex: Int?
     public var scopeIndex: Int?
@@ -202,9 +203,10 @@ public class FunctionStmt: Stmt {
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(keyword: Token, name: Token, endToken: Token, symbolTableIndex: Int?, nameSymbolTableIndex: Int?, scopeIndex: Int?, params: [AstFunctionParam], annotation: AstType?, body: [Stmt], endOfFunction: Token, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.name = name
+        self.endToken = endToken
         self.symbolTableIndex = symbolTableIndex
         self.nameSymbolTableIndex = nameSymbolTableIndex
         self.scopeIndex = scopeIndex
@@ -218,6 +220,7 @@ public class FunctionStmt: Stmt {
     init(_ objectToCopy: FunctionStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.endToken = objectToCopy.endToken
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.nameSymbolTableIndex = objectToCopy.nameSymbolTableIndex
         self.scopeIndex = objectToCopy.scopeIndex
@@ -546,18 +549,21 @@ public class ContinueStmt: Stmt {
 public class BlockStmt: Stmt {
     public var statements: [Stmt]
     public var scopeIndex: Int?
+    public var justBeyondEndOfStatements: InterpreterLocation
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(statements: [Stmt], scopeIndex: Int?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(statements: [Stmt], scopeIndex: Int?, justBeyondEndOfStatements: InterpreterLocation, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.statements = statements
         self.scopeIndex = scopeIndex
+        self.justBeyondEndOfStatements = justBeyondEndOfStatements
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
     init(_ objectToCopy: BlockStmt) {
         self.statements = objectToCopy.statements
         self.scopeIndex = objectToCopy.scopeIndex
+        self.justBeyondEndOfStatements = objectToCopy.justBeyondEndOfStatements
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
     }

@@ -35,6 +35,7 @@ extension Builtins {
                 let correspondingFunctionStmt: FunctionStmt = .init(
                     keyword: .dummyToken(tokenType: .IDENTIFIER, lexeme: "function"),
                     name: .dummyToken(tokenType: .IDENTIFIER, lexeme: method.name),
+                    endToken: .dummyToken(tokenType: .END, lexeme: "end"),
                     symbolTableIndex: nil,
                     nameSymbolTableIndex: nil,
                     scopeIndex: nil,
