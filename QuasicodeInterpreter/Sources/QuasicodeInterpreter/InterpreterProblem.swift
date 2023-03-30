@@ -30,7 +30,7 @@ public struct InterpreterLocation: Equatable, Comparable {
     init(end: Token) {
         self = end.endLocation
     }
-    static func dub() -> InterpreterLocation {
+    public static func dub() -> InterpreterLocation {
         return .init(index: -1, row: -1, column: -1, logicalRow: -1, logicalColumn: -1)
     }
     

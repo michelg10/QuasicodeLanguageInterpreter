@@ -238,13 +238,14 @@ public class Parser {
             }
         }
         
-        try consume(type: .END, message: "Expect 'end class' after class declaration")
+        let endToken = try consume(type: .END, message: "Expect 'end class' after class declaration")
         let endOfStmt = try consume(type: .CLASS, message: "Expect 'end class' after class declaration")
         try consume(type: .EOL, message: "Expect end-of-line after 'end class'")
         
         let result = ClassStmt(
             keyword: keyword,
             name: name,
+            endToken: endToken,
             builtin: false,
             symbolTableIndex: nil,
             instanceThisSymbolTableIndex: nil,
@@ -588,13 +589,9 @@ public class Parser {
             }
         }
         isInGlobalScope = previousIsInGlobalScope
-        let endToken = previous()
         
         let stmtStartLocation = statements.first?.startLocation ?? startToken.startLocation
-        let stmtEndLocation = statements.last?.endLocation ?? endToken.endLocation
-        
-        assert(stmtStartLocation == startToken.startLocation)
-        assert(stmtEndLocation == endToken.endLocation)
+        let stmtEndLocation = statements.last?.endLocation ?? previous().endLocation
         
         return .init(statements: statements, scopeIndex: nil, startLocation: stmtStartLocation, endLocation: stmtEndLocation)
     }

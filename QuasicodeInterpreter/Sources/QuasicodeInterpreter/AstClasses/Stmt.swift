@@ -87,6 +87,7 @@ public protocol StmtStringVisitor {
 public class ClassStmt: Stmt {
     public var keyword: Token
     public var name: Token
+    public var endToken: Token
     public var builtin: Bool
     public var symbolTableIndex: Int?
     public var instanceThisSymbolTableIndex: Int?
@@ -100,9 +101,10 @@ public class ClassStmt: Stmt {
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(keyword: Token, name: Token, builtin: Bool, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(keyword: Token, name: Token, endToken: Token, builtin: Bool, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField], startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.name = name
+        self.endToken = endToken
         self.builtin = builtin
         self.symbolTableIndex = symbolTableIndex
         self.instanceThisSymbolTableIndex = instanceThisSymbolTableIndex
@@ -119,6 +121,7 @@ public class ClassStmt: Stmt {
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.endToken = objectToCopy.endToken
         self.builtin = objectToCopy.builtin
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.instanceThisSymbolTableIndex = objectToCopy.instanceThisSymbolTableIndex
