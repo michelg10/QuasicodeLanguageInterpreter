@@ -378,14 +378,16 @@ public class ThisExpr: Expr {
 public class SuperExpr: Expr {
     public var keyword: Token
     public var property: Token
+    public var superClassId: Int?
     public var propertyId: Int?
     public var type: QsType?
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(keyword: Token, property: Token, propertyId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(keyword: Token, property: Token, superClassId: Int?, propertyId: Int?, type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.property = property
+        self.superClassId = superClassId
         self.propertyId = propertyId
         self.type = type
         self.startLocation = startLocation
@@ -394,6 +396,7 @@ public class SuperExpr: Expr {
     init(_ objectToCopy: SuperExpr) {
         self.keyword = objectToCopy.keyword
         self.property = objectToCopy.property
+        self.superClassId = objectToCopy.superClassId
         self.propertyId = objectToCopy.propertyId
         self.type = objectToCopy.type
         self.startLocation = objectToCopy.startLocation

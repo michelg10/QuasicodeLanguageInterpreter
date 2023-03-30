@@ -174,6 +174,7 @@ public class ClassSymbol: Symbol {
         name: String,
         displayName: String,
         nonSignatureName: String,
+        builtin: Bool,
         classScopeSymbolTableIndex: Int? = nil,
         upperClass: Int? = nil,
         depth: Int? = nil,
@@ -185,6 +186,7 @@ public class ClassSymbol: Symbol {
         self.name = name
         self.displayName = displayName
         self.nonSignatureName = nonSignatureName
+        self.builtin = builtin
         self.classScopeSymbolTableIndex = classScopeSymbolTableIndex
         self.upperClass = upperClass
         self.depth = depth
@@ -202,6 +204,7 @@ public class ClassSymbol: Symbol {
         } else {
             displayName = name
         }
+        self.builtin = classStmt.builtin
         self.classScopeSymbolTableIndex = classStmt.symbolTableIndex
         self.depth = depth
         self.parentOf = parentOf
@@ -214,6 +217,7 @@ public class ClassSymbol: Symbol {
     public var runtimeId: Int
     public let displayName: String
     public let nonSignatureName: String
+    public let builtin: Bool
     public var classScopeSymbolTableIndex: Int?
     public var upperClass: Int?
     public var depth: Int?
@@ -238,13 +242,15 @@ public class ClassSymbol: Symbol {
     
 }
 public class ClassNameSymbol: Symbol {
-    init(name: String) {
+    init(name: String, builtin: Bool) {
         self.id = -1
         self.belongsToTable = -1
         self.name = name
+        self.builtin = builtin
     }
     
     public var id: Int
     public var belongsToTable: Int
     public let name: String
+    public let builtin: Bool
 }

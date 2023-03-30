@@ -57,6 +57,7 @@ extension Builtins {
             return .init(
                 keyword: .dummyToken(tokenType: .CLASS, lexeme: "class"),
                 name: .dummyToken(tokenType: .IDENTIFIER, lexeme: name),
+                builtin: true,
                 symbolTableIndex: nil,
                 instanceThisSymbolTableIndex: nil,
                 staticThisSymbolTableIndex: nil,

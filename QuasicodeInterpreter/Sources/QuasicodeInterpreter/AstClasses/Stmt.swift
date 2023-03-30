@@ -85,6 +85,7 @@ public protocol StmtStringVisitor {
 public class ClassStmt: Stmt {
     public var keyword: Token
     public var name: Token
+    public var builtin: Bool
     public var symbolTableIndex: Int?
     public var instanceThisSymbolTableIndex: Int?
     public var staticThisSymbolTableIndex: Int?
@@ -95,9 +96,10 @@ public class ClassStmt: Stmt {
     public var methods: [MethodStmt]
     public var fields: [AstClassField]
     
-    init(keyword: Token, name: Token, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField]) {
+    init(keyword: Token, name: Token, builtin: Bool, symbolTableIndex: Int?, instanceThisSymbolTableIndex: Int?, staticThisSymbolTableIndex: Int?, scopeIndex: Int?, templateParameters: [Token]?, expandedTemplateParameters: [AstType]?, superclass: AstClassType?, methods: [MethodStmt], fields: [AstClassField]) {
         self.keyword = keyword
         self.name = name
+        self.builtin = builtin
         self.symbolTableIndex = symbolTableIndex
         self.instanceThisSymbolTableIndex = instanceThisSymbolTableIndex
         self.staticThisSymbolTableIndex = staticThisSymbolTableIndex
@@ -111,6 +113,7 @@ public class ClassStmt: Stmt {
     init(_ objectToCopy: ClassStmt) {
         self.keyword = objectToCopy.keyword
         self.name = objectToCopy.name
+        self.builtin = objectToCopy.builtin
         self.symbolTableIndex = objectToCopy.symbolTableIndex
         self.instanceThisSymbolTableIndex = objectToCopy.instanceThisSymbolTableIndex
         self.staticThisSymbolTableIndex = objectToCopy.staticThisSymbolTableIndex
@@ -387,14 +390,17 @@ public class LoopFromStmt: Stmt {
 
 public class WhileStmt: Stmt {
     public var expression: Expr
+    public var isDesugaredUntil: Bool
     public var body: BlockStmt
     
-    init(expression: Expr, body: BlockStmt) {
+    init(expression: Expr, isDesugaredUntil: Bool, body: BlockStmt) {
         self.expression = expression
+        self.isDesugaredUntil = isDesugaredUntil
         self.body = body
     }
     init(_ objectToCopy: WhileStmt) {
         self.expression = objectToCopy.expression
+        self.isDesugaredUntil = objectToCopy.isDesugaredUntil
         self.body = objectToCopy.body
     }
 

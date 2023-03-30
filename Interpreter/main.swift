@@ -36,20 +36,24 @@ if true {
     let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex, builtinClasses: INCLUDE_BUILTIN_CLASSES ? builtinClassNames : [])
     var ast: [Stmt]
     let parseErrors: [InterpreterProblem]
-    (ast, parseErrors) = parser.parse(addBuiltinclassesToAst: INCLUDE_BUILTIN_CLASSES, debugPrint: false)
+    (ast, parseErrors) = parser.parse(addBuiltinclassesToAst: INCLUDE_BUILTIN_CLASSES, debugPrint: true)
 
 
     let templater = Templater()
     let (templatedStmts, templateErrors) = templater.expandClasses(statements: ast)
     ast = templatedStmts
+    print("templateErrors", templateErrors)
 
     let resolver = Resolver()
     let resolveErrors = resolver.resolveAST(statements: &ast, symbolTable: &symbolTable)
+    print("resolveErrors", resolveErrors)
 
 
     let typeChecker = TypeChecker()
-    let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTables: &symbolTable, debugPrint: false)
+    let typeCheckerErrors = typeChecker.typeCheckAst(statements: ast, symbolTables: &symbolTable, debugPrint: true)
 
+    symbolTable.printTable()
+    
     let interpreter = Interpreter()
     interpreter.execute(ast, symbolTable: symbolTable, debugPrint: false)
     

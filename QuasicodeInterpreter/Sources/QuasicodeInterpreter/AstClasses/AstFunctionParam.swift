@@ -1,8 +1,8 @@
 public struct AstFunctionParam {
-    var name: Token
-    var astType: AstType?
-    var initializer: Expr?
-    var symbolTableIndex: Int?
+    public var name: Token
+    public var astType: AstType?
+    public var initializer: Expr?
+    public var symbolTableIndex: Int?
     func getType(symbolTable: SymbolTables) -> QsType? {
         if symbolTableIndex == nil {
             return QsErrorType()

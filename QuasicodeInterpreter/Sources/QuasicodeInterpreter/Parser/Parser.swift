@@ -229,6 +229,7 @@ public class Parser {
         let result = ClassStmt(
             keyword: keyword,
             name: name,
+            builtin: false,
             symbolTableIndex: nil,
             instanceThisSymbolTableIndex: nil,
             staticThisSymbolTableIndex: nil,
@@ -444,7 +445,7 @@ public class Parser {
         }
         let body = block(additionalEndMarkers: [])
         
-        return WhileStmt(expression: condition, body: body)
+        return WhileStmt(expression: condition, isDesugaredUntil: whileOrUntil.tokenType == .UNTIL, body: body)
     }
     
     private func continueStatement() -> Stmt {
@@ -690,7 +691,7 @@ public class Parser {
                 contains: allocationType!,
                 capacity: capacity,
                 type: nil,
-                startLocation: .init(start: baseType),
+                startLocation: .init(start: newKeyword),
                 endLocation: .init(end: previous())
             )
         } else if match(types: .LEFT_PAREN) {
@@ -704,7 +705,7 @@ public class Parser {
                 arguments: argumentsList,
                 callsFunction: nil,
                 type: nil,
-                startLocation: .init(start: baseType),
+                startLocation: .init(start: newKeyword),
                 endLocation: .init(end: previous())
             )
         }
@@ -919,6 +920,7 @@ public class Parser {
                 return SuperExpr(
                     keyword: keyword,
                     property: property,
+                    superClassId: nil,
                     propertyId: nil,
                     type: nil,
                     startLocation: .init(start: keyword),
@@ -953,14 +955,16 @@ public class Parser {
     }
     
     private func arrayLiteral() throws -> Expr {
-        let leftBracket = previous()
+        let leftBrace = previous()
         var values: [Expr] = []
-        repeat {
-            values.append(try expression())
-        } while match(types: .COMMA)
-        try consume(type: .RIGHT_BRACE, message: "Expect '}' after '{'")
+        if !match(types: .RIGHT_BRACE) {
+            repeat {
+                values.append(try expression())
+            } while match(types: .COMMA)
+            try consume(type: .RIGHT_BRACE, message: "Expect '}' after '{'")
+        }
         
-        return ArrayLiteralExpr(values: values, type: nil, startLocation: .init(start: leftBracket), endLocation: .init(end: previous()))
+        return ArrayLiteralExpr(values: values, type: nil, startLocation: .init(start: leftBrace), endLocation: .init(end: previous()))
     }
     
     private func typeSignature(matchArray: Bool, optional: Bool) throws -> AstType? {

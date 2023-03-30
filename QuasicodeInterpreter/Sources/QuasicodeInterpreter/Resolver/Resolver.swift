@@ -77,6 +77,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
             return
         }
         let upperClass = symbolTable.getSymbol(id: currentClassSymbol.upperClass!) as! ClassSymbol
+        expr.superClassId = upperClass.id
         if upperClass.classScopeSymbolTableIndex == nil {
             return
         }
@@ -137,15 +138,10 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
                     // no problem
                     break
                 }
-            } else if let symbol = existingSymbol as? FunctionNameSymbol {
-                if symbol.isForMethods {
-                    let method = symbolTable.getSymbol(id: symbol.belongingFunctions[0]) as! MethodSymbol
-                    if !method.finishedInit {
-                        error(message: "Use of method within class before class is available", start: expr.startLocation, end: expr.endLocation)
-                    }
-                }
+                expr.symbolTableIndex = existingSymbol.id
+            } else {
+                assertionFailure("Expected symbol query result to be a VariableSymbol, instead got \(existingSymbol)")
             }
-            expr.symbolTableIndex = existingSymbol.id
         } else {
             error(message: "Use of unknown identifier \(expr.name.lexeme)", start: expr.startLocation, end: expr.endLocation)
         }
@@ -677,7 +673,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
                 error(message: "Invalid redeclaration of '\(stmt.name.lexeme)'", token: stmt.name)
             }
         } else {
-            symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: stmt.name.lexeme))
+            symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: stmt.name.lexeme, builtin: stmt.builtin))
         }
         
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()

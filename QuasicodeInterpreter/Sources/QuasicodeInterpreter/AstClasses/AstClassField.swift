@@ -10,10 +10,10 @@ public class AstClassField {
         self.symbolTableIndex = symbolTableIndex
     }
     
-    var isStatic: Bool
-    var visibilityModifier: VisibilityModifier
-    var name: Token
-    var astType: AstType
-    var initializer: Expr?
-    var symbolTableIndex: Int?
+    public var isStatic: Bool
+    public var visibilityModifier: VisibilityModifier
+    public var name: Token
+    public var astType: AstType
+    public var initializer: Expr?
+    public var symbolTableIndex: Int?
 }

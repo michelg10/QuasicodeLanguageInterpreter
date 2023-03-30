@@ -11,13 +11,13 @@ public struct InterpreterLocation: Equatable, Comparable {
         return lhs.index == rhs.index
     }
     
-    var index: Int
-    var row: Int
-    var column: Int
-    var logicalRow: Int
-    var logicalColumn: Int
+    public var index: Int
+    public var row: Int
+    public var column: Int
+    public var logicalRow: Int
+    public var logicalColumn: Int
     
-    init(index: Int, row: Int, column: Int, logicalRow: Int, logicalColumn: Int) {
+    public init(index: Int, row: Int, column: Int, logicalRow: Int, logicalColumn: Int) {
         self.index = index
         self.row = row
         self.column = column

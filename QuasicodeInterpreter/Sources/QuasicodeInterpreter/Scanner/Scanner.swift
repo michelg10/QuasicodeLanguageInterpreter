@@ -110,7 +110,7 @@ public class Scanner {
             scanToken()
         }
         
-        let endOfDocumentLocation: InterpreterLocation = .init(index: source.count, row: startLocation.row + 1, column: 1, logicalRow: startLocation.logicalRow + 1, logicalColumn: 1)
+        let endOfDocumentLocation: InterpreterLocation = .init(index: source.count, row: currentLocation.row, column: currentLocation.column+1, logicalRow: currentLocation.logicalRow, logicalColumn: currentLocation.logicalColumn+1)
         if tokens.last?.tokenType != .EOL {
             tokens.append(.init(
                 tokenType: .EOL,

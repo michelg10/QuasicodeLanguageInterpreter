@@ -67,6 +67,7 @@ internal func printMethodInfo(_ symbol: MethodSymbol) -> String {
 internal func printClassInfo(_ symbol: ClassSymbol) -> String {
     "displayName: \(symbol.displayName), " +
     "nonSignatureName: \(symbol.nonSignatureName), " +
+    "builtin: \(symbol.builtin), " +
     "runtimeId: \(symbol.runtimeId), " +
     "depth: \(stringifyOptionalInt(symbol.depth)), " +
     "parentOf: \(symbol.parentOf)), " +
@@ -74,5 +75,5 @@ internal func printClassInfo(_ symbol: ClassSymbol) -> String {
     "classScopeSymbolTableIndex: \(stringifyOptionalInt(symbol.classScopeSymbolTableIndex))"
 }
 internal func printClassNameInfo(_ symbol: ClassNameSymbol) -> String {
-    ""
+    "builtin: \(symbol.builtin)"
 }

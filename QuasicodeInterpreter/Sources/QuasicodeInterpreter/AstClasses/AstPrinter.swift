@@ -127,6 +127,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     public func visitSuperExprString(expr: SuperExpr) -> String {
         parenthesize(name: "super", additionalProperties: [
             ("property", expr.property.lexeme),
+            ("superClassId", stringifyOptionalInt(expr.superClassId)),
             ("propertyId", stringifyOptionalInt(expr.propertyId))
         ] + generateAdditionalTypePropertyArray(expr))
     }
@@ -291,6 +292,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         )
         let classDesc = "{name: \(stmt.name.lexeme), " +
                          "id: \(stringifyOptionalInt(stmt.symbolTableIndex)), " +
+                         "builtin: \(stmt.builtin), " +
                          "instanceThisId: \(stringifyOptionalInt(stmt.instanceThisSymbolTableIndex)), " +
                          "staticThisId: \(stringifyOptionalInt(stmt.staticThisSymbolTableIndex)), " +
                          "superclass: \(stmt.superclass == nil ? "none" : stmt.superclass!.name.lexeme), " +
@@ -427,7 +429,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     public func visitWhileStmtString(stmt: WhileStmt) -> String {
         parenthesizeBlock(
-            name: "While",
+            name: "While{isDesugaredUntil: \(stmt.isDesugaredUntil)}",
             exprs: [stmt.expression],
             blockStmt: stmt.body
         )

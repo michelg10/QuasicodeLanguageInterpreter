@@ -7,6 +7,7 @@ extension Builtins {
                 name: "String<>",
                 displayName: "String",
                 nonSignatureName: "String",
+                builtin: true,
                 classScopeSymbolTableIndex: stringClassScopeSymbol,
                 upperClass: nil,
                 depth: 1,
@@ -14,7 +15,7 @@ extension Builtins {
             )
         )
         let stringClassType = QsClass(name: "String", id: stringClassSymbolTableIndex)
-        symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: "String"))
+        symbolTable.addToSymbolTable(symbol: ClassNameSymbol(name: "String", builtin: true))
         symbolTable.gotoTable(stringClassScopeSymbol)
         defer {
             symbolTable.resetScope()
