@@ -6,6 +6,7 @@ public protocol Expr {
     func accept(visitor: ExprExprThrowVisitor) throws -> Expr
     func accept(visitor: ExprStringVisitor) -> String
     func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any?
+    func accept(visitor: ExprBoolVisitor) -> Bool
     func fallbackToErrorType(assignable: Bool)
     var type: QsType? { get set }
     var startLocation: InterpreterLocation { get set }
@@ -144,6 +145,28 @@ public protocol ExprOptionalAnyThrowVisitor {
     func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any?
 }
 
+public protocol ExprBoolVisitor {
+    func visitGroupingExprBool(expr: GroupingExpr) -> Bool
+    func visitLiteralExprBool(expr: LiteralExpr) -> Bool
+    func visitArrayLiteralExprBool(expr: ArrayLiteralExpr) -> Bool
+    func visitStaticClassExprBool(expr: StaticClassExpr) -> Bool
+    func visitThisExprBool(expr: ThisExpr) -> Bool
+    func visitSuperExprBool(expr: SuperExpr) -> Bool
+    func visitVariableExprBool(expr: VariableExpr) -> Bool
+    func visitSubscriptExprBool(expr: SubscriptExpr) -> Bool
+    func visitCallExprBool(expr: CallExpr) -> Bool
+    func visitGetExprBool(expr: GetExpr) -> Bool
+    func visitUnaryExprBool(expr: UnaryExpr) -> Bool
+    func visitCastExprBool(expr: CastExpr) -> Bool
+    func visitArrayAllocationExprBool(expr: ArrayAllocationExpr) -> Bool
+    func visitClassAllocationExprBool(expr: ClassAllocationExpr) -> Bool
+    func visitBinaryExprBool(expr: BinaryExpr) -> Bool
+    func visitLogicalExprBool(expr: LogicalExpr) -> Bool
+    func visitVariableToSetExprBool(expr: VariableToSetExpr) -> Bool
+    func visitIsTypeExprBool(expr: IsTypeExpr) -> Bool
+    func visitImplicitCastExprBool(expr: ImplicitCastExpr) -> Bool
+}
+
 public class GroupingExpr: Expr {
     public var expression: Expr
     public var type: QsType?
@@ -186,6 +209,9 @@ public class GroupingExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitGroupingExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitGroupingExprBool(expr: self)
     }
 }
 
@@ -232,6 +258,9 @@ public class LiteralExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitLiteralExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitLiteralExprBool(expr: self)
+    }
 }
 
 public class ArrayLiteralExpr: Expr {
@@ -276,6 +305,9 @@ public class ArrayLiteralExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitArrayLiteralExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitArrayLiteralExprBool(expr: self)
     }
 }
 
@@ -325,6 +357,9 @@ public class StaticClassExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitStaticClassExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitStaticClassExprBool(expr: self)
+    }
 }
 
 public class ThisExpr: Expr {
@@ -372,6 +407,9 @@ public class ThisExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitThisExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitThisExprBool(expr: self)
     }
 }
 
@@ -427,6 +465,9 @@ public class SuperExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitSuperExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitSuperExprBool(expr: self)
+    }
 }
 
 public class VariableExpr: Expr {
@@ -475,6 +516,9 @@ public class VariableExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitVariableExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitVariableExprBool(expr: self)
+    }
 }
 
 public class SubscriptExpr: Expr {
@@ -522,6 +566,9 @@ public class SubscriptExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitSubscriptExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitSubscriptExprBool(expr: self)
     }
 }
 
@@ -583,6 +630,9 @@ public class CallExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitCallExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitCallExprBool(expr: self)
+    }
 }
 
 public class GetExpr: Expr {
@@ -634,6 +684,9 @@ public class GetExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitGetExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitGetExprBool(expr: self)
+    }
 }
 
 public class UnaryExpr: Expr {
@@ -682,6 +735,9 @@ public class UnaryExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitUnaryExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitUnaryExprBool(expr: self)
+    }
 }
 
 public class CastExpr: Expr {
@@ -729,6 +785,9 @@ public class CastExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitCastExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitCastExprBool(expr: self)
     }
 }
 
@@ -781,6 +840,9 @@ public class ArrayAllocationExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitArrayAllocationExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitArrayAllocationExprBool(expr: self)
+    }
 }
 
 public class ClassAllocationExpr: Expr {
@@ -831,6 +893,9 @@ public class ClassAllocationExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitClassAllocationExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitClassAllocationExprBool(expr: self)
     }
 }
 
@@ -883,6 +948,9 @@ public class BinaryExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitBinaryExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitBinaryExprBool(expr: self)
+    }
 }
 
 public class LogicalExpr: Expr {
@@ -933,6 +1001,9 @@ public class LogicalExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitLogicalExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitLogicalExprBool(expr: self)
     }
 }
 
@@ -988,6 +1059,9 @@ public class VariableToSetExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitVariableToSetExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitVariableToSetExprBool(expr: self)
+    }
 }
 
 public class IsTypeExpr: Expr {
@@ -1042,6 +1116,9 @@ public class IsTypeExpr: Expr {
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitIsTypeExprOptionalAny(expr: self)
     }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitIsTypeExprBool(expr: self)
+    }
 }
 
 public class ImplicitCastExpr: Expr {
@@ -1086,6 +1163,9 @@ public class ImplicitCastExpr: Expr {
     }
     public func accept(visitor: ExprOptionalAnyThrowVisitor) throws -> Any? {
         try visitor.visitImplicitCastExprOptionalAny(expr: self)
+    }
+    public func accept(visitor: ExprBoolVisitor) -> Bool {
+        visitor.visitImplicitCastExprBool(expr: self)
     }
 }
 

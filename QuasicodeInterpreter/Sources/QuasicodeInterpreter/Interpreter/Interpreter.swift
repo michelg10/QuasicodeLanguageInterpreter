@@ -4,9 +4,39 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
 // swiftlint:enable type_body_length
     public init() {}
     
-    let verifyTypeCheck = true // this switch configures whether or not the interpreter will verify the type checker
+    private class FunctionCallable {
+        var params: [AstFunctionParam]
+        var stmts: [Stmt]
+        
+        init(functionStmt: FunctionStmt) {
+            params = functionStmt.params
+            stmts = functionStmt.body
+        }
+        
+        func execute(environment: Environment, interpreter: Interpreter, arguments: [Any?]) throws -> Any? {
+            for (i, param) in params.enumerated() {
+                let resolvedParam: Any?
+                if i < arguments.count {
+                    resolvedParam = arguments[i]
+                } else {
+                    resolvedParam = try interpreter.interpret(param.initializer!)
+                }
+                environment.add(symbolTableId: param.symbolTableIndex!, name: param.name.lexeme, value: resolvedParam)
+            }
+            
+            do {
+                try interpreter.interpret(stmts)
+            } catch InterpreterInterruptSignal.return(let res) {
+                return res
+            }
+            return nil
+        }
+    }
+    
+    let verifyTypeCheck = false // this switch configures whether or not the interpreter will verify the type checker
     var doDebugPrint = false
     private var environment = Environment()
+    private var symbolTable: SymbolTables = .init()
     
     private var stringClassId = -1
     
@@ -34,6 +64,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     private enum InterpreterInterruptSignal: Error {
         case breakLoop
         case continueLoop
+        case `return`(Any?)
     }
     
     enum TypeVerificationResult {
@@ -78,6 +109,37 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
+    private func getQsTypeOfSwiftValue(_ value: Any?) -> QsType {
+        if value is Double {
+            return QsDouble()
+        }
+        if value is Int {
+            return QsInt()
+        }
+        if value is Bool {
+            return QsBoolean()
+        }
+        if value is String {
+            return getStringType()
+        }
+        if let value = value as? QsArrayReference {
+            if value.isEmpty {
+                return QsArray(contains: QsAnyType())
+            } else {
+                var type = getQsTypeOfSwiftValue(value[0])
+                for i in 1..<value.count {
+                    type = TypeChecker.findCommonType(type, getQsTypeOfSwiftValue(value[i]), symbolTable: symbolTable)
+                }
+                return QsArray(contains: type)
+            }
+        }
+        if value == nil {
+            return QsVoidType()
+        }
+        
+        preconditionFailure("Unrecognized type \(Swift.type(of: value))")
+    }
+    
     private func verifyIsType(_ value: Any?, type: QsType) -> TypeVerificationResult {
         defer {
             debugPrint(purpose: "Type checker verification", "Verifying \(String(describing: value)) as \(printType(type))")
@@ -112,7 +174,13 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             if value.isEmpty {
                 return .pass
             }
-            return verifyIsType(value[0], type: type.contains)
+            for arrayValue in value {
+                let verifySubvalue = verifyIsType(arrayValue, type: type.contains)
+                if verifySubvalue != .pass {
+                    return verifySubvalue
+                }
+            }
+            return .pass
         }
         if value == nil {
             if type is QsVoidType {
@@ -178,9 +246,22 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return indexedArray[index]
     }
     
-    public func visitCallExprOptionalAny(expr: CallExpr) -> Any? {
-        // TODO
-        return nil
+    public func visitCallExprOptionalAny(expr: CallExpr) throws -> Any? {
+        precondition(expr.uniqueFunctionCall != nil, "Operation not implemented")
+        let callSymbolId = expr.uniqueFunctionCall!
+        
+        let functionCallable = environment.fetch(symbolTableId: callSymbolId)?.value as! FunctionCallable
+        var arguments: [Any?] = Array(repeating: nil, count: expr.arguments.count)
+        for (i, argument) in expr.arguments.enumerated() {
+            arguments[i] = try interpret(argument)
+        }
+        
+        environment = Environment(enclosing: environment)
+        defer {
+            environment = environment.enclosing!
+        }
+        
+        return try functionCallable.execute(environment: environment, interpreter: self, arguments: arguments)
     }
     
     public func visitGetExprOptionalAny(expr: GetExpr) throws -> Any? {
@@ -216,9 +297,34 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    public func visitCastExprOptionalAny(expr: CastExpr) -> Any? {
-        // TODO
-        return nil
+    private func cast(value: Any?, to type: QsType, expr: Expr) throws -> Any? {
+        if type is QsAnyType {
+            // nothing needs to be done
+            return value
+        } else if type is QsInt {
+            if let value = value as? Double {
+                return Int(value)
+            } else if let value = value as? Int {
+                return value
+            }
+        } else if type is QsDouble {
+            if let value = value as? Double {
+                return value
+            } else if let value = value as? Int {
+                return Double(value)
+            }
+        } else {
+            // TODO: Casting to classes and superclasses
+            preconditionFailure("Unrecognized type \(Swift.type(of: value))")
+        }
+        
+        throw InterpreterRuntimeError.error("Could not cast value of type '\(printType(getQsTypeOfSwiftValue(value)))' to '\(printType(type))'", expr.startLocation, expr.endLocation)
+    }
+    
+    public func visitCastExprOptionalAny(expr: CastExpr) throws -> Any? {
+        let value = try interpret(expr.value)
+        
+        return try cast(value: value, to: expr.type!, expr: expr)
     }
     
     /// Gets the default value of a requested type for array initialization.
@@ -226,8 +332,8 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     /// - Parameter type: The requested type. This function does not support array types.
     /// - Returns: The default value for the requested type
     private func getDefaultValue(ofType type: QsType) -> Any? {
-        if let type = type as? QsArray {
-            preconditionFailure("getDefaultValue called with QsArray type!")
+        if type is QsArray {
+            return QsArrayReference(data: [])
         }
         if type is QsBoolean {
             return false
@@ -473,9 +579,10 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         preconditionFailure()
     }
     
-    public func visitIsTypeExprOptionalAny(expr: IsTypeExpr) -> Any? {
+    public func visitIsTypeExprOptionalAny(expr: IsTypeExpr) throws -> Any? {
         // TODO: since type information is erased in the compiler / VM, "is type" expressions need to be computed at compile-time for every type *except* for anys and potentially polymorphic classes
-        return nil
+        let value = try interpret(expr.left)
+        return typesEqual(getQsTypeOfSwiftValue(value), expr.rightType!, anyEqAny: true)
     }
     
     public func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any? {
@@ -511,7 +618,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     public func visitFunctionStmt(stmt: FunctionStmt) throws {
-        // TODO
+        // Do nothing, as they've already been forward-declared
     }
     
     public func visitExpressionStmt(stmt: ExpressionStmt) throws {
@@ -624,7 +731,11 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     }
     
     public func visitReturnStmt(stmt: ReturnStmt) throws {
-        // TODO
+        if let value = stmt.value {
+            let returnValue = try interpret(value)
+            throw InterpreterInterruptSignal.return(returnValue)
+        }
+        throw InterpreterInterruptSignal.return(nil)
     }
     
     public func visitLoopFromStmt(stmt: LoopFromStmt) throws {
@@ -711,7 +822,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         try assignTo(lhs: stmt.left, rhs: rhs)
     }
     
-    private func interpret(_ expr: Expr) throws -> Any? {
+    fileprivate func interpret(_ expr: Expr) throws -> Any? {
         let result = try expr.accept(visitor: self)
         if verifyTypeCheck {
             let verificationResult = verifyIsType(result, type: expr.type!)
@@ -723,13 +834,28 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return result
     }
     
-    private func interpret(_ stmt: Stmt) throws {
+    fileprivate func interpret(_ stmt: Stmt) throws {
         try stmt.accept(visitor: self)
     }
     
-    private func interpret(_ stmts: [Stmt]) throws {
+    fileprivate func interpret(_ stmts: [Stmt]) throws {
         for stmt in stmts {
             try interpret(stmt)
+        }
+    }
+    
+    public func forwardDeclareGlobalsFunctionsClasses(symbolTable: SymbolTables) {
+        let symbols = symbolTable.getAllSymbolsAtCurrentTable()
+        for symbol in symbols {
+            if symbol is GlobalVariableSymbol {
+                let symbol = symbol as! GlobalVariableSymbol
+                environment.add(symbolTableId: symbol.id, name: symbol.name, value: getDefaultValue(ofType: symbol.type!))
+            } else if symbol is FunctionSymbol {
+                let symbol = symbol as! FunctionSymbol
+                environment.add(symbolTableId: symbol.id, name: symbol.name, value: FunctionCallable(functionStmt: symbol.functionStmt!))
+            } else if symbol is ClassSymbol {
+                // TODO
+            }
         }
     }
     
@@ -737,10 +863,12 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         if debugPrint {
             print("----- Interpreter -----")
         }
+        self.symbolTable = symbolTable
         doDebugPrint = debugPrint
         
         stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         self.environment = Environment()
+        forwardDeclareGlobalsFunctionsClasses(symbolTable: symbolTable)
         for stmt in stmts {
             do {
                 try interpret(stmt)

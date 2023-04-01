@@ -4,7 +4,12 @@ internal struct StoredVariable {
 }
 
 internal class Environment {
+    public var enclosing: Environment?
     private var variables: [Int : StoredVariable] = [:]
+    
+    init(enclosing: Environment? = nil) {
+        self.enclosing = enclosing
+    }
     
     func add(symbolTableId: Int, name: String, value: Any?) {
         add(symbolTableId: symbolTableId, variable: .init(name: name, value: value))
@@ -15,6 +20,10 @@ internal class Environment {
     }
     
     func fetch(symbolTableId: Int) -> StoredVariable? {
-        return variables[symbolTableId]
+        let result = variables[symbolTableId]
+        if result == nil && enclosing != nil {
+            return enclosing!.fetch(symbolTableId: symbolTableId)
+        }
+        return result
     }
 }

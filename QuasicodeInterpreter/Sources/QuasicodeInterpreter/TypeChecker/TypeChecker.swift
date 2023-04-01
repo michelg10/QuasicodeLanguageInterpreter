@@ -16,7 +16,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return currentFunctionIndex != nil && currentClassIndex != nil
     }
     
-    private func findCommonType(_ lhs: QsType, _ rhs: QsType) -> QsType {
+    static internal func findCommonType(_ lhs: QsType, _ rhs: QsType, symbolTable: SymbolTables) -> QsType {
         if lhs is QsErrorType || rhs is QsErrorType {
             return QsErrorType()
         }
@@ -51,7 +51,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
             
             // both are QsArrays
-            return QsArray(contains: findCommonType((lhs as! QsArray).contains, (rhs as! QsArray).contains))
+            return QsArray(contains: findCommonType((lhs as! QsArray).contains, (rhs as! QsArray).contains, symbolTable: symbolTable))
         }
         
         struct JumpError: Error { }
@@ -102,6 +102,10 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return QsErrorType()
         }
         return QsAnyType()
+    }
+    
+    private func findCommonType(_ lhs: QsType, _ rhs: QsType) -> QsType {
+        TypeChecker.findCommonType(lhs, rhs, symbolTable: self.symbolTable)
     }
     
     public func visitAstArrayTypeQsType(asttype: AstArrayType) -> QsType {

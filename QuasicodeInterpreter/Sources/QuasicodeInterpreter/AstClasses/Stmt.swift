@@ -4,6 +4,7 @@ public protocol Stmt {
     func accept(visitor: StmtThrowVisitor) throws
     func accept(visitor: StmtStmtVisitor) -> Stmt
     func accept(visitor: StmtStringVisitor) -> String
+    func accept(visitor: StmtBoolVisitor) -> Bool
     var startLocation: InterpreterLocation { get set }
     var endLocation: InterpreterLocation { get set }
 }
@@ -84,6 +85,25 @@ public protocol StmtStringVisitor {
     func visitSetStmtString(stmt: SetStmt) -> String
 }
 
+public protocol StmtBoolVisitor {
+    func visitClassStmtBool(stmt: ClassStmt) -> Bool
+    func visitMethodStmtBool(stmt: MethodStmt) -> Bool
+    func visitFunctionStmtBool(stmt: FunctionStmt) -> Bool
+    func visitExpressionStmtBool(stmt: ExpressionStmt) -> Bool
+    func visitIfStmtBool(stmt: IfStmt) -> Bool
+    func visitOutputStmtBool(stmt: OutputStmt) -> Bool
+    func visitInputStmtBool(stmt: InputStmt) -> Bool
+    func visitReturnStmtBool(stmt: ReturnStmt) -> Bool
+    func visitLoopFromStmtBool(stmt: LoopFromStmt) -> Bool
+    func visitWhileStmtBool(stmt: WhileStmt) -> Bool
+    func visitBreakStmtBool(stmt: BreakStmt) -> Bool
+    func visitContinueStmtBool(stmt: ContinueStmt) -> Bool
+    func visitBlockStmtBool(stmt: BlockStmt) -> Bool
+    func visitExitStmtBool(stmt: ExitStmt) -> Bool
+    func visitMultiSetStmtBool(stmt: MultiSetStmt) -> Bool
+    func visitSetStmtBool(stmt: SetStmt) -> Bool
+}
+
 public class ClassStmt: Stmt {
     public var keyword: Token
     public var name: Token
@@ -148,6 +168,9 @@ public class ClassStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitClassStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitClassStmtBool(stmt: self)
+    }
 }
 
 public class MethodStmt: Stmt {
@@ -186,6 +209,9 @@ public class MethodStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitMethodStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitMethodStmtBool(stmt: self)
     }
 }
 
@@ -244,6 +270,9 @@ public class FunctionStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitFunctionStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitFunctionStmtBool(stmt: self)
+    }
 }
 
 public class ExpressionStmt: Stmt {
@@ -273,6 +302,9 @@ public class ExpressionStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitExpressionStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitExpressionStmtBool(stmt: self)
     }
 }
 
@@ -313,6 +345,9 @@ public class IfStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitIfStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitIfStmtBool(stmt: self)
+    }
 }
 
 public class OutputStmt: Stmt {
@@ -343,6 +378,9 @@ public class OutputStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitOutputStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitOutputStmtBool(stmt: self)
+    }
 }
 
 public class InputStmt: Stmt {
@@ -372,6 +410,9 @@ public class InputStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitInputStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitInputStmtBool(stmt: self)
     }
 }
 
@@ -408,6 +449,9 @@ public class ReturnStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitReturnStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitReturnStmtBool(stmt: self)
     }
 }
 
@@ -448,6 +492,9 @@ public class LoopFromStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitLoopFromStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitLoopFromStmtBool(stmt: self)
+    }
 }
 
 public class WhileStmt: Stmt {
@@ -484,6 +531,9 @@ public class WhileStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitWhileStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitWhileStmtBool(stmt: self)
+    }
 }
 
 public class BreakStmt: Stmt {
@@ -514,6 +564,9 @@ public class BreakStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitBreakStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitBreakStmtBool(stmt: self)
+    }
 }
 
 public class ContinueStmt: Stmt {
@@ -543,6 +596,9 @@ public class ContinueStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitContinueStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitContinueStmtBool(stmt: self)
     }
 }
 
@@ -580,6 +636,9 @@ public class BlockStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitBlockStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitBlockStmtBool(stmt: self)
+    }
 }
 
 public class ExitStmt: Stmt {
@@ -610,6 +669,9 @@ public class ExitStmt: Stmt {
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitExitStmtString(stmt: self)
     }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitExitStmtBool(stmt: self)
+    }
 }
 
 public class MultiSetStmt: Stmt {
@@ -639,6 +701,9 @@ public class MultiSetStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitMultiSetStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitMultiSetStmtBool(stmt: self)
     }
 }
 
@@ -675,6 +740,9 @@ public class SetStmt: Stmt {
     }
     public func accept(visitor: StmtStringVisitor) -> String {
         visitor.visitSetStmtString(stmt: self)
+    }
+    public func accept(visitor: StmtBoolVisitor) -> Bool {
+        visitor.visitSetStmtBool(stmt: self)
     }
 }
 
