@@ -93,11 +93,11 @@ public class Scanner {
     }
     
     private func isAtEnd() -> Bool {
-        return current == source.endIndex
+        return current >= source.endIndex
     }
     
     private func isAtEnd(_ index:String.Index) -> Bool {
-        return index == source.endIndex
+        return index >= source.endIndex
     }
     
     public func scanTokens(debugPrint: Bool = false) -> ([Token], [InterpreterProblem]) {
@@ -141,7 +141,7 @@ public class Scanner {
     }
     
     private func lineContinuation() {
-        advance() // consume the line continuation
+        // the line continuation is already consumed
         consumeWhiteSpace()
         if isAtEnd() {
             return

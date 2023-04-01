@@ -733,13 +733,15 @@ public class CastExpr: Expr {
 }
 
 public class ArrayAllocationExpr: Expr {
+    public var baseType: AstType
     public var contains: AstType
     public var capacity: [Expr]
     public var type: QsType?
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(contains: AstType, capacity: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(baseType: AstType, contains: AstType, capacity: [Expr], type: QsType?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+        self.baseType = baseType
         self.contains = contains
         self.capacity = capacity
         self.type = type
@@ -747,6 +749,7 @@ public class ArrayAllocationExpr: Expr {
         self.endLocation = endLocation
     }
     init(_ objectToCopy: ArrayAllocationExpr) {
+        self.baseType = objectToCopy.baseType
         self.contains = objectToCopy.contains
         self.capacity = objectToCopy.capacity
         self.type = objectToCopy.type

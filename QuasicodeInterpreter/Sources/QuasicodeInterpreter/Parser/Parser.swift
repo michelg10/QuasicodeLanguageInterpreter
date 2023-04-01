@@ -712,8 +712,9 @@ public class Parser {
     private func allocation() throws -> Expr {
         let newKeyword = previous()
         // consume the base type
-        let baseType = peek()
+        let baseTypeToken = peek()
         var allocationType = try typeSignature(matchArray: false, optional: false)
+        let baseType = allocationType
         if allocationType == nil {
             throw error(message: "Expect type after 'new'", token: newKeyword)
         }
@@ -722,10 +723,11 @@ public class Parser {
             var capacity: [Expr] = []
             repeat {
                 capacity.append(try expression())
-                allocationType = AstArrayType(contains: allocationType!, startLocation: .init(start: baseType), endLocation: .init(end: peek()))
+                allocationType = AstArrayType(contains: allocationType!, startLocation: .init(start: baseTypeToken), endLocation: .init(end: peek()))
                 try consume(type: .RIGHT_BRACKET, message: "Expect ']' after '['")
             } while match(types: .LEFT_BRACKET)
             return ArrayAllocationExpr(
+                baseType: baseType!,
                 contains: allocationType!,
                 capacity: capacity,
                 type: nil,
@@ -735,7 +737,7 @@ public class Parser {
         } else if match(types: .LEFT_PAREN) {
             let argumentsList = try arguments()
             if !(allocationType! is AstClassType) {
-                throw error(message: "Expect class", token: baseType)
+                throw error(message: "Expect class", token: baseTypeToken)
             }
             try consume(type: .RIGHT_PAREN, message: "Expect ')' after '('")
             return ClassAllocationExpr(
