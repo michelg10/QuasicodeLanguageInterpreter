@@ -268,7 +268,7 @@ public class Parser {
         if !checkTokenType(is: .RIGHT_PAREN) {
             repeat {
                 let parameterName = try consume(type: .IDENTIFIER, message: "Expect parameter name")
-                var parameterType: AstType? = AstAnyType(startLocation: .init(end: previous()), endLocation: .init(end: previous()))
+                var parameterType: AstType?
                 var initializer: Expr?
                 if match(types: .COLON) {
                     parameterType = try typeSignature(matchArray: true, optional: false)

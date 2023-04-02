@@ -40,9 +40,9 @@ public struct InterpreterLocation: Equatable, Comparable {
 }
 
 public struct InterpreterProblem {
-    var message: String
-    var startLocation: InterpreterLocation
-    var endLocation: InterpreterLocation
+    public var message: String
+    public var startLocation: InterpreterLocation
+    public var endLocation: InterpreterLocation
     
     init(message: String, start: InterpreterLocation, end: InterpreterLocation) {
         self.message = message

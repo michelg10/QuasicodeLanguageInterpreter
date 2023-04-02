@@ -1,3 +1,5 @@
+import QuasicodeCommon
+
 // swiftlint:disable type_body_length
 /// A slow tree-walk interpreter for debugging purposes
 public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
@@ -44,13 +46,28 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         return QsClass(name: "String", id: stringClassId)
     }
     
+    private var customStdout: ((String) -> Void)?
+    private var customStdin: (() -> String)?
+    private var cancellationToken: CancellationToken?
+    
     private func printToStdout(_ str: String) {
-        print(str, terminator: "")
+        if let customStdout = customStdout {
+            customStdout(str)
+        } else {
+            print(str, terminator: "")
+        }
     }
     
-    private func getStdin() -> String {
-        print("Expect input: ", terminator: "")
-        return readLine(strippingNewline: true) ?? ""
+    private func getStdin() throws -> String {
+        if let customStdin = customStdin {
+            if cancellationToken?.isCancelled == true {
+                throw InterpreterExitSignal.cancel
+            }
+            return customStdin()
+        } else {
+            print("Expect input: ", terminator: "")
+            return readLine(strippingNewline: true) ?? ""
+        }
     }
     
     private enum InterpreterRuntimeError: Error {
@@ -59,6 +76,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     private enum InterpreterExitSignal: Error {
         case signal
+        case cancel
     }
     
     private enum InterpreterInterruptSignal: Error {
@@ -347,6 +365,11 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         if type is QsAnyType {
             return nil
         }
+        if type is QsClass {
+            if typesEqual(type, getStringType(), anyEqAny: false) {
+                return ""
+            }
+        }
         // TODO: QsClassTypes
         preconditionFailure("Unrecognized type for default value fetching")
     }
@@ -503,7 +526,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
                 let right = right as! Int
                 switch expr.opr.tokenType {
                 case .MINUS:
-                    return left - right
+                    return left &- right
                 case .SLASH, .DIV, .MOD:
                     if right == 0 {
                         throw InterpreterRuntimeError.error("Division by zero", expr.startLocation, expr.endLocation)
@@ -517,9 +540,9 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
                         preconditionFailure("Switch should be exhaustive")
                     }
                 case .STAR:
-                    return left * right
+                    return left &* right
                 case .PLUS:
-                    return left + right
+                    return left &+ right
                 default:
                     preconditionFailure("Switch should be exhaustive")
                 }
@@ -697,7 +720,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     public func visitInputStmt(stmt: InputStmt) throws {
         for expression in stmt.expressions {
-            let input = getStdin()
+            let input = try getStdin()
             if typesEqual(expression.type!, QsInt(), anyEqAny: true) {
                 var value: Int
                 if let input = Int(input) {
@@ -836,6 +859,9 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     fileprivate func interpret(_ stmt: Stmt) throws {
         try stmt.accept(visitor: self)
+        if cancellationToken?.isCancelled == true {
+            throw InterpreterExitSignal.cancel
+        }
     }
     
     fileprivate func interpret(_ stmts: [Stmt]) throws {
@@ -859,7 +885,18 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    public func execute(_ stmts: [Stmt], symbolTable: SymbolTables, debugPrint: Bool = false) {
+    public func execute(
+        _ stmts: [Stmt],
+        symbolTable: SymbolTables,
+        debugPrint: Bool = false,
+        customStdin: (() -> String)? = nil,
+        customStdout: ((String) -> Void)? = nil,
+        customErrorHandling: ((String, InterpreterLocation, InterpreterLocation) -> Void)? = nil,
+        cancellationToken: CancellationToken? = nil
+    ) {
+        self.customStdin = customStdin
+        self.customStdout = customStdout
+        self.cancellationToken = cancellationToken
         if debugPrint {
             print("----- Interpreter -----")
         }
@@ -872,8 +909,15 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         for stmt in stmts {
             do {
                 try interpret(stmt)
-            } catch let error {
-                print(error)
+            } catch InterpreterExitSignal.cancel, InterpreterExitSignal.signal {
+                break
+            } catch InterpreterRuntimeError.error(let str, let begin, let end) {
+                if let customErrorHandling = customErrorHandling {
+                    customErrorHandling(str, begin, end)
+                }
+                return
+            } catch {
+                print(error.localizedDescription)
             }
         }
     }

@@ -1,5 +1,9 @@
 /// The interpreter doesn't support many expressions and statements, such as classes. This class checks for that
 public class SupportedByInterpreterChecker: ExprBoolVisitor, StmtBoolVisitor {
+    public init() {
+        
+    }
+    
     private var problems: [InterpreterProblem] = []
     private var stringClassId = -1
     private var symbolTable: SymbolTables = .init()
