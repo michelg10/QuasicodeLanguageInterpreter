@@ -53,7 +53,7 @@ extension Builtins {
         )
         addMethod(
             name: "codePointAt",
-            functionParams: [.init(name: "index", type: QsInt())],
+            functionParams: [.init(name: "index", type: QsArray(contains: QsInt()))],
             paramRange: 1...1,
             isStatic: false,
             returnType: QsInt()
