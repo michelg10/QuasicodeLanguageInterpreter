@@ -67,8 +67,6 @@ public class Scanner {
         "NOT"      : .NOT,
         "IS"       : .IS,
         
-        "OUTPUT"   : .OUTPUT,
-        "INPUT"    : .INPUT,
         "output"   : .OUTPUT,
         "input"    : .INPUT,
         

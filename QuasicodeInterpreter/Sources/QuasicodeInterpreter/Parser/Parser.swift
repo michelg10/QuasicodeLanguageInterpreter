@@ -403,7 +403,7 @@ public class Parser {
         let endOfStatement = previous()
         
         try consume(type: .EOL, message: "Expect end-of-line after return statement")
-        return ReturnStmt(keyword: keyword, value: value, isTerminator: false, startLocation: keyword.startLocation, endLocation: endOfStatement.endLocation)
+        return ReturnStmt(keyword: keyword, value: value, startLocation: keyword.startLocation, endLocation: endOfStatement.endLocation)
     }
     
     private func loopStatement() throws -> Stmt {
@@ -570,7 +570,7 @@ public class Parser {
                         error(message: "Cannot retype expression", token: annotationColon!)
                     }
                 }
-                return SetStmt(left: leftExpr, chained: chains, value: value!, startLocation: leftExpr.startLocation, endLocation: value!.endLocation)
+                return SetStmt(left: leftExpr, chained: chains, value: value!, typeChecked: false, startLocation: leftExpr.startLocation, endLocation: value!.endLocation)
             }
         }
     }

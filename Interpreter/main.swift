@@ -15,7 +15,8 @@ if true {
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/ParseTest.qsc")
     // swiftlint:disable:next all
-    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test14.qs")
+    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/test.qsc")
+//    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test14.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/Tests/full/countPrimes.qsc")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/ClassImplementations.qs")
 //    let toInterpret = try! String.init(contentsOfFile: "/Users/michel/Desktop/Quasicode/LilTests/test11.qs")
@@ -33,8 +34,15 @@ if true {
         Builtins.addStringClassToSymbolTable(symbolTable)
     }
     let stringClassIndex = INCLUDE_STRING ? symbolTable.queryAtGlobalOnly("String<>")!.id : 0
-
-    let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex, builtinClasses: INCLUDE_BUILTIN_CLASSES ? builtinClassNames : [])
+    
+    var builtinClasses: [String] = []
+    if INCLUDE_STRING {
+        builtinClasses.append("String")
+    }
+    if INCLUDE_BUILTIN_CLASSES {
+        builtinClasses.append(contentsOf: builtinClassNames)
+    }
+    let parser = Parser(tokens: tokens, stringClassIndex: stringClassIndex, builtinClasses: builtinClasses)
     var ast: [Stmt]
     let parseErrors: [InterpreterProblem]
     (ast, parseErrors) = parser.parse(addBuiltinclassesToAst: INCLUDE_BUILTIN_CLASSES, debugPrint: true)

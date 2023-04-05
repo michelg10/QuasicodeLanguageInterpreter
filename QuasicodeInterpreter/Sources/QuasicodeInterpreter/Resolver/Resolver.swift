@@ -523,15 +523,12 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
     
     public func visitReturnStmt(stmt: ReturnStmt) {
         if currentFunction == .none {
-            if stmt.value != nil {
-                error(message: "Can't return a value from top-level code.", token: stmt.keyword)
-            }
-            stmt.isTerminator = true
+            error(message: "Cannot returnfrom top-level code.", token: stmt.keyword)
         }
         
         if stmt.value != nil {
             if currentFunction == .initializer {
-                error(message: "Can't return a value from a constructor", token: stmt.keyword)
+                error(message: "Cannot return a value from a constructor", token: stmt.keyword)
             }
             catchErrorClosure {
                 try resolve(stmt.value!)

@@ -419,21 +419,18 @@ public class InputStmt: Stmt {
 public class ReturnStmt: Stmt {
     public var keyword: Token
     public var value: Expr?
-    public var isTerminator: Bool
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(keyword: Token, value: Expr?, isTerminator: Bool, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(keyword: Token, value: Expr?, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.keyword = keyword
         self.value = value
-        self.isTerminator = isTerminator
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
     init(_ objectToCopy: ReturnStmt) {
         self.keyword = objectToCopy.keyword
         self.value = objectToCopy.value
-        self.isTerminator = objectToCopy.isTerminator
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
     }
@@ -711,13 +708,15 @@ public class SetStmt: Stmt {
     public var left: Expr
     public var chained: [Expr]
     public var value: Expr
+    public var typeChecked: Bool
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(left: Expr, chained: [Expr], value: Expr, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(left: Expr, chained: [Expr], value: Expr, typeChecked: Bool, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.left = left
         self.chained = chained
         self.value = value
+        self.typeChecked = typeChecked
         self.startLocation = startLocation
         self.endLocation = endLocation
     }
@@ -725,6 +724,7 @@ public class SetStmt: Stmt {
         self.left = objectToCopy.left
         self.chained = objectToCopy.chained
         self.value = objectToCopy.value
+        self.typeChecked = objectToCopy.typeChecked
         self.startLocation = objectToCopy.startLocation
         self.endLocation = objectToCopy.endLocation
     }

@@ -423,46 +423,46 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    private func pickBestFunctions(potentialFunctions: [Int], withParameters: [Expr]) -> [Int] {
-        return pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: withParameters.map({ expr in
+    private func pickBestFunctionsAndEliminateTypeMismatches(potentialFunctions: [Int], withParameters: [Expr]) -> [Int] {
+        return pickBestFunctionsAndEliminateTypeMismatches(potentialFunctions: potentialFunctions, withParameters: withParameters.map({ expr in
             expr.type!
         }))
     }
     
-    private func pickBestFunctions(potentialFunctions: [Int], withParameters: [QsType]) -> [Int] {
+    private func pickBestFunctionsAndEliminateTypeMismatches(potentialFunctions: [Int], withParameters: [QsType]) -> [Int] {
         var bestMatches: [Int] = []
-        var bestMatchLevel = Int.max
+        var bestMatchLevel = -1
         var bestMatchBelongsToClassId = -1 // the symbol table ID for the class symbol to which the best classes belong to
         for potentialFunction in potentialFunctions {
             guard let functionSymbolEntry = symbolTable.getSymbol(id: potentialFunction) as? FunctionLikeSymbol else {
                 assertionFailure("Symbol at index is not a function symbol")
                 continue
-                
             }
             if !functionSymbolEntry.paramRange.contains(withParameters.count) {
                 // that's a no go
                 continue
             }
-            var matchLevel = 1
+            var matchLevel = Int.max // use a "match level," where the higher the match level the better. This approach allows for better extensibility
             for i in 0..<withParameters.count {
                 let givenType = withParameters[i]
                 let expectedType = functionSymbolEntry.functionParams[i].type
                 if typesEqual(givenType, expectedType, anyEqAny: true) {
-                    matchLevel = max(matchLevel, 1)
+                    matchLevel = min(matchLevel, 1)
                     continue
-                }
-                let commonType = findCommonType(givenType, expectedType)
-                if typesEqual(commonType, expectedType, anyEqAny: true) {
-                    if expectedType is QsAnyType {
-                        // the given type is being casted to an any
-                        matchLevel = max(matchLevel, 3)
-                    } else {
-                        matchLevel = max(matchLevel, 2)
-                    }
                 } else {
-                    matchLevel = Int.max
-                    break
+                    let commonType = findCommonType(givenType, expectedType)
+                    if typesEqual(commonType, expectedType, anyEqAny: true) { // unable to convert given type to expected type
+                        matchLevel = -1
+                        break
+                    } else {
+                        matchLevel = min(matchLevel, 0)
+                    }
                 }
+            }
+            
+            if matchLevel == -1 {
+                // if a given type cannot be converted to the expected type
+                continue
             }
             
             var belongsToClass = -1
@@ -470,7 +470,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 let functionSymbolEntry = functionSymbolEntry as! MethodSymbol
                 belongsToClass = functionSymbolEntry.withinClass
             }
-            if matchLevel < bestMatchLevel {
+            if matchLevel > bestMatchLevel {
                 bestMatchLevel = matchLevel
                 bestMatches = [potentialFunction]
                 if functionSymbolEntry is MethodSymbol {
@@ -626,7 +626,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         
         // find the best match based off of a "match level": the lower the level, the greater the function matches
-        let bestMatches: [Int] = pickBestFunctions(potentialFunctions: potentialFunctions, withParameters: expr.arguments)
+        let bestMatches: [Int] = pickBestFunctionsAndEliminateTypeMismatches(potentialFunctions: potentialFunctions, withParameters: expr.arguments)
         if bestMatches.isEmpty {
             error(message: "No matching function to call", on: expr)
             return
@@ -927,7 +927,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return
         }
         
-        let bestMatches = pickBestFunctions(potentialFunctions: initializerFunctionNameSymbol.belongingFunctions, withParameters: expr.arguments)
+        let bestMatches = pickBestFunctionsAndEliminateTypeMismatches(potentialFunctions: initializerFunctionNameSymbol.belongingFunctions, withParameters: expr.arguments)
         if bestMatches.isEmpty {
             error(message: noInitializerFoundErrorMessage, on: expr)
             return
@@ -1358,6 +1358,12 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     }
     
     public func visitSetStmt(stmt: SetStmt) {
+        if stmt.typeChecked {
+            return
+        }
+        defer {
+            stmt.typeChecked = true
+        }
         // valid set to types:
         // GetExpr, SubscriptExpr, VariableSetExpr (wrapping VariableExpr), VariableExpr (only in chained)
         typeCheck(stmt.value)

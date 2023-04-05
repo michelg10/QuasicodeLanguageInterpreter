@@ -414,7 +414,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
             return parenthesize(name: "Return")
         }
         return parenthesize(
-            name: "Return{isTerminator: \(stringifyBoolean(stmt.isTerminator))}",
+            name: "Return",
             exprs: stmt.value!
         )
     }
