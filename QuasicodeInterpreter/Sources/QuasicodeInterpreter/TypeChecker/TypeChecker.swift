@@ -451,11 +451,12 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     continue
                 } else {
                     let commonType = findCommonType(givenType, expectedType)
-                    if typesEqual(commonType, expectedType, anyEqAny: true) { // unable to convert given type to expected type
+                    if typesEqual(commonType, expectedType, anyEqAny: true) {
+                        matchLevel = min(matchLevel, 0)
+                    } else {
+                        // unable to convert given type to expected type
                         matchLevel = -1
                         break
-                    } else {
-                        matchLevel = min(matchLevel, 0)
                     }
                 }
             }
