@@ -1,11 +1,11 @@
 public class SymbolTable {
-    private class InternalTable {
+    private class ScopeTable {
         let id: Int
-        var parent: InternalTable?
-        var childTables: [InternalTable] = []
+        var parent: ScopeTable?
+        var childTables: [ScopeTable] = []
         private var table: [String : Symbol] = [:]
         private var allSymbolsCache: [Symbol]?
-        init(parent: InternalTable?, id: Int) {
+        init(parent: ScopeTable?, id: Int) {
             self.parent = parent
             self.id = id
         }
@@ -19,7 +19,7 @@ public class SymbolTable {
             }
             table[symbol.name] = symbol
         }
-        public func linkTableToParent(_ parent: InternalTable) {
+        public func linkTableToParent(_ parent: ScopeTable) {
             self.parent = parent
         }
         public func getAllSymbolsInTable() -> [Symbol] {
@@ -33,8 +33,8 @@ public class SymbolTable {
         }
     }
     private var allSymbols: [Symbol] = []
-    private var tables: [InternalTable] = []
-    private var current: InternalTable
+    private var tables: [ScopeTable] = []
+    private var current: ScopeTable
     private var classRuntimeIdCount = 0
     private var classSymbolTableIndexToRuntimeIdDict: [Int : Int] = [:]
     
@@ -76,7 +76,7 @@ public class SymbolTable {
     }
     
     public func createTableAtScope() -> Int {
-        let newTable: InternalTable = .init(parent: current, id: tables.count)
+        let newTable: ScopeTable = .init(parent: current, id: tables.count)
         current.childTables.append(newTable)
         tables.append(newTable)
         return newTable.id
@@ -101,7 +101,7 @@ public class SymbolTable {
     }
     
     public func query(_ name: String) -> Symbol? {
-        var queryingTable: InternalTable? = current
+        var queryingTable: ScopeTable? = current
         while queryingTable != nil {
             if let result = queryingTable!.queryTable(name: name) {
                 return result
