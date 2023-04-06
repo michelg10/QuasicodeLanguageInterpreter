@@ -4,7 +4,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     public init() {}
     
     private var problems: [InterpreterProblem] = []
-    private var symbolTable: SymbolTables = .init()
+    private var symbolTable: SymbolTable = .init()
     // type checker needs to know:
     // current function / method the checker is currently in for return checks
     // current class the checker is currently in for public / private checks and super checks
@@ -16,7 +16,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         return currentFunctionIndex != nil && currentClassIndex != nil
     }
     
-    static internal func findCommonType(_ lhs: QsType, _ rhs: QsType, symbolTable: SymbolTables) -> QsType {
+    static internal func findCommonType(_ lhs: QsType, _ rhs: QsType, symbolTable: SymbolTable) -> QsType {
         if lhs is QsErrorType || rhs is QsErrorType {
             return QsErrorType()
         }
@@ -1500,7 +1500,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
     }
     
-    public func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTables, debugPrint: Bool = false) -> [InterpreterProblem] {
+    public func typeCheckAst(statements: [Stmt], symbolTables: inout SymbolTable, debugPrint: Bool = false) -> [InterpreterProblem] {
         if debugPrint {
             print("----- Type Checker -----")
         }

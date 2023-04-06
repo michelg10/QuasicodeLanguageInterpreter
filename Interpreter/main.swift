@@ -29,7 +29,7 @@ if true {
     let (tokens, scanErrors) = scanner.scanTokens(debugPrint: true)
     
     // initialize the symbol table and put in all the default classes
-    var symbolTable: SymbolTables = .init()
+    var symbolTable: SymbolTable = .init()
     if INCLUDE_STRING {
         Builtins.addStringClassToSymbolTable(symbolTable)
     }

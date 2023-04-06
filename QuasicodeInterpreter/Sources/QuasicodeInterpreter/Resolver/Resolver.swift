@@ -23,7 +23,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
     private var currentClassStatus: ClassStatus?
     private var currentFunction: FunctionType = .none
     private var problems: [InterpreterProblem] = []
-    private var symbolTable: SymbolTables = .init()
+    private var symbolTable: SymbolTable = .init()
     private var isInGlobalScope = false
     
     public func visitGroupingExpr(expr: GroupingExpr) throws {
@@ -321,7 +321,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
             let superclassSymbol = symbolTable.queryAtGlobalOnly(superclassSignature)
             if let superclassSymbol = superclassSymbol as? ClassSymbol {
                 if superclassSymbol.classScopeSymbolTableIndex != nil {
-                    symbolTable.linkCurrentTableToParent(superclassSymbol.classScopeSymbolTableIndex!)
+                    symbolTable.linkCurrentTableToParent(withId: superclassSymbol.classScopeSymbolTableIndex!)
                 }
             }
         }
@@ -537,6 +537,8 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
     }
     
     public func visitLoopFromStmt(stmt: LoopFromStmt) {
+        let previousSymbolTableIndex = symbolTable.getCurrentTableId()
+        
         let previousLoopState = isInLoop
         catchErrorClosure {
             let existingSymbol = symbolTable.query(stmt.variable.name.lexeme)
@@ -958,7 +960,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
         }
     }
     
-    public func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTables, debugPrint: Bool = false) -> [InterpreterProblem] {
+    public func resolveAST(statements: inout [Stmt], symbolTable: inout SymbolTable, debugPrint: Bool = false) -> [InterpreterProblem] {
         if debugPrint {
             print("----- Resolver -----")
         }

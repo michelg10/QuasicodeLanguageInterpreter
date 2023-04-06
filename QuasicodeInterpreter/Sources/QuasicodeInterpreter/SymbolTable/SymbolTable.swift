@@ -1,11 +1,11 @@
-public class SymbolTables {
-    private class SymbolTable {
+public class SymbolTable {
+    private class InternalTable {
         let id: Int
-        var parent: SymbolTable?
-        var childTables: [SymbolTable] = []
+        var parent: InternalTable?
+        var childTables: [InternalTable] = []
         private var table: [String : Symbol] = [:]
         private var allSymbolsCache: [Symbol]?
-        init(parent: SymbolTable?, id: Int) {
+        init(parent: InternalTable?, id: Int) {
             self.parent = parent
             self.id = id
         }
@@ -19,7 +19,7 @@ public class SymbolTables {
             }
             table[symbol.name] = symbol
         }
-        public func linkTableToParent(_ parent: SymbolTable) {
+        public func linkTableToParent(_ parent: InternalTable) {
             self.parent = parent
         }
         public func getAllSymbolsInTable() -> [Symbol] {
@@ -33,10 +33,20 @@ public class SymbolTables {
         }
     }
     private var allSymbols: [Symbol] = []
-    private var tables: [SymbolTable] = []
-    private var current: SymbolTable
+    private var tables: [InternalTable] = []
+    private var current: InternalTable
     private var classRuntimeIdCount = 0
     private var classSymbolTableIndexToRuntimeIdDict: [Int : Int] = [:]
+    
+    private func exitScope() {
+        current = current.parent!
+    }
+    
+    public init() {
+        current = .init(parent: nil, id: 0)
+        tables.append(current)
+    }
+    
     public func getClassRuntimeIdCount() -> Int {
         return classRuntimeIdCount
     }
@@ -57,11 +67,6 @@ public class SymbolTables {
         return result
     }
     
-    public init() {
-        current = .init(parent: nil, id: 0)
-        tables.append(current)
-    }
-    
     public func getAllSymbolsAtCurrentTable() -> [Symbol] {
         return current.getAllSymbolsInTable()
     }
@@ -71,7 +76,7 @@ public class SymbolTables {
     }
     
     public func createTableAtScope() -> Int {
-        let newTable: SymbolTable = .init(parent: current, id: tables.count)
+        let newTable: InternalTable = .init(parent: current, id: tables.count)
         current.childTables.append(newTable)
         tables.append(newTable)
         return newTable.id
@@ -87,10 +92,6 @@ public class SymbolTables {
         current = tables[index]
     }
     
-    private func exitScope() {
-        current = current.parent!
-    }
-    
     public func queryAtScopeOnly(_ name: String) -> Symbol? {
         return current.queryTable(name: name)
     }
@@ -100,7 +101,7 @@ public class SymbolTables {
     }
     
     public func query(_ name: String) -> Symbol? {
-        var queryingTable: SymbolTable? = current
+        var queryingTable: InternalTable? = current
         while queryingTable != nil {
             if let result = queryingTable!.queryTable(name: name) {
                 return result
@@ -162,7 +163,7 @@ public class SymbolTables {
         return allMethods
     }
     
-    public func linkCurrentTableToParent(_ parent: Int) {
+    public func linkCurrentTableToParent(withId parent: Int) {
         current.linkTableToParent(tables[parent])
     }
     

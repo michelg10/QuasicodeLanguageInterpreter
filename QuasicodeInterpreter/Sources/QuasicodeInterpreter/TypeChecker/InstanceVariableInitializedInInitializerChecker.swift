@@ -1,7 +1,7 @@
 internal class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor, ExprVisitor {
     private var hasInitializedDict: [Int : Bool] = [:]
     private var totalUninitialized: Int = 0
-    private var symbolTable: SymbolTables
+    private var symbolTable: SymbolTable
     private var reportErrorForReturnStatement: ((_ returnStatement: ReturnStmt, _ message: String) -> Void)
     private var reportErrorForExpression: ((_ expression: Expr, _ message: String) -> Void)
     private var reportEndingError: ((_ message: String) -> Void)
@@ -31,7 +31,7 @@ internal class InstanceVariableInitializedInInitializerChecker: StmtThrowVisitor
         reportErrorForReturnStatement: @escaping ((ReturnStmt, String) -> Void),
         reportErrorForExpression: @escaping ((Expr, String) -> Void),
         reportEndingError: @escaping ((String) -> Void),
-        symbolTable: SymbolTables
+        symbolTable: SymbolTable
     ) {
         self.reportErrorForReturnStatement = reportErrorForReturnStatement
         self.reportErrorForExpression = reportErrorForExpression

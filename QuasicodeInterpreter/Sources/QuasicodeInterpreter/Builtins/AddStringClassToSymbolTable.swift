@@ -1,6 +1,6 @@
 extension Builtins {
     // swiftlint:disable:next function_body_length
-    public static func addStringClassToSymbolTable(_ symbolTable: SymbolTables) {
+    public static func addStringClassToSymbolTable(_ symbolTable: SymbolTable) {
         let stringClassScopeSymbol = symbolTable.createTableAtScope()
         let stringClassSymbolTableIndex = symbolTable.addToSymbolTable(
             symbol: ClassSymbol(

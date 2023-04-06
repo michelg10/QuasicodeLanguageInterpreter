@@ -28,8 +28,8 @@ public class VariableSymbol: Symbol {
     
     public var id: Int
     public var belongsToTable: Int
-    public var type: QsType?
     public let name: String
+    public var type: QsType?
     public var variableStatus: VariableStatus
     public var variableType: VariableType
 }
@@ -54,8 +54,8 @@ public class FunctionNameSymbol: Symbol {
     // multiple overloaded functions are under the same signature
     public var id: Int
     public var belongsToTable: Int
-    public var isForMethods: Bool
     public let name: String
+    public var isForMethods: Bool
     public var belongingFunctions: [Int]
 }
 internal func getParamRangeForFunction(functionStmt: FunctionStmt) -> ClosedRange<Int> {
@@ -96,10 +96,10 @@ public class FunctionSymbol: FunctionLikeSymbol {
     public var id: Int
     public var belongsToTable: Int
     public let name: String
+    public var returnType: QsType
     public let functionStmt: FunctionStmt?
     public var functionParams: [FunctionParam]
     public let paramRange: ClosedRange<Int>
-    public var returnType: QsType
 }
 public class MethodSymbol: FunctionLikeSymbol {
     init(name: String, withinClass: Int, overridedBy: [Int], methodStmt: MethodStmt, returnType: QsType, finishedInit: Bool, isConstructor: Bool) {
@@ -147,6 +147,7 @@ public class MethodSymbol: FunctionLikeSymbol {
     public var id: Int
     public var belongsToTable: Int
     public let name: String
+    public var returnType: QsType
     public let withinClass: Int
     public var overridedBy: [Int]
     public let methodStmt: MethodStmt?
@@ -154,7 +155,6 @@ public class MethodSymbol: FunctionLikeSymbol {
     public let visibility: VisibilityModifier
     public var functionParams: [FunctionParam]
     public let paramRange: ClosedRange<Int>
-    public var returnType: QsType
     public var finishedInit: Bool
     public let isConstructor: Bool
 }
@@ -223,7 +223,7 @@ public class ClassSymbol: Symbol {
     public var depth: Int?
     public var parentOf: [Int]
     
-    public func getMethodSymbols(symbolTable: SymbolTables) -> [MethodSymbol] {
+    public func getMethodSymbols(symbolTable: SymbolTable) -> [MethodSymbol] {
         if classScopeSymbolTableIndex == nil {
             return []
         }

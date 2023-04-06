@@ -6,7 +6,7 @@ public class SupportedByInterpreterChecker: ExprBoolVisitor, StmtBoolVisitor {
     
     private var problems: [InterpreterProblem] = []
     private var stringClassId = -1
-    private var symbolTable: SymbolTables = .init()
+    private var symbolTable: SymbolTable = .init()
     
     private func getStringType() -> QsType {
         return QsClass(name: "String", id: stringClassId)
@@ -254,7 +254,7 @@ public class SupportedByInterpreterChecker: ExprBoolVisitor, StmtBoolVisitor {
         return supported
     }
     
-    public func checkSupport(_ stmts: [Stmt], symbolTable: SymbolTables) -> (Bool, [InterpreterProblem]) {
+    public func checkSupport(_ stmts: [Stmt], symbolTable: SymbolTable) -> (Bool, [InterpreterProblem]) {
         problems = []
         stringClassId = symbolTable.queryAtGlobalOnly("String<>")?.id ?? -1
         self.symbolTable = symbolTable

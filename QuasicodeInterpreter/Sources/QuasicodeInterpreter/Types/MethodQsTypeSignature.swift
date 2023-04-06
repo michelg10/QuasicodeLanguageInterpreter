@@ -27,7 +27,7 @@ internal struct MethodQsTypeSignature: Hashable {
         }
     }
     
-    init(functionStmt: FunctionStmt, symbolTable: SymbolTables) {
+    init(functionStmt: FunctionStmt, symbolTable: SymbolTable) {
         self.name = functionStmt.name.lexeme
         self.parameters = functionStmt.params.map({ functionParam in
             functionParam.getType(symbolTable: symbolTable)!

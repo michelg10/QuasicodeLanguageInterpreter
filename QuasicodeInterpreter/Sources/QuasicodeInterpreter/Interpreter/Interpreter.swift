@@ -38,7 +38,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     let verifyTypeCheck = false // this switch configures whether or not the interpreter will verify the type checker
     var doDebugPrint = false
     private var environment = Environment()
-    private var symbolTable: SymbolTables = .init()
+    private var symbolTable: SymbolTable = .init()
     
     private var stringClassId = -1
     
@@ -870,7 +870,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    public func forwardDeclareGlobalsFunctionsClasses(symbolTable: SymbolTables) {
+    public func forwardDeclareGlobalsFunctionsClasses(symbolTable: SymbolTable) {
         let symbols = symbolTable.getAllSymbolsAtCurrentTable()
         for symbol in symbols {
             if symbol is GlobalVariableSymbol {
@@ -887,7 +887,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     public func execute(
         _ stmts: [Stmt],
-        symbolTable: SymbolTables,
+        symbolTable: SymbolTable,
         debugPrint: Bool = false,
         customStdin: (() -> String)? = nil,
         customStdout: ((String) -> Void)? = nil,

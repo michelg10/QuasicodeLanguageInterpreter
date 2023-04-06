@@ -3,7 +3,7 @@ public struct AstFunctionParam {
     public var astType: AstType?
     public var initializer: Expr?
     public var symbolTableIndex: Int?
-    func getType(symbolTable: SymbolTables) -> QsType? {
+    func getType(symbolTable: SymbolTable) -> QsType? {
         if symbolTableIndex == nil {
             return QsErrorType()
         }
