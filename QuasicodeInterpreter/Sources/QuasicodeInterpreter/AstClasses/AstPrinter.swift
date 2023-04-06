@@ -421,7 +421,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     
     public func visitLoopFromStmtString(stmt: LoopFromStmt) -> String {
         parenthesizeBlock(
-            name: "LoopFrom",
+            name: "LoopFrom{loopScopeIndex: \(stringifyOptionalInt(stmt.loopScopeIndex))}",
             exprs: [stmt.variable, stmt.lRange, stmt.rRange],
             blockStmt: stmt.body
         )

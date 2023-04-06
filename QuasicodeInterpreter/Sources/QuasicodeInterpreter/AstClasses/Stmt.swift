@@ -454,14 +454,16 @@ public class ReturnStmt: Stmt {
 
 public class LoopFromStmt: Stmt {
     public var variable: VariableExpr
+    public var loopScopeIndex: Int?
     public var lRange: Expr
     public var rRange: Expr
     public var body: BlockStmt
     public var startLocation: InterpreterLocation
     public var endLocation: InterpreterLocation
     
-    init(variable: VariableExpr, lRange: Expr, rRange: Expr, body: BlockStmt, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
+    init(variable: VariableExpr, loopScopeIndex: Int?, lRange: Expr, rRange: Expr, body: BlockStmt, startLocation: InterpreterLocation, endLocation: InterpreterLocation) {
         self.variable = variable
+        self.loopScopeIndex = loopScopeIndex
         self.lRange = lRange
         self.rRange = rRange
         self.body = body
@@ -470,6 +472,7 @@ public class LoopFromStmt: Stmt {
     }
     init(_ objectToCopy: LoopFromStmt) {
         self.variable = objectToCopy.variable
+        self.loopScopeIndex = objectToCopy.loopScopeIndex
         self.lRange = objectToCopy.lRange
         self.rRange = objectToCopy.rRange
         self.body = objectToCopy.body

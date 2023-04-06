@@ -4,26 +4,55 @@ internal struct StoredVariable {
 }
 
 internal class Environment {
-    public var enclosing: Environment?
-    private var variables: [Int : StoredVariable] = [:]
+    private class FrameEnvironment {
+        private var variables: [Int : StoredVariable] = [:]
+        
+        init() {
+            
+        }
+        
+        func add(symbolTableId: Int, variable: StoredVariable) {
+            variables[symbolTableId] = variable
+        }
+        
+        func fetch(symbolTableId: Int) -> StoredVariable? {
+            return variables[symbolTableId]
+        }
+    }
     
-    init(enclosing: Environment? = nil) {
-        self.enclosing = enclosing
+    private var environments: [FrameEnvironment]
+    
+    init() {
+        self.environments = [.init()]
     }
     
     func add(symbolTableId: Int, name: String, value: Any?) {
-        add(symbolTableId: symbolTableId, variable: .init(name: name, value: value))
+        let topEnvironment = environments.last!
+        topEnvironment.add(symbolTableId: symbolTableId, variable: .init(name: name, value: value))
     }
     
     func add(symbolTableId: Int, variable: StoredVariable) {
-        variables[symbolTableId] = variable
+        let topEnvironment = environments.last!
+        topEnvironment.add(symbolTableId: symbolTableId, variable: variable)
     }
     
     func fetch(symbolTableId: Int) -> StoredVariable? {
-        let result = variables[symbolTableId]
-        if result == nil && enclosing != nil {
-            return enclosing!.fetch(symbolTableId: symbolTableId)
+        var result: StoredVariable?
+        for environment in environments.reversed() {
+            result = environment.fetch(symbolTableId: symbolTableId)
+            if result != nil {
+                return result
+            }
         }
+        
         return result
+    }
+    
+    func pushFrame() {
+        environments.append(.init())
+    }
+    
+    func popFrame() {
+        environments.popLast()
     }
 }

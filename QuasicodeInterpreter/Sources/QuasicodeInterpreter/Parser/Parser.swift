@@ -450,7 +450,7 @@ public class Parser {
         let body = block(additionalEndMarkers: [])
         
         // startLocation and endLocation should be handled by loopStatement()
-        return LoopFromStmt(variable: iteratingVariable, lRange: lRange, rRange: rRange, body: body, startLocation: .dub(), endLocation: .dub())
+        return LoopFromStmt(variable: iteratingVariable, loopScopeIndex: nil, lRange: lRange, rRange: rRange, body: body, startLocation: .dub(), endLocation: .dub())
     }
     
     private func whileLoop() throws -> Stmt {

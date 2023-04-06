@@ -538,18 +538,20 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
     
     public func visitLoopFromStmt(stmt: LoopFromStmt) {
         let previousSymbolTableIndex = symbolTable.getCurrentTableId()
+        stmt.loopScopeIndex = symbolTable.createAndEnterScope()
+        let previousIsInGlobalScope = isInGlobalScope
+        isInGlobalScope = false
+        defer {
+            isInGlobalScope = previousIsInGlobalScope
+            symbolTable.gotoTable(previousSymbolTableIndex)
+        }
         
         let previousLoopState = isInLoop
         catchErrorClosure {
-            let existingSymbol = symbolTable.query(stmt.variable.name.lexeme)
-            if existingSymbol is VariableSymbol {
-                try resolve(stmt.variable)
-            } else {
-                stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(
-                    symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, variableType: .local)
-                )
-                stmt.variable.type = QsInt(assignable: true)
-            }
+            stmt.variable.symbolTableIndex = symbolTable.addToSymbolTable(
+                symbol: VariableSymbol(type: QsInt(), name: stmt.variable.name.lexeme, variableStatus: .finishedInit, variableType: .local)
+            )
+            stmt.variable.type = QsInt(assignable: true)
         }
         catchErrorClosure {
             try resolve(stmt.lRange)

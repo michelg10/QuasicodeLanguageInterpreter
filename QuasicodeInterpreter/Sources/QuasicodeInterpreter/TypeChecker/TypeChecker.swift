@@ -1297,6 +1297,11 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
     public func visitLoopFromStmt(stmt: LoopFromStmt) {
         typeCheck(stmt.lRange)
         typeCheck(stmt.rRange)
+        let previousSymbolTablePosition = symbolTable.getCurrentTableId()
+        symbolTable.gotoTable(stmt.loopScopeIndex!)
+        defer {
+            symbolTable.gotoTable(previousSymbolTablePosition)
+        }
         if stmt.variable.type == nil {
             typeCheck(stmt.variable)
             assertType(
