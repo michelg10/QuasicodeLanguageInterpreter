@@ -274,9 +274,9 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             arguments[i] = try interpret(argument)
         }
         
-        environment = Environment(enclosing: environment)
+        environment.pushFrame()
         defer {
-            environment = environment.enclosing!
+            environment.popFrame()
         }
         
         return try functionCallable.execute(environment: environment, interpreter: self, arguments: arguments)
@@ -870,7 +870,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         }
     }
     
-    public func forwardDeclareGlobalsFunctionsClasses(symbolTable: SymbolTable) {
+    private func forwardDeclareGlobalsFunctionsClasses(symbolTable: SymbolTable) {
         let symbols = symbolTable.getAllSymbolsAtCurrentTable()
         for symbol in symbols {
             if symbol is GlobalVariableSymbol {
@@ -897,6 +897,13 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         self.customStdin = customStdin
         self.customStdout = customStdout
         self.cancellationToken = cancellationToken
+        
+        defer {
+            self.customStdin = nil
+            self.customStdout = nil
+            self.cancellationToken = nil
+        }
+        
         if debugPrint {
             print("----- Interpreter -----")
         }
