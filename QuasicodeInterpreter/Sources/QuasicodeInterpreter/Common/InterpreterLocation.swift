@@ -1,7 +1,3 @@
-public enum InterpreterProblemType {
-    case error, warning, breakpoint
-}
-
 public struct InterpreterLocation: Equatable, Comparable {
     public static func < (lhs: InterpreterLocation, rhs: InterpreterLocation) -> Bool {
         return lhs.index < rhs.index
@@ -36,23 +32,5 @@ public struct InterpreterLocation: Equatable, Comparable {
     
     func offsetByOnSameLine(_ offset: Int) -> InterpreterLocation {
         return .init(index: index + offset, row: row, column: column + offset, logicalRow: logicalRow, logicalColumn: logicalColumn + offset)
-    }
-}
-
-public struct InterpreterProblem {
-    public var message: String
-    public var startLocation: InterpreterLocation
-    public var endLocation: InterpreterLocation
-    
-    init(message: String, start: InterpreterLocation, end: InterpreterLocation) {
-        self.message = message
-        self.startLocation = start
-        self.endLocation = end
-    }
-    
-    init(message: String, token: Token) {
-        self.message = message
-        self.startLocation = token.startLocation
-        self.endLocation = token.endLocation
     }
 }

@@ -32,7 +32,7 @@ internal func printGlobalVariableInfo(_ symbol: GlobalVariableSymbol) -> String 
     printVariableInfo(symbol)
 }
 internal func printVariableInfo(_ symbol: VariableSymbol) -> String {
-    "type: \(printType(symbol.type)), status: \(symbol.variableStatus), variableType: \(symbol.variableType)"
+    "type: \(printQsType(symbol.type)), status: \(symbol.variableStatus), variableType: \(symbol.variableType)"
 }
 internal func printFunctionNameInfo(_ symbol: FunctionNameSymbol) -> String {
     "belongingFunctions: \(symbol.belongingFunctions), isForMethods: \(symbol.isForMethods)"
@@ -45,18 +45,18 @@ internal func debugFunctionParamsToString(_ functionParams: [FunctionParam]) -> 
         if !result.isEmpty {
             result += ", "
         }
-        result += "\(functionParam.name): \(printType(functionParam.type))"
+        result += "\(functionParam.name): \(printQsType(functionParam.type))"
     }) + "]"
 }
 internal func printFunctionInfo(_ symbol: FunctionSymbol) -> String {
     "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
     "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
-    "returnType: \(printType(symbol.returnType))"
+    "returnType: \(printQsType(symbol.returnType))"
 }
 internal func printMethodInfo(_ symbol: MethodSymbol) -> String {
     "functionParams: \(debugFunctionParamsToString(symbol.functionParams)), " +
     "paramRange: \(debugClosedIntRangeToString(symbol.paramRange)), " +
-    "returnType: \(printType(symbol.returnType)), " +
+    "returnType: \(printQsType(symbol.returnType)), " +
     "isStatic: \(symbol.isStatic), " +
     "visibility: \(symbol.visibility), " +
     "withinClass: \(stringifyOptionalInt(symbol.withinClass)), " +

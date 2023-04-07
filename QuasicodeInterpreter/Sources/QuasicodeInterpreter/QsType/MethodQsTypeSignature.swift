@@ -13,7 +13,7 @@ internal struct MethodQsTypeSignature: Hashable {
         }
         
         if lhs.parameters.elementsEqual(rhs.parameters, by: { parameter1, parameter2 in
-            typesEqual(parameter1, parameter2, anyEqAny: true)
+            qsTypesEqual(parameter1, parameter2, anyEqAny: true)
         }) {
             return true
         } else {

@@ -1,4 +1,4 @@
-internal func printType(_ value: QsType?) -> String {
+internal func printQsType(_ value: QsType?) -> String {
     if value == nil {
         return "nil"
     }
@@ -15,7 +15,7 @@ internal func printType(_ value: QsType?) -> String {
     case is QsClass:
         return "\((value as! QsClass).name)"
     case is QsArray:
-        return "[\(printType((value as! QsArray).contains))]"
+        return "[\(printQsType((value as! QsArray).contains))]"
     case is QsErrorType:
         return "<Error>"
     case is QsVoidType:

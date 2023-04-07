@@ -100,7 +100,7 @@ public class SupportedByInterpreterChecker: ExprBoolVisitor, StmtBoolVisitor {
         
         supported = supported && checkSupport(expr.value)
         
-        if expr.type is QsClass && !typesEqual(expr.type!, getStringType(), anyEqAny: true) {
+        if expr.type is QsClass && !qsTypesEqual(expr.type!, getStringType(), anyEqAny: true) {
             error(message: "Classes are not supported", start: expr.toType.startLocation, end: expr.toType.endLocation)
             supported = false
         }

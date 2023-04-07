@@ -20,25 +20,25 @@ internal class Environment {
         }
     }
     
-    private var environments: [FrameEnvironment]
+    private var frameEnvironments: [FrameEnvironment]
     
     init() {
-        self.environments = [.init()]
+        self.frameEnvironments = [.init()]
     }
     
     func add(symbolTableId: Int, name: String, value: Any?) {
-        let topEnvironment = environments.last!
+        let topEnvironment = frameEnvironments.last!
         topEnvironment.add(symbolTableId: symbolTableId, variable: .init(name: name, value: value))
     }
     
     func add(symbolTableId: Int, variable: StoredVariable) {
-        let topEnvironment = environments.last!
+        let topEnvironment = frameEnvironments.last!
         topEnvironment.add(symbolTableId: symbolTableId, variable: variable)
     }
     
     func fetch(symbolTableId: Int) -> StoredVariable? {
         var result: StoredVariable?
-        for environment in environments.reversed() {
+        for environment in frameEnvironments.reversed() {
             result = environment.fetch(symbolTableId: symbolTableId)
             if result != nil {
                 return result
@@ -49,10 +49,10 @@ internal class Environment {
     }
     
     func pushFrame() {
-        environments.append(.init())
+        frameEnvironments.append(.init())
     }
     
     func popFrame() {
-        environments.popLast()
+        frameEnvironments.popLast()
     }
 }

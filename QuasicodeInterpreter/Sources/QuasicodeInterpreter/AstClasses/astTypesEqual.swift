@@ -1,7 +1,7 @@
-internal func typesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
+internal func astTypesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
     if lhs is AstArrayType {
         if rhs is AstArrayType {
-            return typesEqual((lhs as! AstArrayType).contains, (rhs as! AstArrayType).contains)
+            return astTypesEqual((lhs as! AstArrayType).contains, (rhs as! AstArrayType).contains)
         } else {
             return false
         }
@@ -31,7 +31,7 @@ internal func typesEqual(_ lhs: AstType, _ rhs: AstType) -> Bool {
                 }
                 
                 if lhsClass.templateArguments!.elementsEqual(rhsClass.templateArguments!, by: { lhs, rhs in
-                    typesEqual(lhs, rhs)
+                    astTypesEqual(lhs, rhs)
                 }) {
                     return true
                 } else {

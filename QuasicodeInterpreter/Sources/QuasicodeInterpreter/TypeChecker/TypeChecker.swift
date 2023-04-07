@@ -23,7 +23,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if lhs is QsVoidType || rhs is QsVoidType {
             return QsVoidType()
         }
-        if typesEqual(lhs, rhs, anyEqAny: true) {
+        if qsTypesEqual(lhs, rhs, anyEqAny: true) {
             return lhs
         }
         if lhs is QsAnyType || rhs is QsAnyType {
@@ -188,7 +188,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 if qsType is QsErrorType {
                     return false
                 }
-                if !typesEqual(expr.type!, qsType, anyEqAny: true) {
+                if !qsTypesEqual(expr.type!, qsType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -200,7 +200,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     if qsType is QsErrorType {
                         continue
                     }
-                    if typesEqual(expr.type!, qsType, anyEqAny: true) {
+                    if qsTypesEqual(expr.type!, qsType, anyEqAny: true) {
                         assertionPass = true
                     }
                 }
@@ -215,7 +215,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesEqual(qsType, commonType, anyEqAny: true) {
+                if !qsTypesEqual(qsType, commonType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -226,7 +226,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     return false
                 }
                 let commonType = findCommonType(expr.type!, qsType)
-                if !typesEqual(expr.type!, qsType, anyEqAny: true) {
+                if !qsTypesEqual(expr.type!, qsType, anyEqAny: true) {
                     if errorMessage != nil {
                         error(message: errorMessage!, on: expr)
                     }
@@ -259,7 +259,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         // attempted implicit casts may fail for casting to and from array types
         // the rules for implicitly casting arrays are: casting single elements are OK, just not arrays
         
-        if typesEqual(expr.type!, toType, anyEqAny: true) {
+        if qsTypesEqual(expr.type!, toType, anyEqAny: true) {
             // nothing needs to be done
             return true
         }
@@ -273,7 +273,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 return canCast
             } else {
                 if reportError {
-                    error(message: "Cannot convert value of type '\(printType(expr.type))' to expected element type '\(printType(toType))'", on: expr)
+                    error(message: "Cannot convert value of type '\(printQsType(expr.type))' to expected element type '\(printQsType(toType))'", on: expr)
                 }
                 return false
             }
@@ -446,12 +446,12 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             for i in 0..<withParameters.count {
                 let givenType = withParameters[i]
                 let expectedType = functionSymbolEntry.functionParams[i].type
-                if typesEqual(givenType, expectedType, anyEqAny: true) {
+                if qsTypesEqual(givenType, expectedType, anyEqAny: true) {
                     matchLevel = min(matchLevel, 1)
                     continue
                 } else {
                     let commonType = findCommonType(givenType, expectedType)
-                    if typesEqual(commonType, expectedType, anyEqAny: true) {
+                    if qsTypesEqual(commonType, expectedType, anyEqAny: true) {
                         matchLevel = min(matchLevel, 0)
                     } else {
                         // unable to convert given type to expected type
@@ -794,7 +794,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if expr.object.type is QsErrorType {
                 return
             }
-            let propertyDoesNotExistErrorMessage = "Value of type '\(printType(expr.object.type!))' has no property '\(expr.property)'"
+            let propertyDoesNotExistErrorMessage = "Value of type '\(printQsType(expr.object.type!))' has no property '\(expr.property)'"
             if expr.object.type is QsArray {
                 // one built in property: length
                 if expr.property.lexeme == "length" {
@@ -857,7 +857,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(expr.value)
         let castTo = typeCheck(expr.toType)
         expr.type = castTo
-        if typesEqual(castTo, expr.value.type!, anyEqAny: true) {
+        if qsTypesEqual(castTo, expr.value.type!, anyEqAny: true) {
             return
         }
         // allowed type casts: [any type] -> any, any -> [any type], int -> double, double -> int
@@ -871,17 +871,17 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             return // allow int -> double and double -> int
         }
         let commonType = findCommonType(expr.value.type!, castTo)
-        if typesEqual(commonType, expr.value.type!, anyEqAny: true) {
+        if qsTypesEqual(commonType, expr.value.type!, anyEqAny: true) {
             // casting to a subclass
             return
         }
-        if typesEqual(commonType, castTo, anyEqAny: true) {
+        if qsTypesEqual(commonType, castTo, anyEqAny: true) {
             // casting to a superclass
             return
         }
         
         if !(expr.value.type is QsErrorType) {
-            error(message: "Type '\(printType(expr.value.type))' cannot be cast to '\(castTo))'", on: expr.toType)
+            error(message: "Type '\(printQsType(expr.value.type))' cannot be cast to '\(castTo))'", on: expr.toType)
         }
     }
     
@@ -972,14 +972,14 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 promoteToDoubleIfNecessary()
                 return
             }
-            if typesEqual(expr.left.type!, QsBoolean(), anyEqAny: false) && typesEqual(expr.right.type!, QsBoolean(), anyEqAny: false) {
+            if qsTypesEqual(expr.left.type!, QsBoolean(), anyEqAny: false) && qsTypesEqual(expr.right.type!, QsBoolean(), anyEqAny: false) {
                 return
             }
             if isStringType(expr.left.type!) && isStringType(expr.right.type!) {
                 return
             }
             if expr.left.type is QsArray && expr.right.type is QsArray {
-                if typesEqual(expr.left.type!, expr.right.type!, anyEqAny: false) {
+                if qsTypesEqual(expr.left.type!, expr.right.type!, anyEqAny: false) {
                     return
                 }
             }
@@ -995,7 +995,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             }
         case .MOD:
             expr.type = QsInt()
-            if typesEqual(expr.left.type!, QsInt(), anyEqAny: false) && typesEqual(expr.right.type!, QsInt(), anyEqAny: false) {
+            if qsTypesEqual(expr.left.type!, QsInt(), anyEqAny: false) && qsTypesEqual(expr.right.type!, QsInt(), anyEqAny: false) {
                 return
             }
         case .PLUS:
@@ -1032,7 +1032,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         if !(expr.left.type is QsErrorType) && !(expr.right.type is QsErrorType) {
             error(
                 message: "Binary operator '\(expr.opr.lexeme)' cannot be applied " +
-                "to operands of type '\(printType(expr.left.type))' and '\(printType(expr.right.type))'",
+                "to operands of type '\(printQsType(expr.left.type))' and '\(printQsType(expr.right.type))'",
                 on: expr
             )
         }
@@ -1131,7 +1131,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             if field.initializer != nil {
                 if assertType(
                     expr: field.initializer!,
-                    errorMessage: "Type '\(printType(field.initializer!.type))' cannot be cast to '\(printType(fieldType))'",
+                    errorMessage: "Type '\(printQsType(field.initializer!.type))' cannot be cast to '\(printQsType(fieldType))'",
                     typeAssertions: .isSubTypeOf(fieldType)
                 ) {
                     implicitlyCastExprOfSubTypeToType(expr: &field.initializer!, toType: fieldType, reportError: true)
@@ -1215,7 +1215,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             // gaurentee a return
             var gaurenteeReturnChecker = GaurenteeReturnChecker {
                 let functionSymbol = self.symbolTable.getSymbol(id: stmt.symbolTableIndex!) as! FunctionLikeSymbol
-                self.error(message: "Missing return in function expected to return '\(printType(functionSymbol.returnType))'", on: stmt.endOfFunction)
+                self.error(message: "Missing return in function expected to return '\(printQsType(functionSymbol.returnType))'", on: stmt.endOfFunction)
             }
             gaurenteeReturnChecker.checkStatements(stmt.body)
         }
@@ -1229,7 +1229,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(stmt.condition)
         assertType(
             expr: stmt.condition,
-            errorMessage: "Type '\(printType(stmt.condition.type))' cannot be used as a boolean",
+            errorMessage: "Type '\(printQsType(stmt.condition.type))' cannot be used as a boolean",
             typeAssertions: .isType(QsBoolean())
         )
         typeCheck(stmt.thenBranch)
@@ -1257,7 +1257,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             )
             assertType(
                 expr: expression,
-                errorMessage: "Cannot input to type '\(printType(expression.type!))'",
+                errorMessage: "Cannot input to type '\(printQsType(expression.type!))'",
                 typeAssertions: .isOfTypes([
                     QsInt(),
                     QsAnyType(),
@@ -1285,7 +1285,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                 } else {
                     if assertType(
                         expr: stmt.value!,
-                        errorMessage: "Cannot convert return expression of type '\(printType(stmt.value!.type))' to return type '\(printType(returnType))'",
+                        errorMessage: "Cannot convert return expression of type '\(printQsType(stmt.value!.type))' to return type '\(printQsType(returnType))'",
                         typeAssertions: .isSubTypeOf(returnType)
                     ) {
                         implicitlyCastExprOfSubTypeToType(expr: &stmt.value!, toType: returnType, reportError: true)
@@ -1307,18 +1307,18 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
             typeCheck(stmt.variable)
             assertType(
                 expr: stmt.variable,
-                errorMessage: "Type '\(printType(stmt.variable.type!))' cannot be used as an int",
+                errorMessage: "Type '\(printQsType(stmt.variable.type!))' cannot be used as an int",
                 typeAssertions: .isType(QsInt())
             )
         }
         assertType(
             expr: stmt.lRange,
-            errorMessage: "Type '\(printType(stmt.lRange.type!))' cannot be used as an int",
+            errorMessage: "Type '\(printQsType(stmt.lRange.type!))' cannot be used as an int",
             typeAssertions: .isType(QsInt())
         )
         assertType(
             expr: stmt.rRange,
-            errorMessage: "Type '\(printType(stmt.rRange.type!))' cannot be used as an int",
+            errorMessage: "Type '\(printQsType(stmt.rRange.type!))' cannot be used as an int",
             typeAssertions: .isType(QsInt())
         )
         typeCheck(stmt.body)
@@ -1328,7 +1328,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         typeCheck(stmt.expression)
         assertType(
             expr: stmt.expression,
-            errorMessage: "Type '\(printType(stmt.expression.type!))' cannot be used as a boolean",
+            errorMessage: "Type '\(printQsType(stmt.expression.type!))' cannot be used as a boolean",
             typeAssertions: .isType(QsBoolean())
         )
         typeCheck(stmt.body)
@@ -1384,7 +1384,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
                     // type inference
                     // do not allow void to be assigned to a variable!
                     if stmt.value.type is QsVoidType {
-                        error(message: "Type '\(printType(stmt.value.type))' cannot be assigned to a variable", on: stmt.value)
+                        error(message: "Type '\(printQsType(stmt.value.type))' cannot be assigned to a variable", on: stmt.value)
                         typeVariable(variable: left.to, type: QsErrorType())
                     } else {
                         typeVariable(variable: left.to, type: stmt.value.type!)
@@ -1394,7 +1394,7 @@ public class TypeChecker: ExprVisitor, StmtVisitor, AstTypeQsTypeVisitor {
         }
         typeCheck(stmt.left)
         assertType(expr: stmt.left, errorMessage: "Cannot assign to immutable value", typeAssertions: .isAssignable)
-        if assertType(expr: stmt.value, errorMessage: "Type '\(printType(stmt.value.type!))' cannot be cast to '\(printType(stmt.left.type!))'", typeAssertions: .isSubTypeOf(stmt.left.type!)) {
+        if assertType(expr: stmt.value, errorMessage: "Type '\(printQsType(stmt.value.type!))' cannot be cast to '\(printQsType(stmt.left.type!))'", typeAssertions: .isSubTypeOf(stmt.left.type!)) {
             implicitlyCastExprOfSubTypeToType(expr: &stmt.value, toType: stmt.left.type!, reportError: true)
         }
         

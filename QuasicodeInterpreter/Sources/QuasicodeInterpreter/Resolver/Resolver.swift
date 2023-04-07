@@ -903,7 +903,7 @@ public class Resolver: ExprThrowVisitor, StmtVisitor {
                         }
                     }
                     // check return type consistency
-                    if !typesEqual(existingMethodSymbolInfo.returnType, methodSymbol.returnType, anyEqAny: true) {
+                    if !qsTypesEqual(existingMethodSymbolInfo.returnType, methodSymbol.returnType, anyEqAny: true) {
                         if methodSymbol.methodStmt == nil {
                             assertionFailure("An internal language error occurred")
                         } else {

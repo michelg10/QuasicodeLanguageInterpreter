@@ -32,7 +32,7 @@ public class Scanner {
         currentLocation = state.currentLocation
     }
     
-    private static let keywords: [String:TokenType] = [
+    private static let keywords: [String : TokenType] = [
         "int"      : .INT,
         "double"   : .DOUBLE,
         "boolean"  : .BOOLEAN,

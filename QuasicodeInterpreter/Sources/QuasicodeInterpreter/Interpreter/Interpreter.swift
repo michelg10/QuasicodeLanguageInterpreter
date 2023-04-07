@@ -160,7 +160,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     
     private func verifyIsType(_ value: Any?, type: QsType) -> TypeVerificationResult {
         defer {
-            debugPrint(purpose: "Type checker verification", "Verifying \(String(describing: value)) as \(printType(type))")
+            debugPrint(purpose: "Type checker verification", "Verifying \(String(describing: value)) as \(printQsType(type))")
         }
         
         if type is QsErrorType {
@@ -336,7 +336,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             preconditionFailure("Unrecognized type \(Swift.type(of: value))")
         }
         
-        throw InterpreterRuntimeError.error("Could not cast value of type '\(printType(getQsTypeOfSwiftValue(value)))' to '\(printType(type))'", expr.startLocation, expr.endLocation)
+        throw InterpreterRuntimeError.error("Could not cast value of type '\(printQsType(getQsTypeOfSwiftValue(value)))' to '\(printQsType(type))'", expr.startLocation, expr.endLocation)
     }
     
     public func visitCastExprOptionalAny(expr: CastExpr) throws -> Any? {
@@ -366,7 +366,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
             return nil
         }
         if type is QsClass {
-            if typesEqual(type, getStringType(), anyEqAny: false) {
+            if qsTypesEqual(type, getStringType(), anyEqAny: false) {
                 return ""
             }
         }
@@ -605,7 +605,7 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     public func visitIsTypeExprOptionalAny(expr: IsTypeExpr) throws -> Any? {
         // TODO: since type information is erased in the compiler / VM, "is type" expressions need to be computed at compile-time for every type *except* for anys and potentially polymorphic classes
         let value = try interpret(expr.left)
-        return typesEqual(getQsTypeOfSwiftValue(value), expr.rightType!, anyEqAny: true)
+        return qsTypesEqual(getQsTypeOfSwiftValue(value), expr.rightType!, anyEqAny: true)
     }
     
     public func visitImplicitCastExprOptionalAny(expr: ImplicitCastExpr) throws -> Any? {
@@ -614,16 +614,16 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
         // some type -> any
         // TODO: subclass -> superclass
         var value = try interpret(expr.expression)
-        if typesEqual(expr.type!, QsDouble(), anyEqAny: true) {
+        if qsTypesEqual(expr.type!, QsDouble(), anyEqAny: true) {
             if value is Int {
                 value = Double(value as! Int)
                 return value
             }
-        } else if typesEqual(expr.type!, QsAnyType(), anyEqAny: true) {
+        } else if qsTypesEqual(expr.type!, QsAnyType(), anyEqAny: true) {
             // do nothing
             return value
         }
-        preconditionFailure("Unsupported implicit type cast \(printType(expr.expression.type)) -> \(printType(expr.type))")
+        preconditionFailure("Unsupported implicit type cast \(printQsType(expr.expression.type)) -> \(printQsType(expr.type))")
         return value
     }
     
@@ -721,25 +721,25 @@ public class Interpreter: ExprOptionalAnyThrowVisitor, StmtThrowVisitor {
     public func visitInputStmt(stmt: InputStmt) throws {
         for expression in stmt.expressions {
             let input = try getStdin()
-            if typesEqual(expression.type!, QsInt(), anyEqAny: true) {
+            if qsTypesEqual(expression.type!, QsInt(), anyEqAny: true) {
                 var value: Int
                 if let input = Int(input) {
                     value = input
                 } else if let input = Double(input) {
                     value = Int(input)
                 } else {
-                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printType(expression.type!))", expression.startLocation, expression.endLocation)
+                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printQsType(expression.type!))", expression.startLocation, expression.endLocation)
                 }
                 try assignTo(lhs: expression, rhs: value)
-            } else if typesEqual(expression.type!, QsDouble(), anyEqAny: true) {
+            } else if qsTypesEqual(expression.type!, QsDouble(), anyEqAny: true) {
                 if let input = Double(input) {
                     try assignTo(lhs: expression, rhs: input)
                 } else {
-                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printType(expression.type!))", expression.startLocation, expression.endLocation)
+                    throw InterpreterRuntimeError.error("Cannot cast input to type \(printQsType(expression.type!))", expression.startLocation, expression.endLocation)
                 }
-            } else if typesEqual(expression.type!, getStringType(), anyEqAny: true) {
+            } else if qsTypesEqual(expression.type!, getStringType(), anyEqAny: true) {
                 try assignTo(lhs: expression, rhs: input)
-            } else if typesEqual(expression.type!, QsAnyType(), anyEqAny: true) {
+            } else if qsTypesEqual(expression.type!, QsAnyType(), anyEqAny: true) {
                 if let input = Int(input) {
                     try assignTo(lhs: expression, rhs: input)
                 } else if let input = Double(input) {

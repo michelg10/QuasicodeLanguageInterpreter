@@ -1,7 +1,7 @@
 internal let astPrinterSingleton = AstPrinter()
 
 // swiftlint:disable type_body_length
-public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
+internal class AstPrinter: ExprStringVisitor, StmtStringVisitor {
 // swiftlint:enable type_body_length
     public init() {}
     
@@ -76,7 +76,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
     }
     
     private func generateTypePropertyForExpr(_ expr: Expr) -> (String, String) {
-        ("QsType", printType(expr.type))
+        ("QsType", printQsType(expr.type))
     }
     
     private func generateAdditionalTypePropertyArray(_ expr: Expr) -> [(String, String)] {
@@ -249,7 +249,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
             name: "IsType",
             additionalProperties: [
                 ("type", printAst(expr.right)),
-                ("QsType", printType(expr.rightType))
+                ("QsType", printQsType(expr.rightType))
             ] + generateAdditionalTypePropertyArray(expr),
             exprs: expr.left
         )
@@ -259,7 +259,7 @@ public class AstPrinter: ExprStringVisitor, StmtStringVisitor {
         parenthesize(
             name: "ImplicitCast",
             additionalProperties: [
-                ("to", printType(expr.type))
+                ("to", printQsType(expr.type))
             ],
             exprs: expr.expression
         )

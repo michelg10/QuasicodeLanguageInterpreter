@@ -1,4 +1,4 @@
-internal func typesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
+internal func qsTypesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
     if lhs is QsErrorType || rhs is QsErrorType {
         return false
     }
@@ -27,7 +27,7 @@ internal func typesEqual(_ lhs: QsType, _ rhs: QsType, anyEqAny: Bool) -> Bool {
     
     if lhs is QsArray {
         if rhs is QsArray {
-            return typesEqual((lhs as! QsArray).contains, (rhs as! QsArray).contains, anyEqAny: anyEqAny)
+            return qsTypesEqual((lhs as! QsArray).contains, (rhs as! QsArray).contains, anyEqAny: anyEqAny)
         } else {
             return false
         }

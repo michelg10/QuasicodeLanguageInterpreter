@@ -21,7 +21,7 @@ public class Templater: StmtStmtVisitor, ExprExprThrowVisitor, AstTypeAstTypeThr
             }
             
             if lhs.templateParameters.elementsEqual(rhs.templateParameters, by: { lhsAstType, rhsAstType in
-                typesEqual(lhsAstType, rhsAstType)
+                astTypesEqual(lhsAstType, rhsAstType)
             }) {
                 return true
             } else {
